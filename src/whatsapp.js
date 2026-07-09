@@ -4,7 +4,6 @@ import qrcodeTerminal from 'qrcode-terminal';
 import pino from 'pino';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import QRCodeImage from 'qrcode'; // Naya image QR generator
 
 const require = createRequire(import.meta.url);
 const baileys = require('@whiskeysockets/baileys');
@@ -41,7 +40,7 @@ export async function startWhatsApp() {
     sock.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Agar naya QR aata hai toh use variable me save karein + terminal me bhi dikhayein
+      // Naya QR aata hai toh variable me save + terminal me dikhayein
       if (qr) {
         globalQrCode = qr;
         try { qrcodeTerminal.generate(qr, { small: true }); } catch {}
@@ -70,18 +69,21 @@ export async function startWhatsApp() {
   }
 }
 
-export async function sendMessage(target, text, wantsGroup = false) {
+// sendMessage ab OBJECT leta hai: { text, groupJid, directToGroup }
+// directToGroup true + groupJid ho -> group me jaata hai, warna aapke apne number (Note-to-Self) par.
+export async function sendMessage({ text, groupJid, directToGroup = false }) {
   if (!ready || !sock) {
     throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
   }
-  const prefix = wantsGroup ? '📢 Announcement to group:\n\n' : '';
+  const target = (directToGroup && groupJid) ? groupJid : myJid;
+  const prefix = (target !== myJid) ? '📢 Announcement to group:\n\n' : '';
   try {
     await sock.sendMessage(target, { text: prefix + text });
-    console.log(`✅ Message DELIVERED to ${wantsGroup ? 'GROUP' : 'SELF'}: ${target}`);
+    console.log(`✅ Message DELIVERED to ${target === myJid ? 'SELF' : 'GROUP'}: ${target}`);
     return { sent: true, target };
   } catch (e) {
     console.error(`❌ sendMessage FAILED to ${target}: ${e.message}`);
-    if (wantsGroup) {
+    if (target !== myJid) {
       try {
         await sock.sendMessage(myJid, { text: '⚠️ (Group send failed, sent to you instead)\n\n' + text });
         console.log('↩️ Fell back to SELF after group failure');
@@ -113,7 +115,7 @@ export async function resolveGroupJid(input) {
   return '';
 }
 
-// Ye naye helpers hain jo server.js me kaam aayenge
+// Helpers used by server.js
 export const getQrCode = () => globalQrCode;
 export const isReady = () => ready;
 export const isWhatsAppReady = () => ready; // server.js isi naam se import karta hai

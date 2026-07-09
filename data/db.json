@@ -36,6 +36,16 @@
           "meetLink": "https://meet.google.com/rsk-nhso-kxm",
           "eventId": "42d1k5gd7rs8ojneepkbubs0qs",
           "createdAt": 1783566374086
+        },
+        {
+          "id": "mrdx5v4al5u7o",
+          "topic": "mind reading",
+          "startISO": "2026-07-14T06:42:00.000Z",
+          "meetLink": "https://meet.google.com/txp-mfpj-qtu",
+          "eventId": "nhvtujj1ocm3mlgc5rs377f6js",
+          "durationMin": 60,
+          "status": "scheduled",
+          "createdAt": 1783626494410
         }
       ],
       "driveFolderId": "1NbkTfP4BmmMXale-2bRCErJLqOE9KsxM"

@@ -3,171 +3,320 @@ import express from 'express';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import QRCodeImage from 'qrcode'; 
+import QRCodeImage from 'qrcode';
 import { read, update, id } from './src/store.js';
 import { startWhatsApp, isWhatsAppReady, listGroups, sendMessage, resolveGroupJid, getQrCode } from './src/whatsapp.js';
 import { startScheduler, jobs } from './src/scheduler.js';
-import { createClassEvent, deleteClassEvent, findRecording, makeShareable, sendEmail, listInboxVideos, ensureFolder, moveFile, ensureBatchFolder, ensureFolderAccess, revokeFolderAccess, moveIntoFolder } from './src/google.js';
+import {
+  createClassEvent, deleteClassEvent, sendEmail, listInboxVideos,
+  ensureFolder, moveFile, ensureBatchFolder, ensureFolderAccess, moveIntoFolder
+} from './src/google.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public'))); // Serve The Oracle control panel (index.html, app.js, styles.css)
 
 const googleReady = () => !!process.env.GOOGLE_REFRESH_TOKEN;
-
 const IST = 'Asia/Kolkata';
+
+// ---------- helpers ----------
 function className(topic) {
   return String(topic).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
     .replace(/\b\w/g, c => c.toUpperCase());
 }
-function fmtDate(iso) {
-  return new Date(iso).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: IST });
+const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: IST });
+const fmtTime = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: IST });
+
+function classAddedMessage(name, startISO, meetLink) {
+  return `📢 New Class Scheduled — ${name}
+
+📅 ${fmtDate(startISO)}
+🕐 ${fmtTime(startISO)} IST
+🔗 Join: ${meetLink}
+
+*English:* Please join on time with your registered name and email. Tap the link and wait — the host will admit you.
+*हिंदी:* कृपया समय पर अपने रजिस्टर्ड नाम और ईमेल के साथ जुड़ें। लिंक पर टैप करके प्रतीक्षा करें — होस्ट आपको admit करेगा।
+
+Regards,
+Harry Rajput`;
 }
-function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: IST });
+
+function classCancelledMessage(name, startISO, reason) {
+  return `❌ Class Cancelled — ${name}
+📅 ${fmtDate(startISO)} · 🕐 ${fmtTime(startISO)} IST
+${reason ? `\n📝 Reason: ${reason}\n` : ''}
+*English:* This class has been cancelled. Sorry for the inconvenience.
+*हिंदी:* यह क्लास रद्द कर दी गई है। असुविधा के लिए क्षमा करें।
+
+Regards,
+Harry Rajput`;
 }
 
-// Helper to handle recording classification safely
-function classifyRecording(fileName) {
-  const name = fileName || '';
-  return {
-    batch: name.includes('batch') ? 'Batch Class' : 'General',
-    topic: name.split('—')[0] || 'Topic'
-  };
+function recordingMessage(name, link) {
+  return `🎥 Recording Available — ${name}
+
+*English:* Here is the recording of the class. Open it while signed in with your registered email.
+*हिंदी:* क्लास की रिकॉर्डिंग यहाँ है। अपने रजिस्टर्ड ईमेल से साइन-इन करके खोलें।
+
+🔗 ${link}
+
+Regards,
+Harry Rajput`;
 }
 
-// --- ROOT HOMEPAGE ---
-app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Arya Agent Control Panel</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-          .container { text-align: center; background: white; padding: 60px 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-width: 500px; }
-          h1 { color: #333; margin-bottom: 10px; font-size: 2.5em; }
-          .status { margin: 30px 0; font-size: 1.2em; }
-          .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: bold; }
-          .badge-success { background: #10b981; color: white; }
-          .badge-loading { background: #f59e0b; color: white; }
-          .button-group { margin-top: 40px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
-          a { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-          a:hover { background: #764ba2; transform: scale(1.05); }
-          .secondary { background: #6b7280; }
-          .secondary:hover { background: #4b5563; }
-          p { color: #666; margin: 15px 0; line-height: 1.6; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>🎭 Arya Agent</h1>
-          <p>Complete Mentalism Class Automation System</p>
-          
-          <div class="status">
-            <strong>WhatsApp Status:</strong>
-            <div class="badge ${isWhatsAppReady() ? 'badge-success' : 'badge-loading'}">
-              ${isWhatsAppReady() ? '✅ Connected & Ready' : '⏳ Connecting...'}
-            </div>
-          </div>
+// Drive organizer classification
+function classify(fileName) {
+  const n = (fileName || '').toLowerCase();
+  let batch = 'Unsorted';
+  const bm = n.match(/batch\s*\d+/);
+  if (bm) batch = bm[0].replace(/\s+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  else if (n.includes('diwali')) batch = 'Diwali';
+  else if (n.includes('rakhi')) batch = 'Rakhi';
+  else if (n.includes('march')) batch = 'March';
 
-          <p style="font-size: 0.95em; color: #999;">
-            ${isWhatsAppReady() ? 'WhatsApp is authenticated and ready to send messages.' : 'Scanning QR code to authenticate WhatsApp...'}
-          </p>
+  let topic = 'General';
+  if (n.includes('hypnos')) topic = 'Hypnosis';
+  else if (n.includes('mind')) topic = 'Mind Reading';
+  else if (n.includes('act')) topic = 'Acts';
+  else if (n.includes('practice')) topic = 'Practice';
+  else if (n.includes('advanc')) topic = 'Advanced';
+  else if (n.includes('classic')) topic = 'Classic';
 
-          <div class="button-group">
-            <a href="/qr">📱 Scan WhatsApp QR</a>
-            <a href="/api/config" class="secondary">⚙️ API Status</a>
-          </div>
+  return { batch, topic, target: `${batch} / ${topic}` };
+}
 
-          <p style="margin-top: 40px; font-size: 0.9em; color: #999;">
-            🔐 Protected API endpoints require authentication.<br>
-            Use header: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">x-admin-password: arya123</code>
-          </p>
-        </div>
-      </body>
-    </html>
-  `);
-});
-
-// --- BROWSER QR CODE ENDPOINT ---
+// ---------- QR endpoint (browser) ----------
 app.get('/qr', async (req, res) => {
   const qrData = getQrCode();
-  
-  if (isWhatsAppReady()) {
-    return res.send('<h3>✅ WhatsApp connected aur ready hai!</h3>');
-  }
-  
-  if (!qrData) {
-    return res.send('<h3>⏳ QR Code ban raha hai... Kripya 5 second baad page ko Refresh (F5) karein.</h3>');
-  }
-
+  if (isWhatsAppReady()) return res.send('<h3 style="font-family:Arial;text-align:center;margin-top:50px">✅ WhatsApp connected aur ready hai!</h3>');
+  if (!qrData) return res.send('<h3 style="font-family:Arial;text-align:center;margin-top:50px">⏳ QR Code ban raha hai... 5 second baad page Refresh (F5) karein.</h3>');
   try {
     const qrImageSrc = await QRCodeImage.toDataURL(qrData);
     res.send(`
-      <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
-        <h2>Arya Agent WhatsApp se connect karne ke liye scan karein</h2>
-        <div style="margin: 20px auto; padding: 10px; border: 1px solid #ccc; display: inline-block; background: #fff;">
-          <img src="${qrImageSrc}" alt="WhatsApp QR Code" style="width: 300px; height: 300px;"/>
+      <div style="text-align:center;margin-top:50px;font-family:Arial,sans-serif">
+        <h2>Arya Agent — WhatsApp se connect karne ke liye scan karein</h2>
+        <div style="margin:20px auto;padding:10px;border:1px solid #ccc;display:inline-block;background:#fff">
+          <img src="${qrImageSrc}" alt="WhatsApp QR Code" style="width:300px;height:300px"/>
         </div>
-        <p><strong>Status:</strong> Phone ke WhatsApp -> Linked Devices me jaakar scan karein.</p>
-      </div>
-    `);
+        <p><strong>Phone → WhatsApp → Linked Devices → Scan.</strong></p>
+      </div>`);
   } catch (err) {
-    console.error('QR Image banane mein dikkat aayi:', err);
+    console.error('QR image error:', err);
     res.status(500).send('QR Code image generate nahi ho payi.');
   }
 });
 
-// ---- API Routes ----
+// ---------- AUTH ----------
+// Frontend (app.js) sends the passphrase in the "x-admin-pass" header.
 const auth = (req, res, next) => {
-  if (req.headers['x-admin-password'] === process.env.ADMIN_PASSWORD) return next();
+  if (req.headers['x-admin-pass'] === process.env.ADMIN_PASSWORD) return next();
   res.status(401).json({ error: 'unauthorized' });
 };
 
-app.get('/api/config', auth, async (req, res) => res.json(await read()));
-app.post('/api/config', auth, async (req, res) => {
-  await update(req.body);
+// LOGIN (no auth middleware — this is where the password gets checked)
+app.post('/api/login', (req, res) => {
+  if (req.body?.password === process.env.ADMIN_PASSWORD) return res.json({ ok: true });
+  res.status(401).json({ ok: false, error: 'Wrong passphrase.' });
+});
+
+// ---------- WHATSAPP ----------
+app.get('/api/whatsapp/status', auth, (req, res) => res.json({ ready: isWhatsAppReady() }));
+app.get('/api/whatsapp/groups', auth, async (req, res) => {
+  try { res.json(await listGroups()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ---------- CONFIG ----------
+app.get('/api/config', auth, (req, res) => res.json(read().config));
+app.put('/api/config', auth, (req, res) => {
+  update(d => { d.config = { ...d.config, ...req.body }; });
   res.json({ ok: true });
 });
 
-app.post('/api/classes', auth, async (req, res) => {
-  if (!googleReady()) return res.status(400).json({ error: 'google auth missing' });
+// ---------- BATCHES ----------
+app.get('/api/batches', auth, (req, res) => res.json(read().batches));
+
+app.post('/api/batches', auth, async (req, res) => {
   try {
-    const data = await read();
-    const c = { id: id(), topic: req.body.topic, start: req.body.start, end: req.body.end, processed: false };
-    c.calendarEventId = await createClassEvent(className(c.topic), c.start, c.end);
-    data.classes.push(c);
-    await update(data);
-    res.json(c);
+    const name = (req.body.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'batch name required' });
+    const emails = (req.body.emails || []).map(e => e.trim()).filter(Boolean);
+    let groupJid = (req.body.whatsappGroupJid || '').trim();
+    if (groupJid && !groupJid.includes('@g.us')) {
+      try { groupJid = (await resolveGroupJid(groupJid)) || groupJid; } catch {}
+    }
+    const batch = { id: id(), name, emails, whatsappGroupJid: groupJid, classes: [] };
+
+    if (googleReady()) {
+      try {
+        batch.driveFolderId = await ensureBatchFolder(name);
+        await ensureFolderAccess(batch.driveFolderId, emails);
+      } catch (e) { console.error('Drive folder setup failed:', e.message); }
+    }
+
+    update(d => { d.batches.push(batch); });
+    res.json(batch);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/classes/:id', auth, async (req, res) => {
+app.put('/api/batches/:id', auth, async (req, res) => {
   try {
-    const data = await read();
-    const idx = data.classes.findIndex(c => c.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ error: 'not found' });
-    const [c] = data.classes.splice(idx, 1);
-    if (c.calendarEventId && googleReady()) {
-      try { await deleteClassEvent(c.calendarEventId); } catch (e) { console.error('cal delete failed:', e.message); }
+    const emails = (req.body.emails || []).map(e => e.trim()).filter(Boolean);
+    let groupJid = (req.body.whatsappGroupJid || '').trim();
+    if (groupJid && !groupJid.includes('@g.us')) {
+      try { groupJid = (await resolveGroupJid(groupJid)) || groupJid; } catch {}
     }
-    await update(data);
+    let updated = null;
+    update(d => {
+      const b = d.batches.find(x => x.id === req.params.id);
+      if (!b) return;
+      if (req.body.name) b.name = req.body.name.trim();
+      b.emails = emails;
+      b.whatsappGroupJid = groupJid;
+      updated = b;
+    });
+    if (!updated) return res.status(404).json({ error: 'batch not found' });
+    if (googleReady() && updated.driveFolderId) {
+      try { await ensureFolderAccess(updated.driveFolderId, emails); } catch (e) { console.error('access sync failed:', e.message); }
+    }
+    res.json(updated);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/batches/:id', auth, (req, res) => {
+  update(d => { d.batches = d.batches.filter(b => b.id !== req.params.id); });
+  res.json({ ok: true });
+});
+
+// ---------- CLASSES ----------
+app.post('/api/batches/:bid/classes', auth, async (req, res) => {
+  try {
+    const db = read();
+    const batch = db.batches.find(b => b.id === req.params.bid);
+    if (!batch) return res.status(404).json({ error: 'batch not found' });
+
+    const topic = (req.body.topic || '').trim();
+    const startISO = req.body.startISO;
+    if (!topic || !startISO) return res.status(400).json({ error: 'topic and startISO required' });
+
+    let meetLink = (req.body.meetLink || '').trim();
+    let eventId = null;
+
+    if (!meetLink) {
+      if (!googleReady()) return res.status(400).json({ error: 'google auth missing — cannot auto-generate Meet link' });
+      const ev = await createClassEvent(className(topic), startISO, null, '', batch.emails);
+      meetLink = ev.meetLink;
+      eventId = ev.eventId;
+    }
+
+    const cls = { id: id(), topic, startISO, meetLink, eventId, durationMin: 60, status: 'scheduled', createdAt: Date.now() };
+    update(d => { d.batches.find(b => b.id === batch.id).classes.push(cls); });
+
+    // Notify via WhatsApp + email (best-effort)
+    const msg = classAddedMessage(className(topic), startISO, meetLink);
+    try {
+      await sendMessage({ text: msg, groupJid: batch.whatsappGroupJid, directToGroup: db.config.whatsappDirectToGroup });
+      if (googleReady() && batch.emails.length) {
+        await sendEmail({ to: batch.emails, subject: `New Class: ${className(topic)}`, text: msg }).catch(() => {});
+      }
+    } catch (e) { console.error('class notify failed:', e.message); }
+
+    res.json(cls);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Cancel a class (with reason) — notifies students
+app.delete('/api/batches/:bid/classes/:cid', auth, async (req, res) => {
+  try {
+    const db = read();
+    const batch = db.batches.find(b => b.id === req.params.bid);
+    const cls = batch?.classes.find(c => c.id === req.params.cid);
+    if (!cls) return res.status(404).json({ error: 'class not found' });
+
+    const reason = req.body?.reason || '';
+    update(d => {
+      const c = d.batches.find(b => b.id === batch.id).classes.find(x => x.id === cls.id);
+      if (c) { c.status = 'cancelled'; c.cancelReason = reason; }
+    });
+
+    if (cls.eventId && googleReady()) { try { await deleteClassEvent(cls.eventId); } catch (e) { console.error('cal delete failed:', e.message); } }
+
+    const msg = classCancelledMessage(className(cls.topic), cls.startISO, reason);
+    try {
+      await sendMessage({ text: msg, groupJid: batch.whatsappGroupJid, directToGroup: db.config.whatsappDirectToGroup });
+      if (googleReady() && batch.emails.length) {
+        await sendEmail({ to: batch.emails, subject: `Class Cancelled: ${className(cls.topic)}`, text: msg }).catch(() => {});
+      }
+    } catch (e) { console.error('cancel notify failed:', e.message); }
+
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/process-recordings', auth, async (req, res) => {
-  if (!googleReady()) return res.status(400).json({ error: 'google auth missing' });
+// Permanently remove a class from history
+app.delete('/api/batches/:bid/classes/:cid/purge', auth, (req, res) => {
+  update(d => {
+    const b = d.batches.find(x => x.id === req.params.bid);
+    if (b) b.classes = b.classes.filter(c => c.id !== req.params.cid);
+  });
+  res.json({ ok: true });
+});
+
+// Manually find + deliver a recording for a class
+app.post('/api/batches/:bid/classes/:cid/send-recording', auth, async (req, res) => {
   try {
-    const data = await read();
+    if (!googleReady()) return res.status(400).json({ error: 'google auth missing' });
+    const db = read();
+    const batch = db.batches.find(b => b.id === req.params.bid);
+    const cls = batch?.classes.find(c => c.id === req.params.cid);
+    if (!cls) return res.status(404).json({ error: 'class not found' });
+
     const files = await listInboxVideos();
-    const rootFolder = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || 'root';
+    const name = className(cls.topic).toLowerCase();
+    const match = files.find(f => (f.name || '').toLowerCase().includes(name)) || files[0];
+    if (!match) return res.status(404).json({ error: 'no recording found in Drive inbox' });
+
+    let folderId = batch.driveFolderId;
+    if (!folderId) {
+      folderId = await ensureBatchFolder(batch.name);
+      update(d => { const b = d.batches.find(x => x.id === batch.id); if (b) b.driveFolderId = folderId; });
+    }
+    await ensureFolderAccess(folderId, batch.emails);
+    const link = await moveIntoFolder(match.id, folderId);
+
+    update(d => {
+      const c = d.batches.find(b => b.id === batch.id).classes.find(x => x.id === cls.id);
+      if (c) c.recordingLink = link;
+    });
+
+    const msg = recordingMessage(className(cls.topic), link);
+    await sendMessage({ text: msg, groupJid: batch.whatsappGroupJid, directToGroup: db.config.whatsappDirectToGroup });
+    if (batch.emails.length) await sendEmail({ to: batch.emails, subject: `Recording: ${className(cls.topic)}`, text: msg }).catch(() => {});
+
+    res.json({ ok: true, link });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ---------- DRIVE ORGANIZER ----------
+app.get('/api/organize/preview', auth, async (req, res) => {
+  try {
+    if (!googleReady()) return res.status(400).json({ error: 'google auth missing' });
+    const files = await listInboxVideos();
+    const plan = files.map(f => ({ name: f.name, target: classify(f.name).target }));
+    res.json({ count: files.length, plan });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/organize/execute', auth, async (req, res) => {
+  try {
+    if (!googleReady()) return res.status(400).json({ error: 'google auth missing' });
+    const files = await listInboxVideos();
+    const root = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || process.env.DRIVE_INBOX_FOLDER_ID || 'root';
     let moved = 0;
     for (const f of files) {
-      const c = classifyRecording(f.name);
-      const batchFolder = await ensureFolder(c.batch, rootFolder);
+      const c = classify(f.name);
+      const batchFolder = await ensureFolder(c.batch, root);
       const topicFolder = await ensureFolder(c.topic, batchFolder);
       await moveFile(f.id, topicFolder);
       moved++;
@@ -176,9 +325,7 @@ app.post('/api/process-recordings', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/whatsapp/status', auth, (req, res) => res.json({ ready: isWhatsAppReady() }));
-app.get('/api/whatsapp/groups', auth, async (req, res) => res.json(await listGroups()));
-
+// ---------- RUN JOBS MANUALLY ----------
 app.post('/api/run/:job', auth, async (req, res) => {
   const fn = jobs[req.params.job];
   if (!fn) return res.status(404).json({ error: 'no such job' });
@@ -186,6 +333,7 @@ app.post('/api/run/:job', auth, async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ---------- START ----------
 function lanIP() {
   for (const list of Object.values(os.networkInterfaces())) {
     for (const i of list || []) if (i.family === 'IPv4' && !i.internal) return i.address;
