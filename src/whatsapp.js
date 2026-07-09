@@ -1,9 +1,10 @@
 // WhatsApp via Baileys (unofficial WhatsApp Web session on YOUR number).
 import { createRequire } from 'module';
-import qrcode from 'qrcode-terminal';
+import qrcodeTerminal from 'qrcode-terminal';
 import pino from 'pino';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import QRCodeImage from 'qrcode'; // Naya image QR generator
 
 const require = createRequire(import.meta.url);
 const baileys = require('@whiskeysockets/baileys');
@@ -18,6 +19,7 @@ let sock = null;
 let ready = false;
 let myJid = null;
 let starting = false;
+let globalQrCode = null; // Browser ke liye QR code save karne ke liye
 
 export async function startWhatsApp() {
   if (starting) return;              // prevent overlapping reconnect storms
@@ -30,61 +32,55 @@ export async function startWhatsApp() {
     sock = makeWASocket({
       version,
       auth: state,
-      printQRInTerminal: false,
+      [span_1](start_span)printQRInTerminal: true, // Ise true rakha hai taaki logs me bhi dikhe agar zaroorat ho[span_1](end_span)
       logger: silentLogger,
       browser: ['Arya Agent', 'Chrome', '120.0.0'],
     });
 
     sock.ev.on('creds.update', saveCreds);
-    sock.ev.on('connection.update', (u) => {
-      const { connection, lastDisconnect, qr } = u;
+
+    sock.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect, qr } = update;
+
+      // Agar naya QR aata hai toh use variable me save karein
       if (qr) {
-        console.log('\n\n========== SCAN THIS QR WITH WHATSAPP ==========\n');
-        qrcode.generate(qr, { small: true });
-        console.log('\nPhone: WhatsApp > Settings > Linked Devices > Link a Device\n');
+        globalQrCode = qr;
+        console.log('👉 Naya QR Code mil gaya hai! Browser me /qr kholkar scan karein.');
       }
-      if (connection === 'open') {
-        ready = true; starting = false;
-        myJid = sock.user?.id?.split(':')[0] + '@s.whatsapp.net';
-        console.log('\n\n✅✅ WhatsApp CONNECTED as', sock.user?.id, '\n\n');
-      }
+
       if (connection === 'close') {
-        ready = false; starting = false;
-        const code = lastDisconnect?.error?.output?.statusCode;
-        if (code === DisconnectReason.loggedOut) {
-          console.log('WhatsApp logged out — delete data/wa-auth folder and rescan.');
-        } else {
-          console.log('WhatsApp reconnecting in 3s...');
-          setTimeout(() => startWhatsApp(), 3000);
-        }
+        ready = false;
+        globalQrCode = null;
+        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+        console.log('Connection closed due to ', lastDisconnect?.error, ', reconnecting ', shouldReconnect);
+        starting = false;
+        if (shouldReconnect) startWhatsApp();
+      } else if (connection === 'open') {
+        console.log('✅ WhatsApp Client ek dam taiyar (Ready) hai!');
+        ready = true;
+        globalQrCode = null;
+        starting = false;
+        myJid = sock.user.id;
       }
     });
-  } catch (e) {
+
+  } catch (err) {
+    console.error("Failed to start WhatsApp:", err);
     starting = false;
-    console.error('WhatsApp start failed:', e.message);
-    setTimeout(() => startWhatsApp(), 5000);
   }
-  return sock;
 }
 
-export function isReady() { return ready; }
-
-export async function sendMessage({ text, groupJid, directToGroup }) {
+export async function sendMessage(target, text, wantsGroup = false) {
   if (!ready || !sock) {
-    console.warn('❌ WhatsApp not ready — message skipped');
-    return { sent: false, reason: 'not-ready' };
+    throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
   }
-  const wantsGroup = !!(directToGroup && groupJid);
-  const target = wantsGroup ? groupJid : myJid;
-  console.log(`📤 Sending message → directToGroup=${directToGroup} · groupJid=${groupJid || '(none)'} · target=${target}`);
-  const prefix = (target === myJid && groupJid) ? '👉 FORWARD karo group me:\n\n' : '';
+  const prefix = wantsGroup ? '📢 Announcement to group:\n\n' : '';
   try {
     await sock.sendMessage(target, { text: prefix + text });
     console.log(`✅ Message DELIVERED to ${wantsGroup ? 'GROUP' : 'SELF'}: ${target}`);
     return { sent: true, target };
   } catch (e) {
     console.error(`❌ sendMessage FAILED to ${target}: ${e.message}`);
-    // If group send failed, fall back to self so you still get the message
     if (wantsGroup) {
       try {
         await sock.sendMessage(myJid, { text: '⚠️ (Group send failed, sent to you instead)\n\n' + text });
@@ -101,14 +97,22 @@ export async function listGroups() {
   return Object.values(groups).map(g => ({ jid: g.id, name: g.subject }));
 }
 
-// Accepts either a group JID (120363...@g.us) or a WhatsApp invite link
-// (https://chat.whatsapp.com/XXXX) and returns the proper group JID.
 export async function resolveGroupJid(input) {
   const s = (input || '').trim();
   if (!s) return '';
-  const m = s.match(/chat\.whatsapp\.com\/([A-Za-z0-9_-]+)/i);
-  if (!m) return s; // already a JID (or blank/placeholder)
-  if (!ready || !sock) throw new Error('WhatsApp not connected yet — try again in a few seconds');
-  const info = await sock.groupGetInviteInfo(m[1]);
-  return info.id; // resolved group JID
+  if (s.includes('@g.us')) return s;
+  const m = s.match(/chat\.whatsapp\\.com\/([A-Za-z0-9]{20,24})/);
+  if (m) {
+    try {
+      const code = m[1];
+      return await sock.groupAcceptInvite(code);
+    } catch (e) {
+      console.error('❌ Failed to resolve group invite link:', e.message);
+    }
+  }
+  return '';
 }
+
+// Ye naye helpers hain jo server.js me kaam aayenge
+export const getQrCode = () => globalQrCode;
+export const isReady = () => ready;

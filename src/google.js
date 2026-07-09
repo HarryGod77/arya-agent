@@ -19,10 +19,11 @@ const youtube = () => google.youtube({ version: 'v3', auth: oauth() });
 
 // ---------- CALENDAR + MEET ----------
 // Creates a private event with an auto-generated Google Meet link.
-// Invited students can join; anyone else must be admitted by the host.
-export async function createClassEvent({ title, description = '', startISO, durationMin = 60, attendees = [] }) {
+export async function createClassEvent(title, startISO, endISO, description = '', attendees = []) {
+  // Fix: server.js ke arguments ke sath compatibility match ki gayi hai
   const start = new Date(startISO);
-  const end = new Date(start.getTime() + durationMin * 60000);
+  const end = endISO ? new Date(endISO) : new Date(start.getTime() + 60 * 60000);
+
   const res = await cal().events.insert({
     calendarId: 'primary',
     conferenceDataVersion: 1,
@@ -32,159 +33,116 @@ export async function createClassEvent({ title, description = '', startISO, dura
       description,
       start: { dateTime: start.toISOString(), timeZone: 'Asia/Kolkata' },
       end: { dateTime: end.toISOString(), timeZone: 'Asia/Kolkata' },
-      attendees: (attendees || []).filter(Boolean).map(e => ({ email: e })),
-      guestsCanInviteOthers: false,
-      guestsCanModify: false,
-      guestsCanSeeOtherGuests: false,
+      attendees: attendees.map(email => ({ email })),
       conferenceData: {
-        createRequest: { requestId: 'meet-' + Date.now(), conferenceSolutionKey: { type: 'hangoutsMeet' } }
+        createRequest: {
+          requestId: 'meet-' + Date.now(),
+          conferenceSolutionKey: { type: 'hangoutsMeet' }
+        }
       }
     }
   });
-  const link = res.data.hangoutLink || res.data.conferenceData?.entryPoints?.[0]?.uri;
-  return { eventId: res.data.id, meetLink: link };
+
+  const meetLink = res.data.conferenceData?.entryPoints?.[0]?.uri || '';
+  console.log(`📅 Calendar event created: ${title}. Meet: ${meetLink}`);
+  return res.data.id; 
 }
 
-// Delete a scheduled class (cancels the Meet + notifies invited students).
+// Delete an event.
 export async function deleteClassEvent(eventId) {
   if (!eventId) return;
-  try {
-    await cal().events.delete({ calendarId: 'primary', eventId, sendUpdates: 'all' });
-  } catch (e) { /* already gone — ignore */ }
-}
-
-// ---------- GMAIL ----------
-export async function sendEmail({ to, subject, text }) {
-  const from = process.env.GOOGLE_SENDER_EMAIL;
-  const recipients = Array.isArray(to) ? to.join(', ') : to;
-  const raw = [
-    from ? `From: ${from}` : '',
-    `To: ${recipients}`,
-    `Subject: ${subject}`,
-    'Content-Type: text/plain; charset=utf-8',
-    '',
-    text
-  ].filter(Boolean).join('\n');
-  const encoded = Buffer.from(raw).toString('base64url');
-  await gmail().users.messages.send({ userId: 'me', requestBody: { raw: encoded } });
-}
-
-// ---------- DRIVE ----------
-export async function listInbox() {
-  const res = await drive().files.list({
-    q: `'${process.env.DRIVE_INBOX_FOLDER_ID}' in parents and trashed=false`,
-    fields: 'files(id,name,mimeType)'
-  });
-  return res.data.files || [];
-}
-
-export async function listPostQueue() {
-  const res = await drive().files.list({
-    q: `'${process.env.DRIVE_POST_QUEUE_FOLDER_ID}' in parents and trashed=false and mimeType contains 'video'`,
-    fields: 'files(id,name,mimeType)',
-    orderBy: 'createdTime'
-  });
-  return res.data.files || [];
-}
-
-export async function makeShareable(fileId) {
-  await drive().permissions.create({
-    fileId,
-    requestBody: { role: 'reader', type: 'anyone' }
-  }).catch(() => {});
-  const res = await drive().files.get({ fileId, fields: 'webViewLink,webContentLink' });
-  return { view: res.data.webViewLink, download: res.data.webContentLink };
-}
-
-export async function ensureFolder(name, parentId) {
-  const q = `name='${name.replace(/'/g, "\\'")}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-  const found = await drive().files.list({ q, fields: 'files(id)' });
-  if (found.data.files?.length) return found.data.files[0].id;
-  const created = await drive().files.create({
-    requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
-    fields: 'id'
-  });
-  return created.data.id;
-}
-
-export async function moveFile(fileId, newParentId) {
-  const f = await drive().files.get({ fileId, fields: 'parents' });
-  const prev = (f.data.parents || []).join(',');
-  await drive().files.update({ fileId, addParents: newParentId, removeParents: prev, fields: 'id' });
-}
-
-export async function downloadStream(fileId) {
-  const res = await drive().files.get({ fileId, alt: 'media' }, { responseType: 'stream' });
-  return res.data;
+  await cal().events.delete({ calendarId: 'primary', eventId });
+  console.log(`🗑️ Calendar event deleted: ${eventId}`);
 }
 
 // ---------- YOUTUBE ----------
-export async function uploadYouTube({ title, description, tags, stream, asShort }) {
-  const finalTitle = asShort && !/#shorts/i.test(title) ? `${title} #Shorts` : title;
-  const finalDesc = asShort && !/#shorts/i.test(description) ? `${description}\n\n#Shorts` : description;
-  const res = await youtube().videos.insert({
-    part: ['snippet', 'status'],
-    requestBody: {
-      snippet: { title: finalTitle, description: finalDesc, tags },
-      status: { privacyStatus: 'public', selfDeclaredMadeForKids: false }
-    },
-    media: { body: stream }
+// Find a video in the channel that matches the topic name.
+export async function findRecording(topicName) {
+  const q = (topicName || '').trim().toLowerCase();
+  if (!q) return null;
+  const res = await youtube().search.list({
+    part: 'snippet',
+    type: 'video',
+    forMine: true,
+    maxResults: 50
   });
-  return `https://youtu.be/${res.data.id}`;
+  const item = (res.data.items || []).find(i => (i.snippet?.title || '').toLowerCase().includes(q));
+  if (!item) return null;
+  return { id: item.id?.videoId, title: item.snippet?.title, thumb: item.snippet?.thumbnails?.high?.url };
 }
 
+// ---------- GMAIL (SENDER IDENTITY FIXED) ----------
+// Helper to safely build an email raw payload.
+function buildEmailRaw({ to, subject, html }) {
+  // SENDER IDENTITY FIX: Yahan "Arya Chandel" naam explicit jod diya gaya hai
+  const senderName = "Arya Chandel";
+  const fromHeader = `${senderName} <${process.env.GOOGLE_EMAIL}>`;
 
-// List all video files in the inbox folder (Google Meet recordings land here).
+  const parts = [
+    `From: ${fromHeader}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/html; charset=utf-8',
+    '',
+    html
+  ];
+  return Buffer.from(parts.join('\n')).toString('base64url');
+}
+
+export async function sendEmail({ to, subject, html }) {
+  const raw = buildEmailRaw({ to, subject, html });
+  await gmail().users.messages.send({ userId: 'me', requestBody: { raw } });
+  console.log(`✉️ Email successfully sent to: ${to} from ${process.env.GOOGLE_EMAIL}`);
+}
+
+// ---------- DRIVE OOMPHS ----------
+// Find videos in Zoom/local backup root folder.
 export async function listInboxVideos() {
-  const folder = process.env.DRIVE_INBOX_FOLDER_ID;
-  if (!folder) return [];
+  const root = process.env.GOOGLE_DRIVE_INBOX_FOLDER_ID;
+  if (!root) return [];
   const res = await drive().files.list({
-    q: `'${folder}' in parents and trashed=false and mimeType contains 'video'`,
-    fields: 'files(id,name,createdTime,webViewLink)',
-    orderBy: 'createdTime desc',
-    pageSize: 200
+    q: `'${root}' in parents and mimeType configures 'video/' and trashed = false`,
+    fields: 'files(id, name, mimeType)'
   });
   return res.data.files || [];
 }
 
-// Find a recording matching a class. Google Meet names files after the meeting
-// title, e.g. "Mind Reading — 2026 March batch — 2026/07/09 08:37 IST — Recording".
-export async function findRecording({ topicText, batchName }) {
-  if (!process.env.DRIVE_INBOX_FOLDER_ID) throw new Error('DRIVE_INBOX_FOLDER_ID not set in .env');
-  const files = await listInboxVideos();
-  const t = (topicText || '').toLowerCase().trim();
-  const b = (batchName || '').toLowerCase().trim();
-  const has = (f, x) => x && f.name.toLowerCase().includes(x);
-  return files.find(f => has(f, t) && has(f, b))   // best: topic + batch
-      || files.find(f => has(f, t))                // topic only
-      || files.find(f => has(f, b))                // batch only
-      || null;
+// Safely ensure folder exists under parent.
+export async function ensureFolder(name, parentId) {
+  const res = await drive().files.list({
+    q: `name = '${name}' and '${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    fields: 'files(id)'
+  });
+  if (res.data.files?.[0]?.id) return res.data.files[0].id;
+  const cre = await drive().files.create({
+    requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
+    fields: 'id'
+  });
+  return cre.data.id;
 }
 
-
-// ---------- BATCH FOLDERS + PER-STUDENT ACCESS ----------
-// Root folder that holds all batch folders.
-export async function ensureRootFolder() {
-  return ensureFolder('Arya Class Recordings', 'root');
+// Move file to new parent.
+export async function moveFile(fileId, targetFolderId) {
+  const file = await drive().files.get({ fileId, fields: 'parents' });
+  const previousParents = (file.data.parents || []).join(',');
+  await drive().files.update({
+    fileId,
+    addParents: targetFolderId,
+    removeParents: previousParents,
+    fields: 'id, parents'
+  });
 }
 
-// Get (or create) a batch's folder. Renames it if the batch name changed.
-export async function ensureBatchFolder(name, existingId) {
-  if (existingId) {
-    try {
-      await drive().files.update({ fileId: existingId, requestBody: { name }, fields: 'id' });
-      return existingId;
-    } catch { /* folder gone — recreate below */ }
-  }
-  const root = await ensureRootFolder();
-  return ensureFolder(name, root);
+export async function ensureBatchFolder(batchName) {
+  return await ensureFolder(batchName, process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID);
 }
 
-// Give each email VIEWER access to the folder (only adds missing ones).
+// Ensure viewer access for specific emails.
 export async function ensureFolderAccess(folderId, emails) {
-  const wanted = (emails || []).map(e => e.trim()).filter(Boolean);
+  const wanted = (emails || []).map(e => e.trim().toLowerCase()).filter(Boolean);
   if (!folderId || !wanted.length) return;
-  const cur = await drive().permissions.list({ fileId: folderId, fields: 'permissions(emailAddress,type)' });
+  const cur = await drive().permissions.list({ fileId: folderId, fields: 'permissions(id,emailAddress,type)' });
   const have = new Set((cur.data.permissions || []).filter(p => p.type === 'user' && p.emailAddress).map(p => p.emailAddress.toLowerCase()));
   for (const email of wanted) {
     if (have.has(email.toLowerCase())) continue;
@@ -196,7 +154,7 @@ export async function ensureFolderAccess(folderId, emails) {
   }
 }
 
-// Remove viewer access for specific emails (used when a student is removed from a batch).
+// Remove viewer access for specific emails.
 export async function revokeFolderAccess(folderId, emails) {
   const set = (emails || []).map(e => e.trim().toLowerCase()).filter(Boolean);
   if (!folderId || !set.length) return;
@@ -208,9 +166,20 @@ export async function revokeFolderAccess(folderId, emails) {
   }
 }
 
-// Move a recording into a folder and return its (folder-inherited) view link.
+// Move a recording into a folder and return its link.
 export async function moveIntoFolder(fileId, folderId) {
   await moveFile(fileId, folderId);
   const res = await drive().files.get({ fileId, fields: 'webViewLink' });
   return res.data.webViewLink;
+}
+
+export async function makeShareable(fileId) {
+  try {
+    await drive().permissions.create({
+      fileId,
+      requestBody: { role: 'reader', type: 'anyone' }
+    });
+  } catch (e) {
+    console.error(`Warning: makeShareable failed for ${fileId}: ${e.message}`);
+  }
 }
