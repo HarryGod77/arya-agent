@@ -1,0 +1,45 @@
+{
+  "config": {
+    "postsPerDay": 1,
+    "whatsappDirectToGroup": true,
+    "social": {
+      "facebook": {
+        "enabled": true,
+        "format": "reel"
+      },
+      "instagram": {
+        "enabled": true,
+        "format": "reel"
+      },
+      "youtube": {
+        "enabled": true,
+        "format": "short"
+      }
+    }
+  },
+  "batches": [
+    {
+      "id": "mrck7k27ffv80",
+      "name": "2026 March batch students/others",
+      "whatsappGroupJid": "120363411039879010@g.us",
+      "emails": [
+        "harshitsingh928499@gmail.com",
+        "amazingarya8@gmail.com",
+        "hsrtalentmanagement@gmail.com"
+      ],
+      "driveRootFolderId": "",
+      "classes": [
+        {
+          "id": "mrcxd9zac95r3",
+          "topic": "mind reading",
+          "startISO": "2026-07-09T03:10:00.000Z",
+          "meetLink": "https://meet.google.com/rsk-nhso-kxm",
+          "eventId": "42d1k5gd7rs8ojneepkbubs0qs",
+          "createdAt": 1783566374086
+        }
+      ],
+      "driveFolderId": "1NbkTfP4BmmMXale-2bRCErJLqOE9KsxM"
+    }
+  ],
+  "sentLog": {}
+}

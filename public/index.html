@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Oracle — Control Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <div class="sigil">◈</div>
+    <h1>The Oracle</h1>
+    <p class="muted">Control Room</p>
+    <input id="pass" type="password" placeholder="Enter the passphrase" autocomplete="current-password">
+    <button id="enterBtn">Enter</button>
+    <p id="gateErr" class="err"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app hidden">
+  <header>
+    <div class="brand"><span class="sigil-sm">◈</span> The Oracle <em>· Control Room</em></div>
+    <div id="waStatus" class="pill">WhatsApp: …</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="batches">Batches</button>
+    <button class="tab" data-tab="config">Settings</button>
+    <button class="tab" data-tab="actions">Run &amp; Tools</button>
+  </nav>
+
+  <!-- BATCHES -->
+  <section id="tab-batches" class="tab-panel">
+    <div class="card">
+      <h2>New batch</h2>
+      <label>Batch name <input id="bName" placeholder="August Batch"></label>
+      <label>Student emails (comma separated) <textarea id="bEmails" placeholder="a@x.com, b@y.com"></textarea></label>
+      <label>WhatsApp group JID (optional) <input id="bGroup" placeholder="1203...@g.us"></label>
+      <label>Drive root folder ID (optional) <input id="bDrive" placeholder="leave blank = use inbox"></label>
+      <button id="addBatch">Create batch</button>
+    </div>
+    <div id="batchList"></div>
+  </section>
+
+  <!-- CONFIG -->
+  <section id="tab-config" class="tab-panel hidden">
+    <div class="card">
+      <h2>WhatsApp mode</h2>
+      <label class="switch-row">
+        <span>Send straight to group <small class="muted">(off = goes to your Note-to-Self, you forward — zero ban risk)</small></span>
+        <input type="checkbox" id="cfgGroup">
+      </label>
+    </div>
+    <div class="card">
+      <h2>Social posting</h2>
+      <label>Videos per day <input type="number" id="cfgPerDay" min="0" max="20"></label>
+
+      <div class="plat">
+        <label class="switch-row"><span>Facebook</span><input type="checkbox" id="fbOn"></label>
+        <div class="seg" id="fbFmt"><button data-v="reel">Reel</button><button data-v="video">Video</button></div>
+      </div>
+      <div class="plat">
+        <label class="switch-row"><span>Instagram <small class="muted">(reel only)</small></span><input type="checkbox" id="igOn"></label>
+      </div>
+      <div class="plat">
+        <label class="switch-row"><span>YouTube</span><input type="checkbox" id="ytOn"></label>
+        <div class="seg" id="ytFmt"><button data-v="short">Short</button><button data-v="video">Video</button></div>
+      </div>
+      <button id="saveCfg">Save settings</button>
+    </div>
+  </section>
+
+  <!-- ACTIONS -->
+  <section id="tab-actions" class="tab-panel hidden">
+    <div class="card">
+      <h2>Run now</h2>
+      <p class="muted">Automation khud chalti hai — ye sirf manual test ke liye.</p>
+      <button class="ghost" data-job="checkClassReminders">Send due reminders</button>
+      <button class="ghost" data-job="checkRecordings">Process Drive recordings</button>
+      <button class="ghost" data-job="runSocialPost">Post from queue</button>
+    </div>
+    <div class="card">
+      <h2>Find WhatsApp group JIDs</h2>
+      <button class="ghost" id="loadGroups">Load my groups</button>
+      <div id="groupList"></div>
+    </div>
+    <p id="toast" class="toast"></p>
+  </section>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

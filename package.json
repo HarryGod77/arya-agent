@@ -1,0 +1,19 @@
+{
+  "name": "arya-agent",
+  "version": "1.0.0",
+  "description": "Automation agent for Arya's mentalism classes + social posting",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.1",
+    "node-cron": "^3.0.3",
+    "pino": "^9.3.2",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
