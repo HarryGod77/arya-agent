@@ -3,9 +3,9 @@ import express from 'express';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import QRCodeImage from 'qrcode'; [span_3](start_span)// Naya image generator import[span_3](end_span)
+import QRCodeImage from 'qrcode'; 
 import { read, update, id } from './src/store.js';
-import { startWhatsApp, isReady, listGroups, sendMessage, resolveGroupJid, getQrCode } from './src/js/whatsapp.js';
+import { startWhatsApp, isWhatsAppReady, listGroups, sendMessage, resolveGroupJid, getQrCode } from './src/whatsapp.js';
 import { startScheduler, jobs } from './src/scheduler.js';
 import { createClassEvent, deleteClassEvent, findRecording, makeShareable, sendEmail, listInboxVideos, ensureFolder, moveFile, ensureBatchFolder, ensureFolderAccess, revokeFolderAccess, moveIntoFolder } from './src/google.js';
 
@@ -15,7 +15,6 @@ app.use(express.json());
 
 const googleReady = () => !!process.env.GOOGLE_REFRESH_TOKEN;
 
-// ---- Professional message + formatting helpers ----
 const IST = 'Asia/Kolkata';
 function className(topic) {
   return String(topic).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
@@ -28,12 +27,21 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: IST });
 }
 
+// Helper to handle recording classification safely
+function classifyRecording(fileName) {
+  const name = fileName || '';
+  return {
+    batch: name.includes('batch') ? 'Batch Class' : 'General',
+    topic: name.split('—')[0] || 'Topic'
+  };
+}
+
 // --- BROWSER QR CODE ENDPOINT ---
 app.get('/qr', async (req, res) => {
   const qrData = getQrCode();
   
-  if (isReady()) {
-    return res.send('<h3>✅ WhatsApp pehle se hi connected aur ready hai!</h3>');
+  if (isWhatsAppReady()) {
+    return res.send('<h3>✅ WhatsApp connected aur ready hai!</h3>');
   }
   
   if (!qrData) {
@@ -41,7 +49,6 @@ app.get('/qr', async (req, res) => {
   }
 
   try {
-    [span_4](start_span)// QR string ko saaf suthre image src me badalna[span_4](end_span)
     const qrImageSrc = await QRCodeImage.toDataURL(qrData);
     res.send(`
       <div style="text-align: center; margin-top: 50px; font-family: Arial, sans-serif;">
@@ -101,10 +108,11 @@ app.post('/api/process-recordings', auth, async (req, res) => {
   try {
     const data = await read();
     const files = await listInboxVideos();
+    const rootFolder = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || 'root';
     let moved = 0;
     for (const f of files) {
       const c = classifyRecording(f.name);
-      const batchFolder = await ensureFolder(c.batch, root);
+      const batchFolder = await ensureFolder(c.batch, rootFolder);
       const topicFolder = await ensureFolder(c.topic, batchFolder);
       await moveFile(f.id, topicFolder);
       moved++;
@@ -113,7 +121,7 @@ app.post('/api/process-recordings', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/whatsapp/status', auth, (req, res) => res.json({ ready: isReady() }));
+app.get('/api/whatsapp/status', auth, (req, res) => res.json({ ready: isWhatsAppReady() }));
 app.get('/api/whatsapp/groups', auth, async (req, res) => res.json(await listGroups()));
 
 app.post('/api/run/:job', auth, async (req, res) => {
