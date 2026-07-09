@@ -32,7 +32,6 @@ export async function startWhatsApp() {
     sock = makeWASocket({
       version,
       auth: state,
-      [span_1](start_span)printQRInTerminal: true, // Ise true rakha hai taaki logs me bhi dikhe agar zaroorat ho[span_1](end_span)
       logger: silentLogger,
       browser: ['Arya Agent', 'Chrome', '120.0.0'],
     });
@@ -42,9 +41,10 @@ export async function startWhatsApp() {
     sock.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Agar naya QR aata hai toh use variable me save karein
+      // Agar naya QR aata hai toh use variable me save karein + terminal me bhi dikhayein
       if (qr) {
         globalQrCode = qr;
+        try { qrcodeTerminal.generate(qr, { small: true }); } catch {}
         console.log('👉 Naya QR Code mil gaya hai! Browser me /qr kholkar scan karein.');
       }
 
@@ -101,7 +101,7 @@ export async function resolveGroupJid(input) {
   const s = (input || '').trim();
   if (!s) return '';
   if (s.includes('@g.us')) return s;
-  const m = s.match(/chat\.whatsapp\\.com\/([A-Za-z0-9]{20,24})/);
+  const m = s.match(/chat\.whatsapp\.com\/([A-Za-z0-9]{20,24})/);
   if (m) {
     try {
       const code = m[1];
@@ -116,3 +116,4 @@ export async function resolveGroupJid(input) {
 // Ye naye helpers hain jo server.js me kaam aayenge
 export const getQrCode = () => globalQrCode;
 export const isReady = () => ready;
+export const isWhatsAppReady = () => ready; // server.js isi naam se import karta hai
