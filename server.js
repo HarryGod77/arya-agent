@@ -36,6 +36,61 @@ function classifyRecording(fileName) {
   };
 }
 
+// --- ROOT HOMEPAGE ---
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Arya Agent Control Panel</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+          .container { text-align: center; background: white; padding: 60px 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-width: 500px; }
+          h1 { color: #333; margin-bottom: 10px; font-size: 2.5em; }
+          .status { margin: 30px 0; font-size: 1.2em; }
+          .badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: bold; }
+          .badge-success { background: #10b981; color: white; }
+          .badge-loading { background: #f59e0b; color: white; }
+          .button-group { margin-top: 40px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+          a { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
+          a:hover { background: #764ba2; transform: scale(1.05); }
+          .secondary { background: #6b7280; }
+          .secondary:hover { background: #4b5563; }
+          p { color: #666; margin: 15px 0; line-height: 1.6; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>🎭 Arya Agent</h1>
+          <p>Complete Mentalism Class Automation System</p>
+          
+          <div class="status">
+            <strong>WhatsApp Status:</strong>
+            <div class="badge ${isWhatsAppReady() ? 'badge-success' : 'badge-loading'}">
+              ${isWhatsAppReady() ? '✅ Connected & Ready' : '⏳ Connecting...'}
+            </div>
+          </div>
+
+          <p style="font-size: 0.95em; color: #999;">
+            ${isWhatsAppReady() ? 'WhatsApp is authenticated and ready to send messages.' : 'Scanning QR code to authenticate WhatsApp...'}
+          </p>
+
+          <div class="button-group">
+            <a href="/qr">📱 Scan WhatsApp QR</a>
+            <a href="/api/config" class="secondary">⚙️ API Status</a>
+          </div>
+
+          <p style="margin-top: 40px; font-size: 0.9em; color: #999;">
+            🔐 Protected API endpoints require authentication.<br>
+            Use header: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">x-admin-password: arya123</code>
+          </p>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
 // --- BROWSER QR CODE ENDPOINT ---
 app.get('/qr', async (req, res) => {
   const qrData = getQrCode();
