@@ -1,10 +1,13 @@
-// The brain: reminders + recordings + social posting.
+// The brain: reminders + recordings + social posting + lead follow-ups.
 import cron from 'node-cron';
 import { read, update, alreadySent, markSent } from './store.js';
 import * as G from './google.js';
 import * as social from './social.js';
 import { generateCaption } from './gemini.js';
-import { sendMessage } from './whatsapp.js';
+import { sendMessage, sendToOperatorAlert } from './whatsapp.js';
+import * as LS from './leadStore.js';
+import * as leadResponder from './leadResponder.js';
+import * as backlogScan from './backlogScan.js';
 
 const googleReady = () => !!process.env.GOOGLE_REFRESH_TOKEN;
 const minsUntil = (iso) => (new Date(iso) - Date.now()) / 60000;
@@ -169,11 +172,75 @@ async function runSocialPost() {
   }
 }
 
+// ===== 4) LEAD FOLLOW-UPS (24h / 3d / 7d, max 3 ever) =====
+// Windows are cumulative from the last REAL reply (lastOutboundAt), not chained from
+// the previous follow-up — appendMessage(isFollowUp: true) never touches that field,
+// so this anchor stays put through the whole sequence. See src/leadResponder.js.
+const FOLLOWUP_WINDOWS_MS = [24 * 3600e3, 3 * 86400e3, 7 * 86400e3];
+
+async function checkLeadFollowUps() {
+  for (const lead of LS.getAllLeads()) {
+    if (!['informed', 'interested', 'silent'].includes(lead.state)) continue;
+    if (lead.manualOverride) continue;
+    if (lead.followUps.count >= 3) continue;
+    if (!lead.lastOutboundAt) continue; // no real reply sent yet — nothing to follow up on
+    const windowIdx = lead.followUps.count; // 0 -> 24h due, 1 -> 3d due, 2 -> 7d due
+    if (Date.now() - lead.lastOutboundAt < FOLLOWUP_WINDOWS_MS[windowIdx]) continue;
+    try { await leadResponder.sendFollowUp(lead.jid, windowIdx + 1); }
+    catch (e) { console.error('Follow-up failed for', lead.jid, ':', e.message); }
+  }
+}
+
+// ===== 5) WEEKLY UNANSWERED-QUESTIONS DIGEST =====
+const DIGEST_MAX_LINES = 30; // cap so one wild week doesn't produce an unreadable wall of text
+
+async function sendUnansweredQuestionsDigest() {
+  const since = Date.now() - 7 * 86400e3;
+  const entries = LS.getLogSince(since, 'unanswered_question');
+  if (!entries.length) return; // nothing collected this week — stay quiet, don't send an empty digest
+
+  const shown = entries.slice(0, DIGEST_MAX_LINES);
+  const lines = shown.map(e => {
+    const lead = LS.getLead(e.jid);
+    const who = lead ? (lead.pushName ? `${lead.phone} (${lead.pushName})` : lead.phone) : e.jid.split('@')[0];
+    const q = e.detail?.question || '?';
+    return `• ${who}: "${q}"${e.detail?.reason ? `\n  (${e.detail.reason})` : ''}`;
+  });
+  const overflow = entries.length > DIGEST_MAX_LINES ? `\n\n+${entries.length - DIGEST_MAX_LINES} more — check data/lead-log.jsonl` : '';
+
+  const digest = `📋 Unanswered questions this week (${entries.length})\n\n${lines.join('\n\n')}${overflow}\n\nAdd answers to data/course-knowledge.md when you get a chance.`;
+  try { await sendToOperatorAlert(digest); }
+  catch (e) { console.error('Unanswered-questions digest send failed:', e.message); }
+}
+
+// ===== 6) BACKLOG SCAN =====
+// Daily discovery run. The actual sends are a separate, frequent tick below — this one
+// only finds candidates and queues them, never sends anything itself.
+async function runBacklogScan() {
+  try { await backlogScan.runBacklogScan(); }
+  catch (e) { console.error('Backlog scan failed:', e.message); }
+}
+
+// Checks every 15 min whether it's the queue's turn to send its next item — the actual
+// pacing (5/day, 3h+ apart, silent-hours-aware) all lives inside trySendNextBacklogItem
+// itself, this is just "is there anything to do right now".
+async function trySendNextBacklogItem() {
+  try { await backlogScan.trySendNextBacklogItem(); }
+  catch (e) { console.error('Backlog send tick failed:', e.message); }
+}
+
 export function startScheduler() {
   cron.schedule('* * * * *', () => { checkClassReminders(); });   // every minute (10-min accuracy)
   cron.schedule('*/15 * * * *', () => { checkRecordings(); });
   cron.schedule('0 10 * * *', () => { runSocialPost(); });
-  console.log('⏰ Scheduler: reminders every 1m, recordings 15m, social daily 10:00.');
+  cron.schedule('0 * * * *', () => { checkLeadFollowUps(); });    // hourly
+  cron.schedule('0 9 * * 1', () => { sendUnansweredQuestionsDigest(); }); // Monday 09:00
+  cron.schedule('0 7 * * *', () => { runBacklogScan(); });        // daily 07:00, before silent hours end
+  cron.schedule('*/15 * * * *', () => { trySendNextBacklogItem(); }); // every 15 min, pacing enforced internally
+  console.log('⏰ Scheduler: reminders every 1m, recordings 15m, social daily 10:00, lead follow-ups hourly, unanswered-questions digest Mondays 09:00, backlog scan daily 07:00, backlog send-tick every 15m.');
 }
 
-export const jobs = { checkClassReminders, checkRecordings, runSocialPost };
+export const jobs = {
+  checkClassReminders, checkRecordings, runSocialPost, checkLeadFollowUps,
+  sendUnansweredQuestionsDigest, runBacklogScan, trySendNextBacklogItem
+};

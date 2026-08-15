@@ -15,6 +15,15 @@
         "enabled": true,
         "format": "short"
       }
+    },
+    "leadResponder": {
+      "mode": "auto",
+      "dailyCap": 30,
+      "silentHours": {
+        "start": 23,
+        "end": 8
+      },
+      "paymentAutoSend": true
     }
   },
   "batches": [

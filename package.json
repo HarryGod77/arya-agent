@@ -5,7 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "chat:test": "node scripts/test-reply.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.9",

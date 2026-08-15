@@ -15,6 +15,12 @@ const DEFAULT_DB = {
       facebook: { enabled: true, format: 'reel' },   // 'reel' | 'video'
       instagram: { enabled: true, format: 'reel' },  // always reel
       youtube: { enabled: true, format: 'short' }     // 'short' | 'video'
+    },
+    leadResponder: {
+      mode: 'draft',                          // 'draft' = notify self, 'auto' = reply the lead directly (ban risk)
+      dailyCap: 30,                            // max NEW leads (not messages) handled per IST calendar day
+      silentHours: { start: 23, end: 8 },      // IST hours, wraps midnight — no sends in this window
+      paymentAutoSend: false                   // opt-in — also needs PAYMENT_DETAILS filled in course-knowledge.md
     }
   },
   batches: [],   // { id, name, whatsappGroupJid, emails:[], classes:[...] }

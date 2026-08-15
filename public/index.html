@@ -31,6 +31,7 @@
 
   <nav class="tabs">
     <button class="tab active" data-tab="batches">Batches</button>
+    <button class="tab" data-tab="leads">Leads</button>
     <button class="tab" data-tab="config">Settings</button>
     <button class="tab" data-tab="actions">Run &amp; Tools</button>
   </nav>
@@ -46,6 +47,48 @@
       <button id="addBatch">Create batch</button>
     </div>
     <div id="batchList"></div>
+  </section>
+
+  <!-- LEADS -->
+  <section id="tab-leads" class="tab-panel hidden">
+    <div class="card">
+      <h2>AI lead responder</h2>
+      <label class="switch-row">
+        <span>AUTO mode <small class="muted">(off = DRAFT — replies go to your Note-to-Self to forward, zero ban risk)</small></span>
+        <input type="checkbox" id="lrAuto">
+      </label>
+      <label class="switch-row">
+        <span>Payment auto-send <small class="muted">(bot may share PAYMENT_DETAILS from course-knowledge.md once a lead is clearly ready to pay, after 3+ real exchanges)</small></span>
+        <input type="checkbox" id="lrPaymentAuto">
+      </label>
+      <button id="lrSaveCfg" style="margin-top:12px">Save settings</button>
+      <button id="lrScanNow" style="margin-top:12px;margin-left:8px">Scan backlog now</button>
+      <div id="lrStats" class="muted" style="font-size:.85rem;margin-top:12px"></div>
+      <div id="lrKnownChatsStats" class="muted" style="font-size:.85rem;margin-top:6px"></div>
+    </div>
+
+    <div class="card" id="lrFilteredCard" style="display:none">
+      <h2>⚠️ Filtered as contact</h2>
+      <p class="muted">Numbers hard-skipped as saved contacts — never sent to Gemini. If one of these is actually a real lead, recover it here.</p>
+      <div id="lrFilteredList"></div>
+    </div>
+
+    <div class="card" id="lrLearningCard" style="display:none">
+      <h2>🎓 Learning queue</h2>
+      <p class="muted">Questions the bot couldn't answer, where you replied manually. Approve to teach the bot this answer — nothing is added to the knowledge base until you approve it here.</p>
+      <div id="lrLearningList"></div>
+    </div>
+
+    <div class="card" id="lrBacklogCard" style="display:none">
+      <h2>🗂 Backlog queue</h2>
+      <div id="lrBacklogStatus" class="muted" style="font-size:.85rem;margin-bottom:10px"></div>
+      <div id="lrBacklogList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Leads</h2>
+      <div id="lrLeadList"><p class="muted">Loading…</p></div>
+    </div>
   </section>
 
   <!-- CONFIG -->

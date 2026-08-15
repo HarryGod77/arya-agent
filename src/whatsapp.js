@@ -2,6 +2,7 @@
 import { createRequire } from 'module';
 import qrcodeTerminal from 'qrcode-terminal';
 import pino from 'pino';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,12 +14,180 @@ const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = b
 const silentLogger = pino({ level: 'silent' });
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_DIR = path.join(__dirname, '..', 'data', 'wa-auth');
+const CONTACTS_PATH = path.join(__dirname, '..', 'data', 'wa-contacts.json');
+const CHAT_CACHE_PATH = path.join(__dirname, '..', 'data', 'wa-chat-cache.json');
 
 let sock = null;
 let ready = false;
 let myJid = null;
 let starting = false;
 let globalQrCode = null; // Browser ke liye QR code save karne ke liye
+
+// jid -> { name, notify }. Populated from Baileys contact-sync events. `name` is only
+// set if this jid is actually saved in the phone's address book; `notify` is just the
+// sender's own self-set display name, visible for anyone regardless of saved status.
+// Persisted to data/wa-contacts.json so a restart doesn't drop back to an empty cache
+// and reopen the fail-closed window below on every deploy/crash/reconnect.
+const contactCache = new Map();
+let contactCacheSavedAt = null;
+
+(function loadContactCacheFromDisk() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(CONTACTS_PATH, 'utf-8'));
+    for (const [jid, v] of Object.entries(raw || {})) contactCache.set(jid, v);
+    if (contactCache.size) {
+      contactCacheSavedAt = Date.now();
+      console.log(`Loaded ${contactCache.size} cached WhatsApp contacts from disk.`);
+    }
+  } catch { /* no file yet on first run — starts empty, stays fail-closed until synced */ }
+})();
+
+function saveContactCacheToDisk() {
+  try {
+    fs.mkdirSync(path.dirname(CONTACTS_PATH), { recursive: true });
+    fs.writeFileSync(CONTACTS_PATH, JSON.stringify(Object.fromEntries(contactCache), null, 2));
+    contactCacheSavedAt = Date.now();
+  } catch (e) { console.error('Failed to persist WhatsApp contact cache:', e.message); }
+}
+
+// Fail-closed gate. Until the cache has actually been populated (from disk or a live
+// Baileys sync), we cannot reliably tell a saved contact from an unknown lead — so
+// leadResponder.js must treat every inbound message as unclassifiable and stay silent
+// rather than guess "not saved" and risk sending a real contact's chat to Gemini.
+export function isContactCacheReady() {
+  return contactCache.size > 0;
+}
+
+export function getContactCacheStats() {
+  return { size: contactCache.size, ready: isContactCacheReady(), lastSavedAt: contactCacheSavedAt };
+}
+
+// jid -> { fromMe, text, ts } — last known message per 1:1 chat, for src/backlogScan.js.
+// Populated from Baileys' one-time 'messaging-history.set' snapshot on connect, then
+// kept current from the live 'messages.upsert' listener below (which now tracks BOTH
+// directions, not just inbound) — so a human manually replying from their own phone, or
+// the bot replying via sendWithTypingDelay, both correctly mark a chat as "answered"
+// without backlogScan.js needing to know anything about how the reply happened.
+const chatCache = new Map();
+let chatCacheSavedAt = null;
+
+(function loadChatCacheFromDisk() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(CHAT_CACHE_PATH, 'utf-8'));
+    for (const [jid, v] of Object.entries(raw || {})) chatCache.set(jid, v);
+    if (chatCache.size) {
+      chatCacheSavedAt = Date.now();
+      console.log(`Loaded ${chatCache.size} cached chat entries from disk.`);
+    }
+  } catch { /* no file yet on first run */ }
+})();
+
+function saveChatCacheToDisk() {
+  try {
+    fs.mkdirSync(path.dirname(CHAT_CACHE_PATH), { recursive: true });
+    fs.writeFileSync(CHAT_CACHE_PATH, JSON.stringify(Object.fromEntries(chatCache), null, 2));
+    chatCacheSavedAt = Date.now();
+  } catch (e) { console.error('Failed to persist WhatsApp chat cache:', e.message); }
+}
+
+const isTrackable1to1 = (jid) =>
+  !!jid && !jid.endsWith('@g.us') && !jid.endsWith('@broadcast') && !jid.endsWith('@newsletter') && jid !== 'status@broadcast';
+
+function updateChatCache(jid, { fromMe, text, ts }) {
+  if (!isTrackable1to1(jid)) return;
+  const prev = chatCache.get(jid);
+  if (prev && prev.ts >= ts) return; // never let an older/out-of-order event regress a newer known state
+  chatCache.set(jid, { fromMe: !!fromMe, text, ts });
+  saveChatCacheToDisk();
+}
+
+export function getChatCacheEntries() {
+  return [...chatCache.entries()].map(([jid, v]) => ({ jid, ...v }));
+}
+
+// jid -> { ts, unreadCount } — every 1:1 chat WhatsApp's servers have told us about via
+// 'chats.upsert' or the 'chats' array of 'messaging-history.set', REGARDLESS of whether
+// we have actual message text for it in chatCache above. This is a diagnostic overlay,
+// not a source of content: it exists so a gap between "WhatsApp says you have N chats,
+// M unread" and "our chatCache only has usable text for K of them" is visible in the
+// panel instead of silently invisible. backlogScan.js still only classifies jids that
+// have real text in chatCache — a jid+unreadCount pair alone isn't enough to run through
+// Gemini. Persisted to disk for the same restart-durability reason as the other caches.
+const knownChats = new Map();
+const KNOWN_CHATS_PATH = path.join(__dirname, '..', 'data', 'wa-known-chats.json');
+
+(function loadKnownChatsFromDisk() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(KNOWN_CHATS_PATH, 'utf-8'));
+    for (const [jid, v] of Object.entries(raw || {})) knownChats.set(jid, v);
+  } catch { /* no file yet on first run */ }
+})();
+
+function saveKnownChatsToDisk() {
+  try {
+    fs.mkdirSync(path.dirname(KNOWN_CHATS_PATH), { recursive: true });
+    fs.writeFileSync(KNOWN_CHATS_PATH, JSON.stringify(Object.fromEntries(knownChats), null, 2));
+  } catch (e) { console.error('Failed to persist known-chats diagnostic cache:', e.message); }
+}
+
+function noteKnownChats(chats) {
+  let changed = false;
+  for (const c of chats || []) {
+    if (!isTrackable1to1(c?.id)) continue;
+    const ts = Number(c.conversationTimestamp || c.lastMsgTimestamp || 0) * 1000 || Date.now();
+    const prev = knownChats.get(c.id);
+    if (prev && prev.ts >= ts && prev.unreadCount === (c.unreadCount || 0)) continue;
+    knownChats.set(c.id, { ts, unreadCount: c.unreadCount || 0 });
+    changed = true;
+  }
+  if (changed) saveKnownChatsToDisk();
+}
+
+// Surfaced in the Leads tab so the operator can see the actual gap this diagnoses:
+// WhatsApp-reported chats/unread vs. how many of those we hold real text for and can
+// therefore run through the backlog scanner at all.
+export function getKnownChatsStats() {
+  const unreadWithoutContent = [...knownChats.entries()]
+    .filter(([jid, v]) => v.unreadCount > 0 && !chatCache.has(jid))
+    .map(([jid, v]) => ({ jid, unreadCount: v.unreadCount, ts: v.ts }));
+  return {
+    knownChatsTotal: knownChats.size,
+    chatsWithContent: chatCache.size,
+    unreadWithoutContent
+  };
+}
+
+// Explicit, redundant to the messages.upsert self-echo tracking below — called by
+// leadResponder.js's deliver() right after a confirmed AUTO-mode send, so chat-cache
+// correctness for backlog purposes doesn't depend on assuming Baileys always reflects
+// our own outgoing messages back through messages.upsert.
+export function markChatReplied(jid) {
+  updateChatCache(jid, { fromMe: true, text: '(sent)', ts: Date.now() });
+}
+
+// Registered by server.js at boot (src/leadResponder.js#handleInboundMessage). Defaults
+// to a no-op so this module never crashes if nothing has wired a handler yet.
+let inboundHandler = async () => {};
+export function setInboundMessageHandler(fn) { inboundHandler = fn; }
+
+// Registered by server.js at boot (src/leadResponder.js#handleOutboundMessage) — fires
+// for a genuine human-typed message sent from the operator's own phone into a lead's
+// chat, e.g. via the learning-loop feature. Defaults to a no-op.
+let outboundHandler = async () => {};
+export function setOutboundMessageHandler(fn) { outboundHandler = fn; }
+
+// jid -> {text, ts} — the last text this server itself sent to that jid via
+// sendWithTypingDelay (AUTO-mode lead-facing sends). Baileys reflects our own outgoing
+// messages back through messages.upsert with fromMe:true, exactly like a message typed
+// on the phone — this lets the listener below tell "the bot just sent this" apart from
+// "the operator just typed this on their phone", which is the whole signal the learning
+// loop needs. Entries expire after a couple minutes; the echo normally arrives within
+// seconds of the real send.
+const recentBotSends = new Map();
+const BOT_ECHO_WINDOW_MS = 2 * 60 * 1000;
+function markBotSent(jid, text) {
+  recentBotSends.set(jid, { text, ts: Date.now() });
+}
 
 export async function startWhatsApp() {
   if (starting) return;              // prevent overlapping reconnect storms
@@ -33,9 +202,101 @@ export async function startWhatsApp() {
       auth: state,
       logger: silentLogger,
       browser: ['Arya Agent', 'Chrome', '120.0.0'],
+      // Tried syncFullHistory:true here briefly — on the very next reconnect it
+      // provoked a sustained Bad MAC / MessageCounterError decrypt storm against one
+      // corrupted peer session, severe enough that WhatsApp terminated the connection
+      // (428 Precondition Required) before Baileys auto-reconnected. Reverted: it only
+      // ever mattered for a FRESH pairing (new QR scan) anyway — WhatsApp grants a
+      // device its one-time full history sync at link time and won't repeat it on
+      // ordinary reconnects regardless of this flag — so there was no upside to leaving
+      // it on while not re-pairing, only the demonstrated downside. Revisit only
+      // together with an actual QR re-pair, not as a standalone toggle.
     });
 
     sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('contacts.upsert', (contacts) => {
+      for (const c of contacts || []) {
+        if (!c?.id) continue;
+        contactCache.set(c.id, { name: c.name || null, notify: c.notify || null });
+      }
+      saveContactCacheToDisk();
+    });
+    sock.ev.on('contacts.update', (updates) => {
+      for (const c of updates || []) {
+        if (!c?.id) continue;
+        const prev = contactCache.get(c.id) || {};
+        contactCache.set(c.id, { name: c.name ?? prev.name ?? null, notify: c.notify ?? prev.notify ?? null });
+      }
+      saveContactCacheToDisk();
+    });
+
+    // Chat metadata (jid + recency + unread count) WITHOUT message text — WhatsApp
+    // sends this independently of whether it also sends full message bodies. Feeds the
+    // knownChats diagnostic overlay only (see getKnownChatsStats), never chatCache
+    // directly — there's no text here to classify.
+    sock.ev.on('chats.upsert', (chats) => noteKnownChats(chats));
+
+    // One-time snapshot of existing chats after connecting — the seed data for
+    // backlogScan.js. Not gated on syncType/isLatest: we only need whatever last-message
+    // data Baileys hands us, not a full history sync, and this event can fire more than
+    // once as more arrives, which updateChatCache's out-of-order guard handles fine.
+    // Logs its own shape every time it fires — the previous version of this listener
+    // silently discarded the `chats` array (metadata for chats WhatsApp didn't also give
+    // us message text for), which made a real sync look like "8 entries" instead of
+    // showing the actual gap; this log line plus noteKnownChats(chats) below exist so
+    // that gap is visible instead of silent next time.
+    sock.ev.on('messaging-history.set', ({ chats, messages: msgs, isLatest, syncType, progress }) => {
+      console.log(`messaging-history.set: ${chats?.length || 0} chat(s), ${msgs?.length || 0} message(s), syncType=${syncType}, isLatest=${isLatest}, progress=${progress}`);
+      noteKnownChats(chats);
+      for (const m of msgs || []) {
+        const jid = m.key?.remoteJid;
+        const text = extractText(m.message);
+        if (!jid || !text) continue;
+        const ts = m.messageTimestamp ? Number(m.messageTimestamp) * 1000 : 0;
+        updateChatCache(jid, { fromMe: m.key?.fromMe, text, ts });
+      }
+    });
+
+    // Live 1:1 messages. Chat-cache tracking happens for BOTH directions (so replies —
+    // bot or human, from the phone — correctly clear a chat's backlog eligibility); the
+    // lead-responder dispatch below stays inbound-only, same as before. Ignores groups,
+    // status/broadcast/newsletter chats, and history-sync replay batches (type !==
+    // 'notify') so a fresh login doesn't replay old messages through the responder.
+    sock.ev.on('messages.upsert', ({ messages: msgs, type }) => {
+      if (type !== 'notify') return;
+      for (const m of msgs || []) {
+        const jid = m.key?.remoteJid;
+        const text = extractText(m.message);
+        const ts = m.messageTimestamp ? Number(m.messageTimestamp) * 1000 : Date.now();
+        if (text) updateChatCache(jid, { fromMe: m.key?.fromMe, text, ts });
+
+        if (m.key?.fromMe) {
+          // Could be Baileys echoing our own sendWithTypingDelay() send back to us, or
+          // a message the operator genuinely typed on their own phone. Only the latter
+          // is "manual" for the learning loop's purposes.
+          if (!text || !isTrackable1to1(jid)) continue;
+          const pending = recentBotSends.get(jid);
+          if (pending && pending.text === text && (ts - pending.ts) < BOT_ECHO_WINDOW_MS) {
+            recentBotSends.delete(jid); // consumed — this echo is accounted for
+            continue;
+          }
+          Promise.resolve(outboundHandler({ jid, text, ts })).catch(e => console.error('Outbound message handler failed:', e.message));
+          continue;
+        }
+        if (!jid || jid.endsWith('@g.us') || jid.endsWith('@broadcast') || jid.endsWith('@newsletter')) continue;
+        if (!text) continue; // no plain-text content to classify (sticker, image with no caption, etc.)
+
+        const payload = {
+          jid,
+          phone: jid.split('@')[0],
+          pushName: m.pushName || '',
+          text,
+          ts
+        };
+        Promise.resolve(inboundHandler(payload)).catch(e => console.error('Inbound message handler failed:', e.message));
+      }
+    });
 
     sock.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
@@ -66,6 +327,71 @@ export async function startWhatsApp() {
   } catch (err) {
     console.error("Failed to start WhatsApp:", err);
     starting = false;
+  }
+}
+
+function extractText(message) {
+  if (!message) return '';
+  return message.conversation
+    || message.extendedTextMessage?.text
+    || message.imageMessage?.caption
+    || message.videoMessage?.caption
+    || '';
+}
+
+// Heuristic, not certain — Baileys only knows a jid is "saved" if it received a contacts
+// sync with a `name` (the name YOU gave them), as opposed to `notify` (their own self-set
+// display name, present for anyone). Defaults to NOT saved for any jid missing from the
+// cache — safe ONLY because callers must check isContactCacheReady() first and refuse to
+// classify anyone at all while the cache is empty/unpopulated. Once ready, an unlisted
+// jid really does mean "not in the cache", not "unknown, guess false".
+export function isSavedContact(jid) {
+  return !!contactCache.get(jid)?.name;
+}
+
+// For actual 1:1 sends to a lead's own jid (AUTO mode) — shows a typing indicator, waits
+// a random human-like delay, then sends. Distinct from sendMessage() below, which targets
+// the operator's own Note-to-Self/group chats for batch notifications and DRAFT-mode notes.
+export async function sendWithTypingDelay({ jid, text, minMs = 20000, maxMs = 90000 }) {
+  if (!ready || !sock) throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
+  try { await sock.sendPresenceUpdate('composing', jid); } catch {}
+  const waitMs = minMs + Math.random() * (maxMs - minMs);
+  await new Promise(res => setTimeout(res, waitMs));
+  try { await sock.sendPresenceUpdate('paused', jid); } catch {}
+  await sock.sendMessage(jid, { text });
+  markBotSent(jid, text);
+}
+
+// Immediate send to the operator's SECOND number (OPERATOR_ALERT_NUMBER in .env) — for
+// urgent internal alerts (hot leads, etc). Deliberately no typing delay: this isn't a
+// lead-facing message, there's no ban-risk reason to hold it back, and the whole point
+// is the operator sees it right away. Falls back to self (myJid) on any failure so the
+// alert isn't lost, same fallback pattern as sendMessage() below.
+export async function sendToOperatorAlert(text) {
+  const number = (process.env.OPERATOR_ALERT_NUMBER || '').replace(/\D/g, '');
+  if (!number) {
+    console.error('OPERATOR_ALERT_NUMBER not set — cannot send alert.');
+    return { sent: false, reason: 'OPERATOR_ALERT_NUMBER not set' };
+  }
+  if (!ready || !sock) {
+    console.error('WhatsApp not ready — cannot send alert.');
+    return { sent: false, reason: 'WhatsApp not ready' };
+  }
+  const jid = `${number}@s.whatsapp.net`;
+  try {
+    await sock.sendMessage(jid, { text });
+    console.log('✅ Alert sent to operator second number');
+    return { sent: true };
+  } catch (e) {
+    console.error('❌ Alert to second number failed:', e.message);
+    try {
+      await sock.sendMessage(myJid, { text: '⚠️ (Alert to second number failed, sent to you instead)\n\n' + text });
+      console.log('↩️ Alert fell back to SELF');
+      return { sent: true, fellBackToSelf: true };
+    } catch (e2) {
+      console.error('❌ Alert fallback to self also failed:', e2.message);
+      return { sent: false, reason: e.message };
+    }
   }
 }
 

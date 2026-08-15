@@ -5,12 +5,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import QRCodeImage from 'qrcode';
 import { read, update, id } from './src/store.js';
-import { startWhatsApp, isWhatsAppReady, listGroups, sendMessage, resolveGroupJid, getQrCode } from './src/whatsapp.js';
+import {
+  startWhatsApp, isWhatsAppReady, listGroups, sendMessage, resolveGroupJid, getQrCode,
+  setInboundMessageHandler, setOutboundMessageHandler, getContactCacheStats, getKnownChatsStats
+} from './src/whatsapp.js';
+import * as G from './src/gemini.js';
 import { startScheduler, jobs } from './src/scheduler.js';
 import {
   createClassEvent, deleteClassEvent, sendEmail, listInboxVideos,
   ensureFolder, moveFile, ensureBatchFolder, ensureFolderAccess, moveIntoFolder
 } from './src/google.js';
+import * as leadResponder from './src/leadResponder.js';
+import * as LS from './src/leadStore.js';
+import * as backlogScan from './src/backlogScan.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -325,6 +332,120 @@ app.post('/api/organize/execute', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ---------- LEADS ----------
+app.get('/api/leads', auth, (req, res) => res.json(LS.getAllLeads()));
+
+app.get('/api/leads/stats', auth, (req, res) => {
+  const cfg = leadResponder.getConfig();
+  res.json({
+    dailyCount: LS.getDailyCount(), dailyCap: cfg.dailyCap,
+    mode: cfg.mode, paymentAutoSend: cfg.paymentAutoSend,
+    contactCache: getContactCacheStats(),
+    knownChats: getKnownChatsStats()
+  });
+});
+
+// filtered_saved_contact log entries — recovery list for numbers wrongly hard-skipped.
+app.get('/api/leads/filtered-contacts', auth, (req, res) => res.json(LS.getFilteredContacts()));
+
+app.get('/api/leads/:jid', auth, (req, res) => {
+  const lead = LS.getLead(req.params.jid);
+  if (!lead) return res.status(404).json({ error: 'lead not found' });
+  res.json({ ...lead, log: LS.getLogForJid(req.params.jid) });
+});
+
+app.post('/api/leads/:jid/converted', auth, (req, res) => {
+  const jid = req.params.jid;
+  if (!LS.getLead(jid)) return res.status(404).json({ error: 'lead not found' });
+  LS.setState(jid, 'converted');
+  LS.logEvent({ jid, action: 'marked_converted', detail: null });
+  res.json({ ok: true });
+});
+
+app.post('/api/leads/:jid/ignore', auth, (req, res) => {
+  const jid = req.params.jid;
+  if (!LS.getLead(jid)) return res.status(404).json({ error: 'lead not found' });
+  LS.setManualOverride(jid, 'ignore');
+  LS.logEvent({ jid, action: 'manual_ignore', detail: null });
+  res.json({ ok: true });
+});
+
+// Recovery path for a jid that was hard-skipped as a saved contact but is actually a
+// real lead — creates a tracked record so future messages from this jid get classified.
+app.post('/api/leads/:jid/treat-as-lead', auth, (req, res) => {
+  const jid = req.params.jid;
+  const lead = LS.createLead(jid, { phone: jid.split('@')[0] });
+  LS.logEvent({ jid, action: 'treated_as_lead', detail: null });
+  res.json(lead);
+});
+
+// ---------- LEARNING LOOP ----------
+// Queue of {jid, phone, pushName, question, answer} pairs captured when the operator
+// manually answered something the bot flagged as an 'unanswered_question' escalation.
+// Nothing here ever touches course-knowledge.md until the operator explicitly approves
+// it below — see src/gemini.js#appendFaqPair.
+app.get('/api/learning-queue', auth, (req, res) => res.json(LS.getLearningQueue()));
+
+app.post('/api/learning-queue/:id/approve', auth, (req, res) => {
+  const item = LS.getLearningQueueItem(req.params.id);
+  if (!item) return res.status(404).json({ error: 'learning queue item not found' });
+  const question = (req.body?.question ?? item.question ?? '').trim();
+  const answer = (req.body?.answer ?? item.answer ?? '').trim();
+  if (!question || !answer) return res.status(400).json({ error: 'question and answer are both required' });
+  try {
+    G.appendFaqPair(question, answer);
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+  LS.removeFromLearningQueue(item.id);
+  LS.logEvent({ jid: item.jid, action: 'learning_pair_approved', detail: { question } });
+  res.json({ ok: true });
+});
+
+app.post('/api/learning-queue/:id/discard', auth, (req, res) => {
+  const item = LS.getLearningQueueItem(req.params.id);
+  if (!item) return res.status(404).json({ error: 'learning queue item not found' });
+  LS.removeFromLearningQueue(item.id);
+  LS.logEvent({ jid: item.jid, action: 'learning_pair_discarded', detail: null });
+  res.json({ ok: true });
+});
+
+// ---------- BACKLOG SCAN ----------
+// On-demand trigger for the Leads tab's "Scan now" button — same runBacklogScan() the
+// 07:00 daily cron calls, just fired manually instead of waiting for it.
+app.post('/api/backlog/scan', auth, async (req, res) => {
+  try {
+    const result = await backlogScan.runBacklogScan();
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/backlog', auth, (req, res) => {
+  res.json({
+    queue: LS.getBacklogQueue(),
+    firstRunCleared: LS.isBacklogFirstRunCleared(),
+    sentToday: LS.getBacklogSentToday(),
+    lastSendAt: LS.getBacklogLastSendAt()
+  });
+});
+
+app.post('/api/backlog/:jid/approve', auth, (req, res) => {
+  LS.approveBacklogItem(req.params.jid);
+  res.json({ ok: true });
+});
+
+// Permanent exclusion, not just a one-time skip — creates/marks the lead as manually
+// ignored so a future daily scan can't just re-discover and re-queue the same chat.
+app.post('/api/backlog/:jid/remove', auth, (req, res) => {
+  const jid = req.params.jid;
+  LS.removeFromBacklogQueue(jid);
+  if (!LS.getLead(jid)) LS.createLead(jid, { phone: jid.split('@')[0] });
+  LS.setManualOverride(jid, 'ignore');
+  LS.logEvent({ jid, action: 'backlog_removed', detail: null });
+  backlogScan.maybeClearFirstRun();
+  res.json({ ok: true });
+});
+
 // ---------- RUN JOBS MANUALLY ----------
 app.post('/api/run/:job', auth, async (req, res) => {
   const fn = jobs[req.params.job];
@@ -344,6 +465,13 @@ function lanIP() {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server listening on http://localhost:${PORT} or http://${lanIP()}:${PORT}`);
+  setInboundMessageHandler(leadResponder.handleInboundMessage);
+  setOutboundMessageHandler(leadResponder.handleOutboundMessage);
   startWhatsApp();
   startScheduler();
+  // One-time startup scan, ~60s after boot — a best-effort head start for the contact
+  // cache to sync so this run isn't just an immediate fail-closed no-op. Not the
+  // reliable mechanism though: that's the daily 07:00 cron in scheduler.js, which will
+  // run regardless of whether this one found the cache ready in time.
+  setTimeout(() => { backlogScan.runBacklogScan().catch(e => console.error('Startup backlog scan failed:', e.message)); }, 60000);
 });

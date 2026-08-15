@@ -6,6 +6,12 @@ node_modules/
 
 # WhatsApp session
 data/wa-auth/
+data/wa-contacts.json
+data/wa-chat-cache.json
+
+# Lead-responder data — phone numbers + chat transcripts of third parties
+data/leads.json
+data/lead-log.jsonl
 
 # Logs
 *.log

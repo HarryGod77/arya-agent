@@ -24,7 +24,7 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
   $('#tab-' + t.dataset.tab).classList.remove('hidden');
 });
 
-async function boot() { loadWa(); loadBatches(); loadConfig(); injectOrganizer(); }
+async function boot() { loadWa(); loadBatches(); loadConfig(); injectOrganizer(); loadLeadsTab(); }
 
 function injectOrganizer() {
   const panel = $('#tab-actions');
@@ -225,6 +225,171 @@ $('#addBatch').onclick = async () => {
   }) });
   $('#bName').value = $('#bEmails').value = $('#bGroup').value = $('#bDrive').value = '';
   toast('Batch created'); loadBatches();
+};
+
+// LEADS
+let LR_CONFIG = {};
+async function loadLeadsTab() {
+  try {
+    const cfg = await api('/api/config');
+    LR_CONFIG = cfg.leadResponder || { mode: 'draft', dailyCap: 30, silentHours: { start: 23, end: 8 }, paymentAutoSend: false };
+    $('#lrAuto').checked = LR_CONFIG.mode === 'auto';
+    $('#lrPaymentAuto').checked = !!LR_CONFIG.paymentAutoSend;
+  } catch {}
+
+  try {
+    const stats = await api('/api/leads/stats');
+    $('#lrStats').innerHTML = `New leads today: ${stats.dailyCount}/${stats.dailyCap} · Contact cache: ` +
+      (stats.contactCache.ready ? `${stats.contactCache.size} loaded ✓` : '⚠️ not ready yet — bot stays silent for everyone until synced');
+    const kc = stats.knownChats;
+    if (kc) {
+      $('#lrKnownChatsStats').innerHTML = `WhatsApp reports ${kc.knownChatsTotal} known chat(s) · ${kc.chatsWithContent} have cached message text the scanner can use` +
+        (kc.unreadWithoutContent.length
+          ? ` · <span style="color:#c77">${kc.unreadWithoutContent.length} unread chat(s) with NO cached text — invisible to the backlog scanner until they message again or you find them manually: ${kc.unreadWithoutContent.map(u => u.jid.split('@')[0]).join(', ')}</span>`
+          : '');
+    }
+  } catch {}
+
+  try {
+    const filtered = await api('/api/leads/filtered-contacts');
+    if (filtered.length) {
+      $('#lrFilteredCard').style.display = 'block';
+      $('#lrFilteredList').innerHTML = filtered.map(f => `
+        <div class="classline">
+          <div>${f.jid.split('@')[0]} — ${shortDT(f.ts)}
+            <button data-treatlead="${f.jid}" style="margin-left:8px">Treat as lead</button></div>
+        </div>`).join('');
+      document.querySelectorAll('[data-treatlead]').forEach(btn => btn.onclick = async () => {
+        btn.disabled = true;
+        try { await api(`/api/leads/${encodeURIComponent(btn.dataset.treatlead)}/treat-as-lead`, { method: 'POST' }); toast('Now tracked as a lead ✓'); loadLeadsTab(); }
+        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      });
+    } else {
+      $('#lrFilteredCard').style.display = 'none';
+    }
+  } catch {}
+
+  try {
+    const queue = await api('/api/learning-queue');
+    if (queue.length) {
+      $('#lrLearningCard').style.display = 'block';
+      $('#lrLearningList').innerHTML = queue.map(q => `
+        <div class="classline">
+          <div style="opacity:.7;font-size:.85em;margin-bottom:4px">${q.phone}${q.pushName ? ' (' + q.pushName + ')' : ''} — ${shortDT(q.createdAt)}</div>
+          <label style="display:block;font-size:.85em;margin-bottom:2px">Question</label>
+          <textarea data-lq-question="${q.id}" style="width:100%;min-height:44px;margin-bottom:6px">${q.question}</textarea>
+          <label style="display:block;font-size:.85em;margin-bottom:2px">Your answer (goes into the FAQ verbatim)</label>
+          <textarea data-lq-answer="${q.id}" style="width:100%;min-height:60px;margin-bottom:6px">${q.answer}</textarea>
+          <div>
+            <button data-lq-approve="${q.id}">Approve — add to FAQ</button>
+            <button class="del" data-lq-discard="${q.id}" style="margin-left:8px">Discard</button>
+          </div>
+        </div>`).join('');
+      document.querySelectorAll('[data-lq-approve]').forEach(btn => btn.onclick = async () => {
+        const id = btn.dataset.lqApprove;
+        const question = document.querySelector(`[data-lq-question="${id}"]`).value.trim();
+        const answer = document.querySelector(`[data-lq-answer="${id}"]`).value.trim();
+        if (!question || !answer) return toast('Question and answer are both required');
+        btn.disabled = true;
+        try { await api(`/api/learning-queue/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({ question, answer }) }); toast('Added to FAQ ✓'); loadLeadsTab(); }
+        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      });
+      document.querySelectorAll('[data-lq-discard]').forEach(btn => btn.onclick = async () => {
+        btn.disabled = true;
+        try { await api(`/api/learning-queue/${encodeURIComponent(btn.dataset.lqDiscard)}/discard`, { method: 'POST' }); toast('Discarded'); loadLeadsTab(); }
+        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      });
+    } else {
+      $('#lrLearningCard').style.display = 'none';
+    }
+  } catch {}
+
+  try {
+    const backlog = await api('/api/backlog');
+    if (backlog.queue.length) {
+      $('#lrBacklogCard').style.display = 'block';
+      $('#lrBacklogStatus').textContent =
+        (backlog.firstRunCleared ? 'Auto-sends once its turn comes up — remove to veto' : 'First run — nothing sends until you approve it') +
+        ` · Sent today: ${backlog.sentToday}/5`;
+      $('#lrBacklogList').innerHTML = backlog.queue.map(q => `
+        <div class="classline">
+          <div>${q.phone}${q.pushName ? ' (' + q.pushName + ')' : ''} — "${(q.lastMessageSnippet || '').slice(0, 80)}"</div>
+          <div style="opacity:.7;font-size:.85em;margin:4px 0 8px">
+            Last message: ${shortDT(q.lastMessageAt)} · ${q.approved ? '✅ approved, waiting its turn' : '⏳ needs approval'}
+          </div>
+          <div>
+            ${!q.approved ? `<button data-approve="${q.jid}">Approve</button>` : ''}
+            <button class="del" data-removebacklog="${q.jid}" style="margin-left:8px">Remove</button>
+          </div>
+        </div>`).join('');
+      document.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => {
+        btn.disabled = true;
+        try { await api(`/api/backlog/${encodeURIComponent(btn.dataset.approve)}/approve`, { method: 'POST' }); toast('Approved ✓'); loadLeadsTab(); }
+        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      });
+      document.querySelectorAll('[data-removebacklog]').forEach(btn => btn.onclick = async () => {
+        if (!confirm('Remove this chat from the backlog queue permanently? It will not be re-discovered by future scans.')) return;
+        btn.disabled = true;
+        try { await api(`/api/backlog/${encodeURIComponent(btn.dataset.removebacklog)}/remove`, { method: 'POST' }); toast('Removed'); loadLeadsTab(); }
+        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      });
+    } else {
+      $('#lrBacklogCard').style.display = 'none';
+    }
+  } catch {}
+
+  try {
+    const leads = await api('/api/leads');
+    $('#lrLeadList').innerHTML = leads.length ? leads.map(l => {
+      const lastMsg = l.messages[l.messages.length - 1];
+      const flagBadge = l.flags.length ? ` · 🚩 ${l.flags.length}` : '';
+      return `<div class="classline">
+        <div><b>${l.phone}</b>${l.pushName ? ' (' + l.pushName + ')' : ''} — <span class="pill ${l.state === 'converted' ? 'on' : ''}">${l.state}</span>${flagBadge}</div>
+        <div style="opacity:.7;font-size:.85em;margin:4px 0">
+          ${lastMsg ? `${lastMsg.dir === 'in' ? 'Them' : 'Bot'}: "${lastMsg.text.slice(0, 100)}" — ${shortDT(lastMsg.ts)}` : 'No messages yet'}
+          ${lastMsg?.dir === 'out' && lastMsg.tier != null ? ` · <span title="Priority tier that produced this reply">${lastMsg.tier === 'human' ? 'Manual reply' : lastMsg.tier === 0 ? 'Tier 0 (knowledge base)' : `Tier ${lastMsg.tier} (${lastMsg.model})`}</span>` : ''}
+          · replies: ${l.replyCount} · follow-ups: ${l.followUps.count}/3${l.manualOverride ? ` · ${l.manualOverride}` : ''}
+        </div>
+        <div style="margin-top:6px">
+          ${l.state !== 'converted' ? `<button data-converted="${l.jid}">Mark converted</button>` : ''}
+          ${l.manualOverride !== 'ignore' ? `<button class="del" data-ignorelead="${l.jid}" style="margin-left:8px">Ignore</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') : '<p class="muted">No leads yet.</p>';
+
+    document.querySelectorAll('[data-converted]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true;
+      try { await api(`/api/leads/${encodeURIComponent(btn.dataset.converted)}/converted`, { method: 'POST' }); toast('Marked converted ✓'); loadLeadsTab(); }
+      catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+    });
+    document.querySelectorAll('[data-ignorelead]').forEach(btn => btn.onclick = async () => {
+      if (!confirm('Stop the bot from responding to this number?')) return;
+      btn.disabled = true;
+      try { await api(`/api/leads/${encodeURIComponent(btn.dataset.ignorelead)}/ignore`, { method: 'POST' }); toast('Ignored ✓'); loadLeadsTab(); }
+      catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+    });
+  } catch { $('#lrLeadList').innerHTML = '<p class="muted">Error loading leads.</p>'; }
+
+  setTimeout(loadLeadsTab, 30000);
+}
+
+$('#lrSaveCfg').onclick = async () => {
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({
+    leadResponder: { ...LR_CONFIG, mode: $('#lrAuto').checked ? 'auto' : 'draft', paymentAutoSend: $('#lrPaymentAuto').checked }
+  }) });
+  toast('Lead responder settings saved');
+  loadLeadsTab();
+};
+
+$('#lrScanNow').onclick = async () => {
+  const btn = $('#lrScanNow');
+  btn.disabled = true;
+  try {
+    const r = await api('/api/backlog/scan', { method: 'POST' });
+    toast(r.skipped ? `Scan skipped: ${r.reason}` : `Scan done — ${r.scanned} checked, ${r.queued} queued`);
+    loadLeadsTab();
+  } catch (e) { toast('Error: ' + e.message); }
+  btn.disabled = false;
 };
 
 // CONFIG
