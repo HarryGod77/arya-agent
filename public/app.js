@@ -1,5 +1,6 @@
 import { api, login } from './api.js';
-import { toast } from './ui.js';
+import { toast, confirmModal, promptModal, row, showErrorBanner, clearErrorBanner } from './ui.js';
+import { icon } from './icons.js';
 
 const $ = s => document.querySelector(s);
 
@@ -100,8 +101,60 @@ const shortDT = (d) => new Date(d).toLocaleString('en-IN', { day: 'numeric', mon
 const REMS = [[1440, '24h'], [180, '3h'], [60, '1h'], [10, '10m'], [2, '2m']];
 
 // BATCHES
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Shared list-row email editor — used by both the new-batch form and every existing
+// batch's edit box, instead of a single cramped comma-separated field. `emails` is the
+// current array; onChange(nextArray) is called after every add/remove so the caller
+// decides what to do with the new list (hold it in memory, or PUT it on save).
+function renderEmailList(container, emails, onChange) {
+  container.innerHTML = `
+    <div class="list">
+      ${emails.length ? emails.map((e, i) => row({
+        icon: 'mail',
+        primary: e,
+        actionsHtml: `<button type="button" class="icon-btn danger" data-remove-email="${i}" title="Remove email">${icon('trash')}</button>`
+      })).join('') : '<div class="empty-state">No emails yet.</div>'}
+      <button type="button" class="list-row-add" data-add-email>${icon('plus')} Add email</button>
+    </div>`;
+
+  container.querySelectorAll('[data-remove-email]').forEach(btn => btn.onclick = () => {
+    onChange(emails.filter((_, i) => i !== Number(btn.dataset.removeEmail)));
+  });
+
+  container.querySelector('[data-add-email]').onclick = async () => {
+    const value = await promptModal({ title: 'Add student email', placeholder: 'student@email.com', confirmLabel: 'Add' });
+    if (value === null) return; // cancelled
+    const email = value.trim();
+    if (!email) return;
+    if (!EMAIL_RE.test(email)) return toast('That doesn’t look like a valid email', { tone: 'danger' });
+    if (emails.includes(email)) return toast('Already in the list', { tone: 'danger' });
+    onChange([...emails, email]);
+  };
+}
+
+// New-batch form state — held in memory until "Create batch" is clicked, same as the
+// name/JID/folder fields already were.
+let newBatchEmails = [];
+function renderNewBatchEmails() {
+  renderEmailList($('#bEmailList'), newBatchEmails, (next) => { newBatchEmails = next; renderNewBatchEmails(); });
+}
+renderNewBatchEmails();
+
+// Per-batch pending email edits, keyed by batch id — only meaningful while that batch's
+// edit box is open; re-seeded from the server's copy every time loadBatches() re-renders.
+const pendingEditEmails = {};
+
 async function loadBatches() {
-  const list = await api('/api/batches');
+  let list;
+  try {
+    list = await api('/api/batches');
+  } catch (e) {
+    showErrorBanner($('#batchList'), 'Could not load batches: ' + e.message, loadBatches);
+    return;
+  }
+  clearErrorBanner($('#batchList'));
+
   const now = Date.now();
   const endOf = c => new Date(c.startISO).getTime() + (c.durationMin || 60) * 60000;
 
@@ -117,59 +170,79 @@ async function loadBatches() {
         return `${lab} ${shortDT(t)}${t.getTime() < now ? '✓' : ''}`;
       }).join('  ·  ');
       return `<div class="classline">
-        <div>🔮 <b>${c.topic}</b> — ${shortDT(start)} · <a href="${c.meetLink}" target="_blank">Join link</a>
-          <button class="del" data-delcls="${b.id}:${c.id}" style="margin-left:8px">✕ cancel class</button>
-          <button data-sendrec="${b.id}:${c.id}" style="margin-left:8px">🎥 send recording</button></div>
-        <div class="rem" style="opacity:.7;font-size:.85em;margin:4px 0 10px">⏰ Reminders → ${rem}</div>
+        <div>${icon('calendar', { size: 14 })} <b>${c.topic}</b> — ${shortDT(start)} · <a href="${c.meetLink}" target="_blank">Join link</a>
+          <button class="btn btn-danger btn-sm" data-delcls="${b.id}:${c.id}" style="margin-left:8px">Cancel class</button>
+          <button class="btn btn-secondary btn-sm" data-sendrec="${b.id}:${c.id}" style="margin-left:8px">${icon('video', { size: 13 })} Send recording</button></div>
+        <div class="rem" style="opacity:.7;font-size:.85em;margin:4px 0 10px">${icon('clock', { size: 12 })} Reminders → ${rem}</div>
       </div>`;
     }).join('');
 
     const historyHtml = history.length ? `
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid #333">
-        <div style="opacity:.6;font-size:.85em;margin-bottom:6px">📁 History (${history.length})</div>
+        <div style="opacity:.6;font-size:.85em;margin-bottom:6px">${icon('folder', { size: 13 })} History (${history.length})</div>
         ${history.map(c => {
           const cancelled = c.status === 'cancelled';
-          const badge = cancelled ? '❌ Cancelled' : '✅ Completed';
+          const badge = cancelled
+            ? `<span class="badge badge-danger">Cancelled</span>`
+            : `<span class="badge badge-success">Completed</span>`;
           const rec = c.recordingLink
             ? ` · <a href="${c.recordingLink}" target="_blank">▶ Recording</a>`
-            : (cancelled ? '' : ` · <button data-sendrec="${b.id}:${c.id}">🎥 send recording</button>`);
+            : (cancelled ? '' : ` · <button class="btn btn-secondary btn-sm" data-sendrec="${b.id}:${c.id}">${icon('video', { size: 13 })} Send recording</button>`);
           const reason = cancelled && c.cancelReason ? `<div style="opacity:.6;font-size:.8em">Reason: ${c.cancelReason}</div>` : '';
           return `<div class="classline" style="opacity:.9">
-            <div>${badge} · <b>${c.topic}</b> — ${shortDT(new Date(c.startISO))}${rec}
-              <button class="del" data-purge="${b.id}:${c.id}" style="margin-left:8px">🗑 remove</button></div>
+            <div>${badge} <b>${c.topic}</b> — ${shortDT(new Date(c.startISO))}${rec}
+              <button class="icon-btn danger" data-purge="${b.id}:${c.id}" title="Remove from history" style="margin-left:8px">${icon('trash', { size: 13 })}</button></div>
             ${reason}
           </div>`;
         }).join('')}
       </div>` : '';
 
+    if (!(b.id in pendingEditEmails)) pendingEditEmails[b.id] = [...(b.emails || [])];
+
     return `
     <div class="batch">
       <h3>${b.name}</h3>
-      <div class="meta">${b.emails.length} emails${b.driveFolderId ? ' (viewer access ✓)' : ''} · ${b.whatsappGroupJid ? 'group linked ✓' : 'no group (Note-to-Self)'}${b.driveFolderId ? ` · <a href="https://drive.google.com/drive/folders/${b.driveFolderId}" target="_blank">📁 batch folder</a>` : ''}
-        <button class="del" data-editbtn="${b.id}" style="margin-left:8px">✎ edit batch</button></div>
+      <div class="meta">${b.emails.length} emails${b.driveFolderId ? ' (viewer access ✓)' : ''} · ${b.whatsappGroupJid ? 'group linked ✓' : 'no group (Note-to-Self)'}${b.driveFolderId ? ` · <a href="https://drive.google.com/drive/folders/${b.driveFolderId}" target="_blank">${icon('folder', { size: 12 })} batch folder</a>` : ''}
+        <button class="btn btn-secondary btn-sm" data-editbtn="${b.id}" style="margin-left:8px">${icon('edit', { size: 13 })} Edit batch</button></div>
 
-      <div class="editbox" id="edit_${b.id}" style="display:none;margin:8px 0;padding:10px;border:1px solid #444;border-radius:8px">
-        <label>Batch name</label>
-        <input id="en_${b.id}" value="${(b.name || '').replace(/"/g, '&quot;')}">
-        <label>Student emails (comma separated)</label>
-        <input id="ee_${b.id}" value="${(b.emails || []).join(', ').replace(/"/g, '&quot;')}">
-        <label>WhatsApp group JID or invite link</label>
-        <input id="ej_${b.id}" value="${(b.whatsappGroupJid || '').replace(/"/g, '&quot;')}" placeholder="120363...@g.us  OR  https://chat.whatsapp.com/xxxx">
-        <button data-saveedit="${b.id}" style="margin-top:8px">Save changes</button>
+      <div class="editbox" id="edit_${b.id}" style="display:none;margin:10px 0;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2)">
+        <div class="field">
+          <label class="field-label" for="en_${b.id}">Batch name</label>
+          <input id="en_${b.id}" class="input" value="${(b.name || '').replace(/"/g, '&quot;')}">
+        </div>
+        <div class="field">
+          <label class="field-label">Student emails</label>
+          <div id="ee_${b.id}"></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="ej_${b.id}">WhatsApp group JID or invite link</label>
+          <input id="ej_${b.id}" class="input" value="${(b.whatsappGroupJid || '').replace(/"/g, '&quot;')}" placeholder="120363...@g.us  OR  https://chat.whatsapp.com/xxxx">
+        </div>
+        <button class="btn btn-primary" data-saveedit="${b.id}" style="margin-top:4px">Save changes</button>
       </div>
 
       ${upcomingHtml || '<div style="opacity:.5;font-size:.85em;margin:6px 0">No upcoming classes.</div>'}
       ${historyHtml}
 
       <div class="addcls">
-        <input placeholder="Topic e.g. Mind Reading" id="t_${b.id}">
-        <input type="datetime-local" id="dt_${b.id}" title="Pick date & time" style="min-width:210px">
-        <input placeholder="Meet link (blank = auto-generate)" id="lk_${b.id}" style="min-width:220px">
-        <button data-add="${b.id}">Add class</button>
-        <button class="del" data-del="${b.id}">Delete batch</button>
+        <div class="field" style="margin:10px 0 0"><label class="field-label" for="t_${b.id}">Topic</label><input class="input" placeholder="e.g. Mind Reading" id="t_${b.id}"></div>
+        <div class="field" style="margin:10px 0 0"><label class="field-label" for="dt_${b.id}">Date &amp; time</label><input type="datetime-local" class="input" id="dt_${b.id}"></div>
+        <div class="field" style="margin:10px 0 0"><label class="field-label" for="lk_${b.id}">Meet link (optional)</label><input class="input" placeholder="blank = auto-generate" id="lk_${b.id}"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-primary" data-add="${b.id}">${icon('plus', { size: 14 })} Add class</button>
+          <button class="btn btn-danger" data-del="${b.id}">${icon('trash', { size: 14 })} Delete batch</button>
+        </div>
       </div>
     </div>`;
   }).join('') || '<p class="muted">No batches yet.</p>';
+
+  // Render each batch's email editor now that its container exists in the DOM.
+  list.forEach(b => {
+    const container = $('#ee_' + b.id);
+    if (!container) return;
+    const rerender = () => renderEmailList(container, pendingEditEmails[b.id], (next) => { pendingEditEmails[b.id] = next; rerender(); });
+    rerender();
+  });
 
   document.querySelectorAll('[data-editbtn]').forEach(btn => btn.onclick = () => {
     const box = $('#edit_' + btn.dataset.editbtn);
@@ -181,11 +254,12 @@ async function loadBatches() {
     try {
       await api(`/api/batches/${bid}`, { method: 'PUT', body: JSON.stringify({
         name: $('#en_' + bid).value.trim(),
-        emails: $('#ee_' + bid).value.split(','),
+        emails: pendingEditEmails[bid] || [],
         whatsappGroupJid: $('#ej_' + bid).value.trim()
       }) });
+      delete pendingEditEmails[bid];
       toast('Batch updated ✓'); loadBatches();
-    } catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+    } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
   });
 
   document.querySelectorAll('[data-add]').forEach(btn => btn.onclick = async () => {
@@ -193,13 +267,13 @@ async function loadBatches() {
     const topic = $('#t_' + bid).value.trim();
     const dt = $('#dt_' + bid).value;
     const meetLink = $('#lk_' + bid).value.trim();
-    if (!topic || !dt) return toast('Topic aur date-time dono chahiye');
+    if (!topic || !dt) return toast('Topic and date/time are both required', { tone: 'danger' });
     const startISO = new Date(dt).toISOString();
     btn.disabled = true; toast(meetLink ? 'Adding…' : 'Creating Meet link…');
     try {
       await api(`/api/batches/${bid}/classes`, { method: 'POST', body: JSON.stringify({ topic, startISO, meetLink }) });
       toast('Class added + WhatsApp sent ✓'); loadBatches();
-    } catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+    } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
   });
 
   document.querySelectorAll('[data-sendrec]').forEach(btn => btn.onclick = async () => {
@@ -208,43 +282,52 @@ async function loadBatches() {
     try {
       await api(`/api/batches/${bid}/classes/${cid}/send-recording`, { method: 'POST' });
       toast('Recording sent to group + email ✓'); loadBatches();
-    } catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+    } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
   });
 
   document.querySelectorAll('[data-delcls]').forEach(btn => btn.onclick = async () => {
     const [bid, cid] = btn.dataset.delcls.split(':');
-    const reason = prompt('Cancel this class? Type a reason (students ko yahi reason jayega):', '');
-    if (reason === null) return; // cancelled the prompt
+    const reason = await promptModal({ title: 'Cancel this class?', body: 'This reason is sent to students in the cancellation message.', placeholder: 'Reason', confirmLabel: 'Cancel class' });
+    if (reason === null) return; // backed out
     try {
       await api(`/api/batches/${bid}/classes/${cid}`, { method: 'DELETE', body: JSON.stringify({ reason }) });
       toast('Class cancelled + message sent'); loadBatches();
-    } catch (e) { toast('Error: ' + e.message); }
+    } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
   });
 
   document.querySelectorAll('[data-purge]').forEach(btn => btn.onclick = async () => {
-    if (!confirm('Remove this from history permanently?')) return;
+    const ok = await confirmModal({ title: 'Remove from history?', body: 'This removes the class from history permanently — it cannot be undone.', confirmLabel: 'Remove', danger: true });
+    if (!ok) return;
     const [bid, cid] = btn.dataset.purge.split(':');
     try { await api(`/api/batches/${bid}/classes/${cid}/purge`, { method: 'DELETE' }); toast('Removed'); loadBatches(); }
-    catch (e) { toast('Error: ' + e.message); }
+    catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
   });
 
   document.querySelectorAll('[data-del]').forEach(btn => btn.onclick = async () => {
-    if (!confirm('Delete this whole batch?')) return;
-    await api('/api/batches/' + btn.dataset.del, { method: 'DELETE' }); loadBatches();
+    const ok = await confirmModal({ title: 'Delete this whole batch?', body: 'This deletes the batch and all its classes permanently — it cannot be undone.', confirmLabel: 'Delete batch', danger: true });
+    if (!ok) return;
+    try {
+      await api('/api/batches/' + btn.dataset.del, { method: 'DELETE' });
+      delete pendingEditEmails[btn.dataset.del];
+      toast('Batch deleted'); loadBatches();
+    } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
   });
 }
 
 $('#addBatch').onclick = async () => {
   const name = $('#bName').value.trim();
-  if (!name) return toast('Batch name chahiye');
-  await api('/api/batches', { method: 'POST', body: JSON.stringify({
-    name,
-    emails: $('#bEmails').value.split(','),
-    whatsappGroupJid: $('#bGroup').value.trim(),
-    driveRootFolderId: $('#bDrive').value.trim()
-  }) });
-  $('#bName').value = $('#bEmails').value = $('#bGroup').value = $('#bDrive').value = '';
-  toast('Batch created'); loadBatches();
+  if (!name) return toast('Batch name is required', { tone: 'danger' });
+  try {
+    await api('/api/batches', { method: 'POST', body: JSON.stringify({
+      name,
+      emails: newBatchEmails,
+      whatsappGroupJid: $('#bGroup').value.trim(),
+      driveRootFolderId: $('#bDrive').value.trim()
+    }) });
+    $('#bName').value = $('#bGroup').value = $('#bDrive').value = '';
+    newBatchEmails = []; renderNewBatchEmails();
+    toast('Batch created ✓'); loadBatches();
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
 };
 
 // LEADS

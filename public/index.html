@@ -48,12 +48,24 @@
   <!-- BATCHES -->
   <section id="tab-batches" class="tab-panel">
     <div class="card">
-      <h2>New batch</h2>
-      <label>Batch name <input id="bName" placeholder="August Batch"></label>
-      <label>Student emails (comma separated) <textarea id="bEmails" placeholder="a@x.com, b@y.com"></textarea></label>
-      <label>WhatsApp group JID (optional) <input id="bGroup" placeholder="1203...@g.us"></label>
-      <label>Drive root folder ID (optional) <input id="bDrive" placeholder="leave blank = use inbox"></label>
-      <button id="addBatch">Create batch</button>
+      <div class="card-header"><div class="card-title">New batch</div></div>
+      <div class="field">
+        <label class="field-label" for="bName">Batch name</label>
+        <input id="bName" class="input" placeholder="August Batch">
+      </div>
+      <div class="field">
+        <label class="field-label">Student emails</label>
+        <div id="bEmailList"></div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="bGroup">WhatsApp group JID (optional)</label>
+        <input id="bGroup" class="input" placeholder="1203...@g.us">
+      </div>
+      <div class="field">
+        <label class="field-label" for="bDrive">Drive root folder ID (optional)</label>
+        <input id="bDrive" class="input" placeholder="leave blank = use inbox">
+      </div>
+      <button id="addBatch" class="btn btn-primary">Create batch</button>
     </div>
     <div id="batchList"></div>
   </section>

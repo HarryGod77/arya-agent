@@ -78,7 +78,7 @@ function renderModal({ title, bodyHtml, confirmLabel, cancelLabel, danger, showI
 
   root.querySelector('[data-modal-cancel]').onclick = cancelModal;
   root.querySelector('[data-modal-confirm]').onclick = () => resolveModal(showInput ? (input ? input.value : '') : true);
-  if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') resolveModal(input.value); });
+  if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); resolveModal(input.value); } });
 }
 
 // await confirmModal({ title: 'Delete this batch?', body: 'This cannot be undone.', danger: true })
