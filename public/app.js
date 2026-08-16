@@ -31,47 +31,35 @@ function selectSubtab(name) {
   document.querySelectorAll('.subtab-panel').forEach(x => x.classList.toggle('hidden', x.id !== 'subtab-' + name));
 }
 
-async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); injectOrganizer(); loadLeadsTab(); }
+async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); wireOrganizer(); loadLeadsTab(); }
 
-function injectOrganizer() {
-  const panel = $('#tab-actions');
-  if (!panel || $('#orgTool')) return;
-  const box = document.createElement('div');
-  box.className = 'card';
-  box.id = 'orgTool';
-  box.style.marginTop = '16px';
-  box.innerHTML = `
-    <h2>🗂 Organize old Drive recordings</h2>
-    <p class="muted">Reads recordings in your Meet Recordings folder and sorts them into <b>Batch / Topic</b> folders. Preview first — nothing moves until you apply. Moving keeps old share links working.</p>
-    <button class="ghost" id="orgPreview">Preview plan</button>
-    <button id="orgApply" style="display:none">Apply — move files</button>
-    <div id="orgResult" style="margin-top:10px;font-size:.9em"></div>`;
-  panel.appendChild(box);
-
+// Wires the "Organize old Drive recordings" card, which now lives as static markup in
+// index.html (Actions tab) instead of being injected into the DOM at boot — keeps the
+// tab's real content fully visible in the HTML rather than only knowable by reading JS.
+function wireOrganizer() {
   $('#orgPreview').onclick = async () => {
     $('#orgResult').textContent = 'Scanning Drive…';
     try {
       const r = await api('/api/organize/preview');
       if (!r.count) { $('#orgResult').textContent = 'No recordings found in the folder.'; return; }
       $('#orgResult').innerHTML = `<b>${r.count} files</b> will be organized like this:<br><br>` +
-        r.plan.map(p => `📄 ${p.name}<br>&nbsp;&nbsp;➜ <b>${p.target}</b>`).join('<br><br>');
+        r.plan.map(p => `${p.name}<br>&nbsp;&nbsp;➜ <b>${p.target}</b>`).join('<br><br>');
       $('#orgApply').style.display = 'inline-block';
     } catch (e) { $('#orgResult').textContent = 'Error: ' + e.message; }
   };
 
   $('#orgApply').onclick = async () => {
-    if (!confirm('Move all these recordings into Batch/Topic folders? Old share links will keep working, but files will be reorganized.')) return;
+    const ok = await confirmModal({ title: 'Move all these recordings?', body: 'Old share links will keep working, but files will be reorganized into Batch/Topic folders.', confirmLabel: 'Move files' });
+    if (!ok) return;
     $('#orgApply').disabled = true; $('#orgResult').textContent = 'Organizing… (bade archive me thoda time lagega)';
     try {
       const r = await api('/api/organize/execute', { method: 'POST' });
-      $('#orgResult').textContent = `✅ Done — ${r.moved}/${r.total} files organized.`;
+      $('#orgResult').textContent = `Done — ${r.moved}/${r.total} files organized.`;
       $('#orgApply').style.display = 'none';
     } catch (e) { $('#orgResult').textContent = 'Error: ' + e.message; }
     $('#orgApply').disabled = false;
   };
 }
-
-
 
 
 // Header status pills — WhatsApp connection, contact-cache sync, and bot mode all live
@@ -608,7 +596,7 @@ $('#lrScanNow').onclick = async () => {
 
 // CONFIG
 let CFG;
-function seg(id, val) { document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('sel', b.dataset.v === val)); }
+function seg(id, val) { document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('selected', b.dataset.v === val)); }
 async function loadConfig() {
   CFG = await api('/api/config');
   $('#cfgGroup').checked = CFG.whatsappDirectToGroup;
@@ -622,28 +610,33 @@ async function loadConfig() {
 ['fbFmt', 'ytFmt'].forEach(id => document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => seg(id, b.dataset.v)));
 
 $('#saveCfg').onclick = async () => {
-  const pick = id => document.querySelector(`#${id} button.sel`)?.dataset.v;
-  await api('/api/config', { method: 'PUT', body: JSON.stringify({
-    whatsappDirectToGroup: $('#cfgGroup').checked,
-    postsPerDay: +$('#cfgPerDay').value,
-    social: {
-      facebook: { enabled: $('#fbOn').checked, format: pick('fbFmt') || 'reel' },
-      instagram: { enabled: $('#igOn').checked, format: 'reel' },
-      youtube: { enabled: $('#ytOn').checked, format: pick('ytFmt') || 'short' }
-    }
-  }) });
-  toast('Settings saved');
+  const pick = id => document.querySelector(`#${id} button.selected`)?.dataset.v;
+  try {
+    await api('/api/config', { method: 'PUT', body: JSON.stringify({
+      whatsappDirectToGroup: $('#cfgGroup').checked,
+      postsPerDay: +$('#cfgPerDay').value,
+      social: {
+        facebook: { enabled: $('#fbOn').checked, format: pick('fbFmt') || 'reel' },
+        instagram: { enabled: $('#igOn').checked, format: 'reel' },
+        youtube: { enabled: $('#ytOn').checked, format: pick('ytFmt') || 'short' }
+      }
+    }) });
+    toast('Settings saved ✓');
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
 };
 
 // ACTIONS
 document.querySelectorAll('[data-job]').forEach(b => b.onclick = async () => {
-  toast('Running…');
+  b.disabled = true; toast('Running…');
   try { await api('/api/run/' + b.dataset.job, { method: 'POST' }); toast('Done ✓'); }
-  catch (e) { toast('Error: ' + e.message); }
+  catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+  b.disabled = false;
 });
 $('#loadGroups').onclick = async () => {
-  const groups = await api('/api/whatsapp/groups');
-  $('#groupList').innerHTML = groups.length
-    ? groups.map(g => `<div class="gcard">${g.name}<br><code>${g.jid}</code></div>`).join('')
-    : '<p class="muted">No groups (WhatsApp connected hai?).</p>';
+  try {
+    const groups = await api('/api/whatsapp/groups');
+    $('#groupList').innerHTML = groups.length
+      ? groups.map(g => row({ icon: 'message', primary: g.name, secondary: g.jid })).join('')
+      : '<div class="empty-state">No groups found — is WhatsApp connected?</div>';
+  } catch (e) { showErrorBanner($('#groupList'), 'Could not load groups: ' + e.message, () => $('#loadGroups').click()); }
 };

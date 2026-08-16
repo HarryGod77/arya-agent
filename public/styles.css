@@ -23,14 +23,6 @@ small{font-weight:400}
 }
 .gate-card h1{font-weight:800;font-size:2rem;margin:.5em 0 0;letter-spacing:-.01em}
 .gate-card input{margin:22px 0 14px}
-button{
-  background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#1a1408;
-  border:0;border-radius:10px;padding:11px 18px;font-weight:600;font-size:.95rem;
-  cursor:pointer;transition:transform .08s ease,filter .15s ease;
-}
-button:hover{filter:brightness(1.06)}
-button:active{transform:translateY(1px)}
-button.ghost{background:transparent;color:var(--gold-soft);border:1px solid var(--edge);margin:6px 6px 0 0}
 .gate-card button{width:100%}
 
 /* APP */
@@ -38,41 +30,12 @@ button.ghost{background:transparent;color:var(--gold-soft);border:1px solid var(
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:8px 4px 18px}
 .brand{display:flex;align-items:center;gap:9px;font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
 .status-pills{display:flex;gap:8px;flex-wrap:wrap}
-.pill{font-size:.78rem;padding:5px 12px;border-radius:20px;border:1px solid var(--edge);color:var(--muted)}
-.pill.on{color:var(--ok);border-color:rgba(122,201,160,.4)}
-.pill.off{color:var(--err);border-color:rgba(224,121,122,.4)}
-
-.card{
-  background:var(--ink-2);border:1px solid var(--edge);border-radius:14px;
-  padding:20px;margin-bottom:16px;
-}
-.card h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.35rem;margin:0 0 14px}
-label{display:block;font-size:.85rem;color:var(--muted);margin:12px 0}
-label input,label textarea{
-  width:100%;margin-top:6px;padding:10px 12px;background:var(--ink);
-  border:1px solid var(--edge);border-radius:9px;color:var(--text);font-size:.95rem;font-family:inherit;
-}
-textarea{min-height:60px;resize:vertical}
-
-.switch-row{display:flex;justify-content:space-between;align-items:center;gap:16px}
-.switch-row span{color:var(--text);font-size:.95rem}
-input[type=checkbox]{width:44px;height:24px;appearance:none;background:var(--edge);border-radius:20px;position:relative;cursor:pointer;transition:background .2s;flex:0 0 auto}
-input[type=checkbox]:checked{background:var(--gold)}
-input[type=checkbox]::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s}
-input[type=checkbox]:checked::after{left:23px}
 
 .plat{border-top:1px solid var(--edge);padding-top:14px;margin-top:8px}
-.seg{display:inline-flex;margin-top:8px;border:1px solid var(--edge);border-radius:9px;overflow:hidden}
-.seg button{background:transparent;color:var(--muted);border-radius:0;padding:7px 16px;font-weight:500}
-.seg button.sel{background:var(--gold);color:#1a1408}
 
 .batch{background:var(--ink-2);border:1px solid var(--edge);border-radius:14px;padding:16px 18px;margin-bottom:12px}
-.batch h3{font-family:'Cormorant Garamond',serif;margin:0 0 4px;font-size:1.25rem}
+.batch h3{margin:0 0 4px;font-size:1.25rem;font-weight:700}
 .batch .meta{font-size:.8rem;color:var(--muted);margin-bottom:10px}
 .classline{font-size:.85rem;padding:6px 0;border-top:1px dashed var(--edge)}
 .classline a{color:var(--violet)}
 .addcls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.addcls input{padding:8px 10px;background:var(--ink);border:1px solid var(--edge);border-radius:8px;color:var(--text)}
-.del{background:transparent;border:1px solid rgba(224,121,122,.4);color:var(--err);font-size:.8rem;padding:5px 12px}
-.gcard{font-size:.82rem;padding:8px 10px;border:1px solid var(--edge);border-radius:8px;margin-top:8px;word-break:break-all}
-.gcard code{color:var(--gold-soft)}

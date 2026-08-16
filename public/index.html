@@ -144,44 +144,68 @@
   <!-- CONFIG -->
   <section id="tab-config" class="tab-panel hidden">
     <div class="card">
-      <h2>WhatsApp mode</h2>
+      <div class="card-header"><div class="card-title">WhatsApp mode</div></div>
       <label class="switch-row">
-        <span>Send straight to group <small class="muted">(off = goes to your Note-to-Self, you forward — zero ban risk)</small></span>
-        <input type="checkbox" id="cfgGroup">
+        <span class="switch-label">Send straight to group<span class="switch-hint">off = goes to your Note-to-Self, you forward — zero ban risk</span></span>
+        <input type="checkbox" id="cfgGroup" class="switch">
       </label>
     </div>
     <div class="card">
-      <h2>Social posting</h2>
-      <label>Videos per day <input type="number" id="cfgPerDay" min="0" max="20"></label>
+      <div class="card-header"><div class="card-title">Social posting</div></div>
+      <div class="field">
+        <label class="field-label" for="cfgPerDay">Videos per day</label>
+        <input type="number" id="cfgPerDay" class="input" min="0" max="20" style="max-width:120px">
+        <div class="field-hint">0 = social posting paused; the queue keeps filling but nothing gets posted.</div>
+      </div>
 
       <div class="plat">
-        <label class="switch-row"><span>Facebook</span><input type="checkbox" id="fbOn"></label>
-        <div class="seg" id="fbFmt"><button data-v="reel">Reel</button><button data-v="video">Video</button></div>
+        <label class="switch-row"><span class="switch-label">Facebook</span><input type="checkbox" id="fbOn" class="switch"></label>
+        <div class="segmented" id="fbFmt"><button type="button" data-v="reel">Reel</button><button type="button" data-v="video">Video</button></div>
       </div>
       <div class="plat">
-        <label class="switch-row"><span>Instagram <small class="muted">(reel only)</small></span><input type="checkbox" id="igOn"></label>
+        <label class="switch-row"><span class="switch-label">Instagram<span class="switch-hint">reel only</span></span><input type="checkbox" id="igOn" class="switch"></label>
       </div>
       <div class="plat">
-        <label class="switch-row"><span>YouTube</span><input type="checkbox" id="ytOn"></label>
-        <div class="seg" id="ytFmt"><button data-v="short">Short</button><button data-v="video">Video</button></div>
+        <label class="switch-row"><span class="switch-label">YouTube</span><input type="checkbox" id="ytOn" class="switch"></label>
+        <div class="segmented" id="ytFmt"><button type="button" data-v="short">Short</button><button type="button" data-v="video">Video</button></div>
       </div>
-      <button id="saveCfg">Save settings</button>
+      <button id="saveCfg" class="btn btn-primary" style="margin-top:14px">Save settings</button>
     </div>
   </section>
 
   <!-- ACTIONS -->
   <section id="tab-actions" class="tab-panel hidden">
     <div class="card">
-      <h2>Run now</h2>
-      <p class="muted">Automation khud chalti hai — ye sirf manual test ke liye.</p>
-      <button class="ghost" data-job="checkClassReminders">Send due reminders</button>
-      <button class="ghost" data-job="checkRecordings">Process Drive recordings</button>
-      <button class="ghost" data-job="runSocialPost">Post from queue</button>
+      <div class="card-header"><div class="card-title">Run now</div></div>
+      <p class="muted">Automation runs on its own on schedule — these are for manual testing only.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-secondary" data-job="checkClassReminders">Send due reminders</button>
+          <span class="row-secondary">Fires any reminder windows (24h/3h/1h/10m/2m) due right now.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-secondary" data-job="checkRecordings">Process Drive recordings</button>
+          <span class="row-secondary">Matches new files in the Drive inbox to finished classes and notifies students.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-secondary" data-job="runSocialPost">Post from queue</button>
+          <span class="row-secondary">Posts today's video from the Drive post-queue folder now, instead of waiting for 10:00 IST.</span>
+        </div>
+      </div>
     </div>
     <div class="card">
-      <h2>Find WhatsApp group JIDs</h2>
-      <button class="ghost" id="loadGroups">Load my groups</button>
-      <div id="groupList"></div>
+      <div class="card-header"><div class="card-title">Find WhatsApp group JIDs</div></div>
+      <button class="btn btn-secondary" id="loadGroups">Load my groups</button>
+      <div id="groupList" class="list" style="margin-top:10px"></div>
+    </div>
+    <div class="card" id="orgTool">
+      <div class="card-header"><div class="card-title">Organize old Drive recordings</div></div>
+      <p class="muted">Reads recordings in your Meet Recordings folder and sorts them into <b>Batch / Topic</b> folders. Preview first — nothing moves until you apply. Moving keeps old share links working.</p>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-secondary" id="orgPreview">Preview plan</button>
+        <button class="btn btn-primary" id="orgApply" style="display:none">Apply — move files</button>
+      </div>
+      <div id="orgResult" style="margin-top:10px;font-size:.9em"></div>
     </div>
   </section>
 </div>
