@@ -3,21 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Oracle — Control Room</title>
+<title>Harry's Control Room</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230b0a12'/%3E%3Cpath d='M12 4 20 12 12 20 4 12Z' fill='%23c9a24b'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="components.css">
 </head>
 <body>
 
 <!-- LOGIN GATE -->
 <div id="gate" class="gate">
   <div class="gate-card">
-    <div class="sigil">◈</div>
-    <h1>The Oracle</h1>
-    <p class="muted">Control Room</p>
-    <input id="pass" type="password" placeholder="Enter the passphrase" autocomplete="current-password">
-    <button id="enterBtn">Enter</button>
+    <svg class="sigil-mark" width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 12 12 22 2 12Z" style="fill:var(--color-accent)"/></svg>
+    <h1>Harry's Control Room</h1>
+    <input id="pass" class="input" type="password" placeholder="Enter the passphrase" autocomplete="current-password">
+    <button id="enterBtn" class="btn btn-primary">Enter</button>
     <p id="gateErr" class="err"></p>
   </div>
 </div>
@@ -25,8 +27,15 @@
 <!-- APP -->
 <div id="app" class="app hidden">
   <header>
-    <div class="brand"><span class="sigil-sm">◈</span> The Oracle <em>· Control Room</em></div>
-    <div id="waStatus" class="pill">WhatsApp: …</div>
+    <div class="brand">
+      <svg class="sigil-mark" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 12 12 22 2 12Z" style="fill:var(--color-accent)"/></svg>
+      Harry's Control Room
+    </div>
+    <div class="status-pills">
+      <span id="pillWa" class="status-pill">WhatsApp: …</span>
+      <span id="pillCache" class="status-pill">Contact sync: …</span>
+      <span id="pillMode" class="status-pill">Bot: …</span>
+    </div>
   </header>
 
   <nav class="tabs">
@@ -139,10 +148,9 @@
       <button class="ghost" id="loadGroups">Load my groups</button>
       <div id="groupList"></div>
     </div>
-    <p id="toast" class="toast"></p>
   </section>
 </div>
 
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

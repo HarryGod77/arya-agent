@@ -24,7 +24,7 @@ import * as PS from './src/paymentStore.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // Serve The Oracle control panel (index.html, app.js, styles.css)
+app.use(express.static(path.join(__dirname, 'public'))); // Serve Harry's Control Room panel (index.html, app.js, styles.css)
 
 const googleReady = () => !!process.env.GOOGLE_REFRESH_TOKEN;
 const IST = 'Asia/Kolkata';

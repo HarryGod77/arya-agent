@@ -1,17 +1,12 @@
-let PASS = '';
-const $ = s => document.querySelector(s);
-const api = (url, opts = {}) => fetch(url, {
-  ...opts,
-  headers: { 'Content-Type': 'application/json', 'x-admin-pass': PASS, ...(opts.headers || {}) }
-}).then(async r => { if (!r.ok) throw new Error((await r.json()).error || r.status); return r.json(); });
+import { api, login } from './api.js';
+import { toast } from './ui.js';
 
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800); }
+const $ = s => document.querySelector(s);
 
 // LOGIN
 $('#enterBtn').onclick = async () => {
-  PASS = $('#pass').value;
-  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: PASS }) }).then(r => r.json());
-  if (r.ok) { $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden'); boot(); }
+  const ok = await login($('#pass').value);
+  if (ok) { $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden'); boot(); }
   else $('#gateErr').textContent = 'Wrong passphrase.';
 };
 $('#pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#enterBtn').click(); });
@@ -24,7 +19,7 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
   $('#tab-' + t.dataset.tab).classList.remove('hidden');
 });
 
-async function boot() { loadWa(); loadBatches(); loadConfig(); injectOrganizer(); loadLeadsTab(); }
+async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); injectOrganizer(); loadLeadsTab(); }
 
 function injectOrganizer() {
   const panel = $('#tab-actions');
@@ -65,14 +60,39 @@ function injectOrganizer() {
 }
 
 
-async function loadWa() {
+// Header status pills — WhatsApp connection, contact-cache sync, and bot mode all live
+// here now instead of only inside the Leads tab, since all three determine "is it safe
+// to leave the bot alone right now" and shouldn't require opening a tab to check.
+async function loadHeaderStatus() {
   try {
     const s = await api('/api/whatsapp/status');
-    const p = $('#waStatus');
-    p.textContent = 'WhatsApp: ' + (s.ready ? 'connected' : 'scan QR in terminal');
-    p.className = 'pill ' + (s.ready ? 'on' : 'off');
-  } catch {}
-  setTimeout(loadWa, 15000);
+    setPill('pillWa', s.ready ? 'WhatsApp connected' : 'WhatsApp: scan QR', s.ready ? 'success' : 'danger');
+  } catch {
+    setPill('pillWa', 'WhatsApp: unavailable', 'danger');
+  }
+
+  try {
+    const stats = await api('/api/leads/stats');
+    const cache = stats.contactCache;
+    setPill('pillCache',
+      cache.ready ? `Contact sync: ${cache.size} loaded` : 'Contact sync: not ready — bot silent for everyone',
+      cache.ready ? 'success' : 'warning');
+    setPill('pillMode',
+      `Bot: ${stats.mode === 'auto' ? 'AUTO (sends live)' : 'DRAFT'}`,
+      stats.mode === 'auto' ? 'warning' : null);
+  } catch {
+    setPill('pillCache', 'Contact sync: unavailable', 'danger');
+    setPill('pillMode', 'Bot: unavailable', 'danger');
+  }
+
+  setTimeout(loadHeaderStatus, 15000);
+}
+
+function setPill(id, text, tone) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'status-pill' + (tone ? ' status-pill-' + tone : '');
+  el.innerHTML = `<span class="dot"></span>${text}`;
 }
 
 // Short date-time like "10 Jul, 06:21 am"

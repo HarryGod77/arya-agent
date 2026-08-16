@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Arya Agent ("The Oracle") — a single-process Node.js automation server for a mentalism/magic
+Arya Agent ("Harry's Control Room") — a single-process Node.js automation server for a mentalism/magic
 class business: schedules classes with auto-generated Google Meet links, sends WhatsApp/email
 reminders, delivers recordings from Google Drive, and auto-posts videos to Facebook/Instagram/YouTube
 with Gemini-generated captions. Built for one operator (Harry Rajput, managing Arya's classes), not
