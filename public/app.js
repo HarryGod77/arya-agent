@@ -1,5 +1,5 @@
-import { api, login } from './api.js';
-import { toast, confirmModal, promptModal, row, showErrorBanner, clearErrorBanner } from './ui.js';
+import { api, login, getPass } from './api.js';
+import { toast, confirmModal, promptModal, row, badge, countBadge, showErrorBanner, clearErrorBanner } from './ui.js';
 import { icon } from './icons.js';
 
 const $ = s => document.querySelector(s);
@@ -18,7 +18,18 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
   document.querySelectorAll('.tab-panel').forEach(x => x.classList.add('hidden'));
   t.classList.add('active');
   $('#tab-' + t.dataset.tab).classList.remove('hidden');
+  // Land on whichever sub-tab has pending items each time Leads is opened — consumed by
+  // loadLeadsTab() below, not on every 30s background poll, so it doesn't yank the
+  // operator away from what they're looking at while the tab stays open.
+  if (t.dataset.tab === 'leads') leadsTabNeedsAutoNav = true;
 });
+
+// LEADS SUB-TABS
+document.querySelectorAll('.subtab').forEach(t => t.onclick = () => selectSubtab(t.dataset.subtab));
+function selectSubtab(name) {
+  document.querySelectorAll('.subtab').forEach(x => x.classList.toggle('active', x.dataset.subtab === name));
+  document.querySelectorAll('.subtab-panel').forEach(x => x.classList.toggle('hidden', x.id !== 'subtab-' + name));
+}
 
 async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); injectOrganizer(); loadLeadsTab(); }
 
@@ -59,6 +70,8 @@ function injectOrganizer() {
     $('#orgApply').disabled = false;
   };
 }
+
+
 
 
 // Header status pills — WhatsApp connection, contact-cache sync, and bot mode all live
@@ -332,7 +345,11 @@ $('#addBatch').onclick = async () => {
 
 // LEADS
 let LR_CONFIG = {};
+let leadsTabNeedsAutoNav = true; // consumed once per Leads-tab visit — see the TABS handler above
+
 async function loadLeadsTab() {
+  let filteredCount = 0, learningCount = 0, backlogPendingCount = 0, leadsAttentionCount = 0, paymentsAttentionCount = 0;
+
   try {
     const cfg = await api('/api/config');
     LR_CONFIG = cfg.leadResponder || { mode: 'draft', dailyCap: 30, silentHours: { start: 23, end: 8 }, paymentAutoSend: false };
@@ -348,24 +365,26 @@ async function loadLeadsTab() {
     if (kc) {
       $('#lrKnownChatsStats').innerHTML = `WhatsApp reports ${kc.knownChatsTotal} known chat(s) · ${kc.chatsWithContent} have cached message text the scanner can use` +
         (kc.unreadWithoutContent.length
-          ? ` · <span style="color:#c77">${kc.unreadWithoutContent.length} unread chat(s) with NO cached text — invisible to the backlog scanner until they message again or you find them manually: ${kc.unreadWithoutContent.map(u => u.jid.split('@')[0]).join(', ')}</span>`
+          ? ` · <span style="color:var(--color-danger)">${kc.unreadWithoutContent.length} unread chat(s) with NO cached text — invisible to the backlog scanner until they message again or you find them manually: ${kc.unreadWithoutContent.map(u => u.jid.split('@')[0]).join(', ')}</span>`
           : '');
     }
   } catch {}
 
   try {
     const filtered = await api('/api/leads/filtered-contacts');
+    filteredCount = filtered.length;
     if (filtered.length) {
       $('#lrFilteredCard').style.display = 'block';
-      $('#lrFilteredList').innerHTML = filtered.map(f => `
-        <div class="classline">
-          <div>${f.jid.split('@')[0]} — ${shortDT(f.ts)}
-            <button data-treatlead="${f.jid}" style="margin-left:8px">Treat as lead</button></div>
-        </div>`).join('');
+      $('#lrFilteredList').innerHTML = filtered.map(f => row({
+        icon: 'alertTriangle',
+        primary: f.jid.split('@')[0],
+        secondary: shortDT(f.ts),
+        actionsHtml: `<button class="btn btn-secondary btn-sm" data-treatlead="${f.jid}">Treat as lead</button>`
+      })).join('');
       document.querySelectorAll('[data-treatlead]').forEach(btn => btn.onclick = async () => {
         btn.disabled = true;
         try { await api(`/api/leads/${encodeURIComponent(btn.dataset.treatlead)}/treat-as-lead`, { method: 'POST' }); toast('Now tracked as a lead ✓'); loadLeadsTab(); }
-        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+        catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
       });
     } else {
       $('#lrFilteredCard').style.display = 'none';
@@ -374,33 +393,38 @@ async function loadLeadsTab() {
 
   try {
     const queue = await api('/api/learning-queue');
+    learningCount = queue.length;
     if (queue.length) {
       $('#lrLearningCard').style.display = 'block';
       $('#lrLearningList').innerHTML = queue.map(q => `
-        <div class="classline">
-          <div style="opacity:.7;font-size:.85em;margin-bottom:4px">${q.phone}${q.pushName ? ' (' + q.pushName + ')' : ''} — ${shortDT(q.createdAt)}</div>
-          <label style="display:block;font-size:.85em;margin-bottom:2px">Question</label>
-          <textarea data-lq-question="${q.id}" style="width:100%;min-height:44px;margin-bottom:6px">${q.question}</textarea>
-          <label style="display:block;font-size:.85em;margin-bottom:2px">Your answer (goes into the FAQ verbatim)</label>
-          <textarea data-lq-answer="${q.id}" style="width:100%;min-height:60px;margin-bottom:6px">${q.answer}</textarea>
-          <div>
-            <button data-lq-approve="${q.id}">Approve — add to FAQ</button>
-            <button class="del" data-lq-discard="${q.id}" style="margin-left:8px">Discard</button>
+        <div class="list-row stacked">
+          <div class="row-secondary" style="margin-bottom:8px">${q.phone}${q.pushName ? ' (' + q.pushName + ')' : ''} — ${shortDT(q.createdAt)}</div>
+          <div class="field" style="margin:0 0 8px">
+            <label class="field-label">Question</label>
+            <textarea class="textarea" data-lq-question="${q.id}" style="min-height:44px">${q.question}</textarea>
+          </div>
+          <div class="field" style="margin:0 0 10px">
+            <label class="field-label">Your answer (goes into the FAQ verbatim)</label>
+            <textarea class="textarea" data-lq-answer="${q.id}" style="min-height:60px">${q.answer}</textarea>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" data-lq-approve="${q.id}">Approve — add to FAQ</button>
+            <button class="btn btn-danger btn-sm" data-lq-discard="${q.id}">Discard</button>
           </div>
         </div>`).join('');
       document.querySelectorAll('[data-lq-approve]').forEach(btn => btn.onclick = async () => {
         const id = btn.dataset.lqApprove;
         const question = document.querySelector(`[data-lq-question="${id}"]`).value.trim();
         const answer = document.querySelector(`[data-lq-answer="${id}"]`).value.trim();
-        if (!question || !answer) return toast('Question and answer are both required');
+        if (!question || !answer) return toast('Question and answer are both required', { tone: 'danger' });
         btn.disabled = true;
         try { await api(`/api/learning-queue/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({ question, answer }) }); toast('Added to FAQ ✓'); loadLeadsTab(); }
-        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+        catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
       });
       document.querySelectorAll('[data-lq-discard]').forEach(btn => btn.onclick = async () => {
         btn.disabled = true;
         try { await api(`/api/learning-queue/${encodeURIComponent(btn.dataset.lqDiscard)}/discard`, { method: 'POST' }); toast('Discarded'); loadLeadsTab(); }
-        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+        catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
       });
     } else {
       $('#lrLearningCard').style.display = 'none';
@@ -409,32 +433,36 @@ async function loadLeadsTab() {
 
   try {
     const backlog = await api('/api/backlog');
+    backlogPendingCount = backlog.queue.filter(q => !q.approved).length;
     if (backlog.queue.length) {
       $('#lrBacklogCard').style.display = 'block';
       $('#lrBacklogStatus').textContent =
         (backlog.firstRunCleared ? 'Auto-sends once its turn comes up — remove to veto' : 'First run — nothing sends until you approve it') +
         ` · Sent today: ${backlog.sentToday}/5`;
       $('#lrBacklogList').innerHTML = backlog.queue.map(q => `
-        <div class="classline">
-          <div>${q.phone}${q.pushName ? ' (' + q.pushName + ')' : ''} — "${(q.lastMessageSnippet || '').slice(0, 80)}"</div>
-          <div style="opacity:.7;font-size:.85em;margin:4px 0 8px">
-            Last message: ${shortDT(q.lastMessageAt)} · ${q.approved ? '✅ approved, waiting its turn' : '⏳ needs approval'}
+        <div class="list-row stacked">
+          <div class="row-primary">${q.phone}${q.pushName ? ' (' + q.pushName + ')' : ''}</div>
+          <div class="row-secondary" style="margin:2px 0 8px">"${(q.lastMessageSnippet || '').slice(0, 80)}"</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            ${badge(q.approved ? 'Approved, waiting its turn' : 'Needs approval', q.approved ? 'success' : 'warning')}
+            <span class="row-secondary">Last message: ${shortDT(q.lastMessageAt)}</span>
           </div>
-          <div>
-            ${!q.approved ? `<button data-approve="${q.jid}">Approve</button>` : ''}
-            <button class="del" data-removebacklog="${q.jid}" style="margin-left:8px">Remove</button>
+          <div style="display:flex;gap:8px">
+            ${!q.approved ? `<button class="btn btn-primary btn-sm" data-approve="${q.jid}">Approve</button>` : ''}
+            <button class="btn btn-danger btn-sm" data-removebacklog="${q.jid}">Remove</button>
           </div>
         </div>`).join('');
       document.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => {
         btn.disabled = true;
         try { await api(`/api/backlog/${encodeURIComponent(btn.dataset.approve)}/approve`, { method: 'POST' }); toast('Approved ✓'); loadLeadsTab(); }
-        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+        catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
       });
       document.querySelectorAll('[data-removebacklog]').forEach(btn => btn.onclick = async () => {
-        if (!confirm('Remove this chat from the backlog queue permanently? It will not be re-discovered by future scans.')) return;
+        const ok = await confirmModal({ title: 'Remove from backlog queue?', body: 'This chat will not be re-discovered by future scans.', confirmLabel: 'Remove', danger: true });
+        if (!ok) return;
         btn.disabled = true;
         try { await api(`/api/backlog/${encodeURIComponent(btn.dataset.removebacklog)}/remove`, { method: 'POST' }); toast('Removed'); loadLeadsTab(); }
-        catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+        catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
       });
     } else {
       $('#lrBacklogCard').style.display = 'none';
@@ -443,85 +471,120 @@ async function loadLeadsTab() {
 
   try {
     const leads = await api('/api/leads');
+    clearErrorBanner($('#lrLeadList'));
+    leadsAttentionCount = leads.filter(l => l.state !== 'converted' && l.manualOverride !== 'ignore' && l.flags.length > 0).length;
+
     $('#lrLeadList').innerHTML = leads.length ? leads.map(l => {
       const lastMsg = l.messages[l.messages.length - 1];
-      const flagBadge = l.flags.length ? ` · 🚩 ${l.flags.length}` : '';
       const needsPaymentConfirm = l.state !== 'converted' && l.flags.some(f => f.reason === 'payment_screenshot_received');
-      return `<div class="classline">
-        <div><b>${l.phone}</b>${l.pushName ? ' (' + l.pushName + ')' : ''} — <span class="pill ${l.state === 'converted' ? 'on' : ''}">${l.state}</span>${flagBadge}</div>
-        <div style="opacity:.7;font-size:.85em;margin:4px 0">
+      return `<div class="list-row stacked">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div class="row-primary"><b>${l.phone}</b>${l.pushName ? ' (' + l.pushName + ')' : ''}</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${badge(l.state, l.state === 'converted' ? 'success' : undefined)}
+            ${l.flags.length ? badge(`${icon('flag', { size: 11 })} ${l.flags.length}`, 'danger') : ''}
+          </div>
+        </div>
+        <div class="row-secondary" style="margin:6px 0">
           ${lastMsg ? `${lastMsg.dir === 'in' ? 'Them' : 'Bot'}: "${lastMsg.text.slice(0, 100)}" — ${shortDT(lastMsg.ts)}` : 'No messages yet'}
-          ${lastMsg?.dir === 'out' && lastMsg.tier != null ? ` · <span title="Priority tier that produced this reply">${lastMsg.tier === 'human' ? 'Manual reply' : lastMsg.tier === 0 ? 'Tier 0 (knowledge base)' : `Tier ${lastMsg.tier} (${lastMsg.model})`}</span>` : ''}
+          ${lastMsg?.dir === 'out' && lastMsg.tier != null ? ` · ${lastMsg.tier === 'human' ? 'Manual reply' : lastMsg.tier === 0 ? 'Tier 0 (knowledge base)' : `Tier ${lastMsg.tier} (${lastMsg.model})`}` : ''}
           · replies: ${l.replyCount} · follow-ups: ${l.followUps.count}/3${l.manualOverride ? ` · ${l.manualOverride}` : ''}
         </div>
         ${needsPaymentConfirm ? `
-        <div style="margin:8px 0;padding:8px;border:1px solid #446;border-radius:6px">
-          <div style="font-size:.85em;margin-bottom:6px">📸 Payment screenshot received — confirm the amount to generate + send the invoice:</div>
-          <input type="number" min="1" data-payamount="${l.jid}" placeholder="Amount e.g. 25000" style="width:140px">
-          <button data-confirmpay="${l.jid}">Confirm &amp; send invoice</button>
+        <div style="margin:8px 0;padding:12px;border:1px solid var(--color-warning);border-radius:var(--radius-md);background:var(--color-warning-soft)">
+          <div style="font-size:.85em;margin-bottom:8px;display:flex;align-items:center;gap:6px">${icon('camera', { size: 14 })} Payment screenshot received — confirm the amount to generate + send the invoice:</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="number" min="1" class="input" data-payamount="${l.jid}" placeholder="Amount e.g. 25000" style="width:160px">
+            <button class="btn btn-primary btn-sm" data-confirmpay="${l.jid}">Confirm &amp; send invoice</button>
+          </div>
         </div>` : ''}
-        <div style="margin-top:6px">
-          ${l.state !== 'converted' ? `<button data-converted="${l.jid}">Mark converted</button>` : ''}
-          ${l.manualOverride !== 'ignore' ? `<button class="del" data-ignorelead="${l.jid}" style="margin-left:8px">Ignore</button>` : ''}
+        <div style="display:flex;gap:8px;margin-top:8px">
+          ${l.state !== 'converted' ? `<button class="btn btn-secondary btn-sm" data-converted="${l.jid}">Mark converted</button>` : ''}
+          ${l.manualOverride !== 'ignore' ? `<button class="btn btn-danger btn-sm" data-ignorelead="${l.jid}">Ignore</button>` : ''}
         </div>
       </div>`;
-    }).join('') : '<p class="muted">No leads yet.</p>';
+    }).join('') : '<div class="empty-state">No leads yet.</div>';
 
     document.querySelectorAll('[data-converted]').forEach(btn => btn.onclick = async () => {
       btn.disabled = true;
       try { await api(`/api/leads/${encodeURIComponent(btn.dataset.converted)}/converted`, { method: 'POST' }); toast('Marked converted ✓'); loadLeadsTab(); }
-      catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
     });
     document.querySelectorAll('[data-ignorelead]').forEach(btn => btn.onclick = async () => {
-      if (!confirm('Stop the bot from responding to this number?')) return;
+      const ok = await confirmModal({ title: 'Stop responding to this number?', body: 'The bot will no longer reply to this lead automatically.', confirmLabel: 'Ignore', danger: true });
+      if (!ok) return;
       btn.disabled = true;
       try { await api(`/api/leads/${encodeURIComponent(btn.dataset.ignorelead)}/ignore`, { method: 'POST' }); toast('Ignored ✓'); loadLeadsTab(); }
-      catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
     });
     document.querySelectorAll('[data-confirmpay]').forEach(btn => btn.onclick = async () => {
       const jid = btn.dataset.confirmpay;
       const amount = Number(document.querySelector(`[data-payamount="${CSS.escape(jid)}"]`).value);
-      if (!amount || amount <= 0) return toast('Enter a valid amount');
-      if (!confirm(`Confirm ₹${amount.toLocaleString('en-IN')} received and send the invoice to this lead?`)) return;
+      if (!amount || amount <= 0) return toast('Enter a valid amount', { tone: 'danger' });
+      const ok = await confirmModal({ title: 'Confirm payment received?', body: `₹${amount.toLocaleString('en-IN')} — this generates and sends an official invoice to the lead.`, confirmLabel: 'Confirm & send' });
+      if (!ok) return;
       btn.disabled = true; toast('Generating invoice…');
       try {
         const r = await api(`/api/leads/${encodeURIComponent(jid)}/confirm-payment`, { method: 'POST', body: JSON.stringify({ amount }) });
-        toast(r.waSent ? `Invoice ${r.invoiceNumber} sent ✓` : `Invoice ${r.invoiceNumber} generated, but WhatsApp send failed — retry from Payments below`);
+        toast(r.waSent ? `Invoice ${r.invoiceNumber} sent ✓` : `Invoice ${r.invoiceNumber} generated, but WhatsApp send failed — retry from Payments`);
         loadLeadsTab();
-      } catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
     });
-  } catch { $('#lrLeadList').innerHTML = '<p class="muted">Error loading leads.</p>'; }
+  } catch (e) {
+    showErrorBanner($('#lrLeadList'), 'Could not load leads: ' + e.message, loadLeadsTab);
+  }
 
   try {
     const payments = await api('/api/payments');
+    paymentsAttentionCount = payments.filter(p => !p.waSent).length;
     $('#lrPaymentsList').innerHTML = payments.length ? payments.map(p => `
-      <div class="classline">
-        <div><b>${p.invoiceNumber}</b> — ${p.phone}${p.pushName ? ' (' + p.pushName + ')' : ''} · ₹${Number(p.amount).toLocaleString('en-IN')}</div>
-        <div style="opacity:.7;font-size:.85em;margin:4px 0">
-          ${shortDT(p.confirmedAt)} · ${p.waSent ? 'WhatsApp sent ✓' : '⚠️ WhatsApp send failed'}${p.driveFileId ? ' · Drive backup ✓' : ''}
+      <div class="list-row stacked">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div class="row-primary"><b>${p.invoiceNumber}</b> — ${p.phone}${p.pushName ? ' (' + p.pushName + ')' : ''}</div>
+          <div class="row-primary">₹${Number(p.amount).toLocaleString('en-IN')}</div>
         </div>
-        ${!p.waSent ? `<button data-resendinv="${p.invoiceNumber}">Resend to lead</button>` : ''}
-      </div>`).join('') : '<p class="muted">No payments recorded yet.</p>';
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0">
+          <span class="row-secondary">${shortDT(p.confirmedAt)}</span>
+          ${badge(p.waSent ? 'WhatsApp sent' : 'Send failed', p.waSent ? 'success' : 'danger')}
+          ${p.driveFileId ? badge('Drive backup', 'info') : ''}
+        </div>
+        ${!p.waSent ? `<button class="btn btn-primary btn-sm" data-resendinv="${p.invoiceNumber}">Resend to lead</button>` : ''}
+      </div>`).join('') : '<div class="empty-state">No payments recorded yet.</div>';
     document.querySelectorAll('[data-resendinv]').forEach(btn => btn.onclick = async () => {
       btn.disabled = true; toast('Resending…');
       try { await api(`/api/payments/${encodeURIComponent(btn.dataset.resendinv)}/resend`, { method: 'POST' }); toast('Resent ✓'); loadLeadsTab(); }
-      catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
     });
-  } catch { $('#lrPaymentsList').innerHTML = '<p class="muted">Error loading payments.</p>'; }
+  } catch (e) {
+    showErrorBanner($('#lrPaymentsList'), 'Could not load payments: ' + e.message, loadLeadsTab);
+  }
+
+  // Badges — every sub-tab gets one; countBadge() renders nothing for 0, so a quiet
+  // sub-tab just shows no chip rather than a "0".
+  $('#badgeConversations').innerHTML = countBadge(leadsAttentionCount);
+  $('#badgeQueues').innerHTML = countBadge(filteredCount + learningCount + backlogPendingCount);
+  $('#badgePayments').innerHTML = countBadge(paymentsAttentionCount);
+
+  if (leadsTabNeedsAutoNav) {
+    leadsTabNeedsAutoNav = false;
+    if (leadsAttentionCount > 0) selectSubtab('conversations');
+    else if (filteredCount + learningCount + backlogPendingCount > 0) selectSubtab('queues');
+    else if (paymentsAttentionCount > 0) selectSubtab('payments');
+  }
 
   setTimeout(loadLeadsTab, 30000);
 }
 
 $('#paymentsExport').onclick = async () => {
   try {
-    const r = await fetch('/api/payments/export', { headers: { 'x-admin-pass': PASS } });
+    const r = await fetch('/api/payments/export', { headers: { 'x-admin-pass': getPass() } });
     if (!r.ok) throw new Error('Export failed');
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'payments.csv'; a.click();
     URL.revokeObjectURL(url);
-  } catch (e) { toast('Error: ' + e.message); }
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
 };
 
 $('#lrSaveCfg').onclick = async () => {

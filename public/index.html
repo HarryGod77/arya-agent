@@ -72,49 +72,72 @@
 
   <!-- LEADS -->
   <section id="tab-leads" class="tab-panel hidden">
-    <div class="card">
-      <h2>AI lead responder</h2>
-      <label class="switch-row">
-        <span>AUTO mode <small class="muted">(off = DRAFT — replies go to your Note-to-Self to forward, zero ban risk)</small></span>
-        <input type="checkbox" id="lrAuto">
-      </label>
-      <label class="switch-row">
-        <span>Payment auto-send <small class="muted">(bot may share PAYMENT_DETAILS from course-knowledge.md once a lead is clearly ready to pay, after 3+ real exchanges)</small></span>
-        <input type="checkbox" id="lrPaymentAuto">
-      </label>
-      <button id="lrSaveCfg" style="margin-top:12px">Save settings</button>
-      <button id="lrScanNow" style="margin-top:12px;margin-left:8px">Scan backlog now</button>
-      <div id="lrStats" class="muted" style="font-size:.85rem;margin-top:12px"></div>
-      <div id="lrKnownChatsStats" class="muted" style="font-size:.85rem;margin-top:6px"></div>
+    <nav class="subtabs">
+      <button class="subtab active" data-subtab="conversations">Conversations<span id="badgeConversations"></span></button>
+      <button class="subtab" data-subtab="queues">Queues<span id="badgeQueues"></span></button>
+      <button class="subtab" data-subtab="payments">Payments<span id="badgePayments"></span></button>
+      <button class="subtab" data-subtab="responder">Responder<span id="badgeResponder"></span></button>
+    </nav>
+
+    <!-- CONVERSATIONS -->
+    <div id="subtab-conversations" class="subtab-panel">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Leads</div></div>
+        <div id="lrLeadList"><p class="muted">Loading…</p></div>
+      </div>
     </div>
 
-    <div class="card" id="lrFilteredCard" style="display:none">
-      <h2>⚠️ Filtered as contact</h2>
-      <p class="muted">Numbers hard-skipped as saved contacts — never sent to Gemini. If one of these is actually a real lead, recover it here.</p>
-      <div id="lrFilteredList"></div>
+    <!-- QUEUES -->
+    <div id="subtab-queues" class="subtab-panel hidden">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Backlog scan</div></div>
+        <button class="btn btn-secondary" id="lrScanNow">Scan backlog now</button>
+        <div id="lrKnownChatsStats" class="muted" style="font-size:.85rem;margin-top:10px"></div>
+      </div>
+
+      <div class="card" id="lrFilteredCard" style="display:none">
+        <div class="card-header"><div class="card-title">Filtered as contact</div></div>
+        <p class="muted">Numbers hard-skipped as saved contacts — never sent to Gemini. If one of these is actually a real lead, recover it here.</p>
+        <div id="lrFilteredList" class="list" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card" id="lrLearningCard" style="display:none">
+        <div class="card-header"><div class="card-title">Learning queue</div></div>
+        <p class="muted">Questions the bot couldn't answer, where you replied manually. Approve to teach the bot this answer — nothing is added to the knowledge base until you approve it here.</p>
+        <div id="lrLearningList" class="list" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card" id="lrBacklogCard" style="display:none">
+        <div class="card-header"><div class="card-title">Backlog queue</div></div>
+        <div id="lrBacklogStatus" class="muted" style="font-size:.85rem;margin-bottom:10px"></div>
+        <div id="lrBacklogList" class="list"></div>
+      </div>
     </div>
 
-    <div class="card" id="lrLearningCard" style="display:none">
-      <h2>🎓 Learning queue</h2>
-      <p class="muted">Questions the bot couldn't answer, where you replied manually. Approve to teach the bot this answer — nothing is added to the knowledge base until you approve it here.</p>
-      <div id="lrLearningList"></div>
+    <!-- PAYMENTS -->
+    <div id="subtab-payments" class="subtab-panel hidden">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Payments</div></div>
+        <button class="btn btn-secondary" id="paymentsExport">Export CSV</button>
+        <div id="lrPaymentsList" class="list" style="margin-top:12px"></div>
+      </div>
     </div>
 
-    <div class="card" id="lrBacklogCard" style="display:none">
-      <h2>🗂 Backlog queue</h2>
-      <div id="lrBacklogStatus" class="muted" style="font-size:.85rem;margin-bottom:10px"></div>
-      <div id="lrBacklogList"></div>
-    </div>
-
-    <div class="card">
-      <h2>Leads</h2>
-      <div id="lrLeadList"><p class="muted">Loading…</p></div>
-    </div>
-
-    <div class="card">
-      <h2>💳 Payments</h2>
-      <button class="ghost" id="paymentsExport" style="margin-bottom:12px">Export CSV</button>
-      <div id="lrPaymentsList"><p class="muted">Loading…</p></div>
+    <!-- RESPONDER -->
+    <div id="subtab-responder" class="subtab-panel hidden">
+      <div class="card">
+        <div class="card-header"><div class="card-title">AI lead responder</div></div>
+        <label class="switch-row">
+          <span class="switch-label">AUTO mode<span class="switch-hint">off = DRAFT — replies go to your Note-to-Self to forward, zero ban risk</span></span>
+          <input type="checkbox" id="lrAuto" class="switch">
+        </label>
+        <label class="switch-row">
+          <span class="switch-label">Payment auto-send<span class="switch-hint">bot may share PAYMENT_DETAILS from course-knowledge.md once a lead is clearly ready to pay, after 3+ real exchanges</span></span>
+          <input type="checkbox" id="lrPaymentAuto" class="switch">
+        </label>
+        <button id="lrSaveCfg" class="btn btn-primary" style="margin-top:14px">Save settings</button>
+        <div id="lrStats" class="muted" style="font-size:.85rem;margin-top:14px"></div>
+      </div>
     </div>
   </section>
 
