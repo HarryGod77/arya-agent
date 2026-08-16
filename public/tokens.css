@@ -1,0 +1,104 @@
+/* Design tokens — Harry's Control Room.
+   Single fixed dark theme (deliberate — this is a one-operator tool, not a themeable
+   product). Keeps the existing base/surface/gold/violet palette; adds semantic
+   success/warning/danger/info colors kept separate from the accent, so status can be
+   expressed without borrowing the brand color. No component styles here — see
+   components.css. */
+:root{
+  /* ---- surface ---- */
+  --color-bg:#0b0a12;
+  --color-surface:#151220;
+  --color-surface-2:#1b1730;
+  --color-border:#2a2640;
+  --color-border-strong:#3a3555;
+
+  /* ---- text ---- */
+  --color-text:#ece9f5;
+  --color-text-muted:#948dae;
+  --color-text-faint:#6b6588;
+
+  /* ---- accent (brand — used ONLY for primary actions / brand marks) ---- */
+  --color-accent:#c9a24b;
+  --color-accent-soft:#e4c877;
+  --color-accent-ink:#1a1408;
+  --color-accent-2:#8b7ad6;
+
+  /* ---- semantic (status — never doubles as the accent) ---- */
+  --color-success:#6fcb9f;
+  --color-success-soft:rgba(111,203,159,.12);
+  --color-warning:#e28c4a;
+  --color-warning-soft:rgba(226,140,74,.12);
+  --color-danger:#e2726f;
+  --color-danger-soft:rgba(226,114,111,.12);
+  --color-info:#8b7ad6;
+  --color-info-soft:rgba(139,122,214,.12);
+
+  /* ---- type ---- */
+  --font-sans:'Inter',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --font-mono:ui-monospace,'SF Mono',Consolas,'Liberation Mono',monospace;
+
+  --text-xs:.75rem;
+  --text-sm:.85rem;
+  --text-base:.95rem;
+  --text-md:1.05rem;
+  --text-lg:1.25rem;
+  --text-xl:1.5rem;
+  --text-2xl:1.9rem;
+
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+  --weight-bold:700;
+  --weight-extrabold:800;
+
+  /* ---- spacing scale ---- */
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-8:32px;
+  --space-10:40px;
+  --space-12:48px;
+
+  /* ---- radius ---- */
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:14px;
+  --radius-full:999px;
+
+  /* ---- elevation ---- */
+  --shadow-sm:0 4px 14px rgba(0,0,0,.25);
+  --shadow-lg:0 24px 60px rgba(0,0,0,.45);
+
+  /* ---- motion ---- */
+  --ease:cubic-bezier(.4,0,.2,1);
+  --dur-fast:.12s;
+  --dur-med:.2s;
+}
+
+/* ---- reset + base ---- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1a1730 0%, transparent 60%),
+    var(--color-bg);
+  color:var(--color-text);
+  font-family:var(--font-sans);
+  font-size:var(--text-base);
+  line-height:1.5;
+  min-height:100vh;
+}
+h1,h2,h3,h4,p{margin:0}
+button,input,textarea,select{font-family:inherit}
+.hidden{display:none!important}
+.muted{color:var(--color-text-muted)}
+
+:focus-visible{outline:2px solid var(--color-accent-soft); outline-offset:2px}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important; animation:none!important}
+}
