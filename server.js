@@ -493,15 +493,42 @@ function lanIP() {
 }
 
 const PORT = process.env.PORT || 3000;
+
+// Local-dev safety switches — both default to the current live behavior (enabled), so
+// production deploys are unaffected unless explicitly opted out. Exists because a laptop
+// running this app can otherwise reconnect Baileys using a leftover data/wa-auth/ session
+// for the SAME linked WhatsApp account already live on the server, which WhatsApp's
+// multi-device protocol treats as a conflict and can force the real session offline.
+// Set WHATSAPP_ENABLED=false in a LOCAL-ONLY .env to test the panel/API without touching
+// WhatsApp at all. SCHEDULER_ENABLED=false additionally stops cron jobs from firing
+// against real Google Calendar/Gmail/Drive or Meta posting if real credentials happen to
+// be present locally too — recommended alongside WHATSAPP_ENABLED=false for local runs.
+const whatsappEnabled = process.env.WHATSAPP_ENABLED !== 'false';
+const schedulerEnabled = process.env.SCHEDULER_ENABLED !== 'false';
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server listening on http://localhost:${PORT} or http://${lanIP()}:${PORT}`);
   setInboundMessageHandler(leadResponder.handleInboundMessage);
   setOutboundMessageHandler(leadResponder.handleOutboundMessage);
-  startWhatsApp();
-  startScheduler();
+
+  if (whatsappEnabled) {
+    startWhatsApp();
+  } else {
+    console.log('⏸️  WHATSAPP_ENABLED=false — skipping WhatsApp connection (local-dev safety switch). /qr will show nothing and WA-dependent routes will no-op.');
+  }
+
+  if (schedulerEnabled) {
+    startScheduler();
+  } else {
+    console.log('⏸️  SCHEDULER_ENABLED=false — skipping cron scheduler (local-dev safety switch). No reminders, recording checks, social posts, or lead-responder cron jobs will run.');
+  }
+
   // One-time startup scan, ~60s after boot — a best-effort head start for the contact
   // cache to sync so this run isn't just an immediate fail-closed no-op. Not the
   // reliable mechanism though: that's the daily 07:00 cron in scheduler.js, which will
-  // run regardless of whether this one found the cache ready in time.
-  setTimeout(() => { backlogScan.runBacklogScan().catch(e => console.error('Startup backlog scan failed:', e.message)); }, 60000);
+  // run regardless of whether this one found the cache ready in time. Only meaningful
+  // when WhatsApp is actually connected.
+  if (whatsappEnabled) {
+    setTimeout(() => { backlogScan.runBacklogScan().catch(e => console.error('Startup backlog scan failed:', e.message)); }, 60000);
+  }
 });
