@@ -268,8 +268,15 @@ export async function startWhatsApp() {
       for (const m of msgs || []) {
         const jid = m.key?.remoteJid;
         const text = extractText(m.message);
+        // A bare payment screenshot is usually sent with NO caption — extractText()
+        // alone would see empty text and this loop used to drop the message entirely
+        // before it ever reached leadResponder.js. hasImage lets an inbound image
+        // through even with no text, so handleInboundMessage can still alert the
+        // operator (see the "payment screenshot" branch there) without needing Gemini
+        // to classify anything.
+        const hasImage = !!m.message?.imageMessage;
         const ts = m.messageTimestamp ? Number(m.messageTimestamp) * 1000 : Date.now();
-        if (text) updateChatCache(jid, { fromMe: m.key?.fromMe, text, ts });
+        if (text || hasImage) updateChatCache(jid, { fromMe: m.key?.fromMe, text: text || '[image]', ts });
 
         if (m.key?.fromMe) {
           // Could be Baileys echoing our own sendWithTypingDelay() send back to us, or
@@ -285,13 +292,14 @@ export async function startWhatsApp() {
           continue;
         }
         if (!jid || jid.endsWith('@g.us') || jid.endsWith('@broadcast') || jid.endsWith('@newsletter')) continue;
-        if (!text) continue; // no plain-text content to classify (sticker, image with no caption, etc.)
+        if (!text && !hasImage) continue; // no plain-text content and no image (sticker, etc.)
 
         const payload = {
           jid,
           phone: jid.split('@')[0],
           pushName: m.pushName || '',
           text,
+          hasImage,
           ts
         };
         Promise.resolve(inboundHandler(payload)).catch(e => console.error('Inbound message handler failed:', e.message));
@@ -360,6 +368,15 @@ export async function sendWithTypingDelay({ jid, text, minMs = 20000, maxMs = 90
   try { await sock.sendPresenceUpdate('paused', jid); } catch {}
   await sock.sendMessage(jid, { text });
   markBotSent(jid, text);
+}
+
+// Sends a PDF (or other document) to a lead's own jid — used by src/invoicing.js to
+// deliver the generated invoice. No typing delay: this is a deliberate, operator-
+// triggered business document, not an auto-generated chat reply, so the ban-risk
+// reasoning behind sendWithTypingDelay's human-like pacing doesn't apply here.
+export async function sendDocument({ jid, buffer, fileName, caption, mimetype = 'application/pdf' }) {
+  if (!ready || !sock) throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
+  await sock.sendMessage(jid, { document: buffer, mimetype, fileName, caption });
 }
 
 // Immediate send to the operator's SECOND number (OPERATOR_ALERT_NUMBER in .env) — for

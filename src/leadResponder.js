@@ -134,7 +134,7 @@ export async function generateTieredReply({ jid, phone, text, leadState, intent,
   return { ...result, tier: usedTier, model: usedModel };
 }
 
-export async function handleInboundMessage({ jid, phone, pushName, text }) {
+export async function handleInboundMessage({ jid, phone, pushName, text, hasImage = false }) {
   // 1) Fail-closed contact-cache gate — see src/whatsapp.js#isContactCacheReady.
   if (!WA.isContactCacheReady()) {
     LS.logEvent({ jid, action: 'skipped_contact_cache_not_ready', detail: null });
@@ -166,6 +166,24 @@ export async function handleInboundMessage({ jid, phone, pushName, text }) {
     LS.createLead(jid, { phone, pushName });
     LS.incrementDailyCount();
   }
+
+  // 4b) Payment screenshot short-circuit — a screenshot is usually sent with no caption
+  // at all, so there's rarely any text for Gemini to classify, and per the business rule
+  // the bot must never confirm payment or issue an invoice itself. Just alert the
+  // operator and flag the lead for the panel's "confirm payment" action
+  // (src/invoicing.js#confirmPayment) — no classification, no reply, no state change
+  // beyond the flag.
+  if (hasImage) {
+    LS.appendMessage(jid, { dir: 'in', text: text ? `[image] ${text}` : '[image attachment]' });
+    LS.addFlag(jid, 'payment_screenshot_received');
+    LS.logEvent({ jid, action: 'payment_screenshot_received', detail: null });
+    const link = `https://wa.me/${phone}`;
+    const alertText = `📸 PAYMENT SCREENSHOT — ${phone}${pushName ? ' (' + pushName + ')' : ''}\nAn image came in — open the chat, confirm the amount, then use the Leads tab to generate and send the invoice.\n\nOpen chat: ${link}`;
+    const result = await WA.sendToOperatorAlert(alertText);
+    LS.logEvent({ jid, action: result.sent ? 'payment_screenshot_alert_sent' : 'payment_screenshot_alert_failed', detail: result.sent ? null : result.reason });
+    return;
+  }
+
   LS.appendMessage(jid, { dir: 'in', text });
   const lead = LS.getLead(jid);
 

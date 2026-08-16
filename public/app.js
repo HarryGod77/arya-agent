@@ -343,6 +343,7 @@ async function loadLeadsTab() {
     $('#lrLeadList').innerHTML = leads.length ? leads.map(l => {
       const lastMsg = l.messages[l.messages.length - 1];
       const flagBadge = l.flags.length ? ` · 🚩 ${l.flags.length}` : '';
+      const needsPaymentConfirm = l.state !== 'converted' && l.flags.some(f => f.reason === 'payment_screenshot_received');
       return `<div class="classline">
         <div><b>${l.phone}</b>${l.pushName ? ' (' + l.pushName + ')' : ''} — <span class="pill ${l.state === 'converted' ? 'on' : ''}">${l.state}</span>${flagBadge}</div>
         <div style="opacity:.7;font-size:.85em;margin:4px 0">
@@ -350,6 +351,12 @@ async function loadLeadsTab() {
           ${lastMsg?.dir === 'out' && lastMsg.tier != null ? ` · <span title="Priority tier that produced this reply">${lastMsg.tier === 'human' ? 'Manual reply' : lastMsg.tier === 0 ? 'Tier 0 (knowledge base)' : `Tier ${lastMsg.tier} (${lastMsg.model})`}</span>` : ''}
           · replies: ${l.replyCount} · follow-ups: ${l.followUps.count}/3${l.manualOverride ? ` · ${l.manualOverride}` : ''}
         </div>
+        ${needsPaymentConfirm ? `
+        <div style="margin:8px 0;padding:8px;border:1px solid #446;border-radius:6px">
+          <div style="font-size:.85em;margin-bottom:6px">📸 Payment screenshot received — confirm the amount to generate + send the invoice:</div>
+          <input type="number" min="1" data-payamount="${l.jid}" placeholder="Amount e.g. 25000" style="width:140px">
+          <button data-confirmpay="${l.jid}">Confirm &amp; send invoice</button>
+        </div>` : ''}
         <div style="margin-top:6px">
           ${l.state !== 'converted' ? `<button data-converted="${l.jid}">Mark converted</button>` : ''}
           ${l.manualOverride !== 'ignore' ? `<button class="del" data-ignorelead="${l.jid}" style="margin-left:8px">Ignore</button>` : ''}
@@ -368,10 +375,51 @@ async function loadLeadsTab() {
       try { await api(`/api/leads/${encodeURIComponent(btn.dataset.ignorelead)}/ignore`, { method: 'POST' }); toast('Ignored ✓'); loadLeadsTab(); }
       catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
     });
+    document.querySelectorAll('[data-confirmpay]').forEach(btn => btn.onclick = async () => {
+      const jid = btn.dataset.confirmpay;
+      const amount = Number(document.querySelector(`[data-payamount="${CSS.escape(jid)}"]`).value);
+      if (!amount || amount <= 0) return toast('Enter a valid amount');
+      if (!confirm(`Confirm ₹${amount.toLocaleString('en-IN')} received and send the invoice to this lead?`)) return;
+      btn.disabled = true; toast('Generating invoice…');
+      try {
+        const r = await api(`/api/leads/${encodeURIComponent(jid)}/confirm-payment`, { method: 'POST', body: JSON.stringify({ amount }) });
+        toast(r.waSent ? `Invoice ${r.invoiceNumber} sent ✓` : `Invoice ${r.invoiceNumber} generated, but WhatsApp send failed — retry from Payments below`);
+        loadLeadsTab();
+      } catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+    });
   } catch { $('#lrLeadList').innerHTML = '<p class="muted">Error loading leads.</p>'; }
+
+  try {
+    const payments = await api('/api/payments');
+    $('#lrPaymentsList').innerHTML = payments.length ? payments.map(p => `
+      <div class="classline">
+        <div><b>${p.invoiceNumber}</b> — ${p.phone}${p.pushName ? ' (' + p.pushName + ')' : ''} · ₹${Number(p.amount).toLocaleString('en-IN')}</div>
+        <div style="opacity:.7;font-size:.85em;margin:4px 0">
+          ${shortDT(p.confirmedAt)} · ${p.waSent ? 'WhatsApp sent ✓' : '⚠️ WhatsApp send failed'}${p.driveFileId ? ' · Drive backup ✓' : ''}
+        </div>
+        ${!p.waSent ? `<button data-resendinv="${p.invoiceNumber}">Resend to lead</button>` : ''}
+      </div>`).join('') : '<p class="muted">No payments recorded yet.</p>';
+    document.querySelectorAll('[data-resendinv]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true; toast('Resending…');
+      try { await api(`/api/payments/${encodeURIComponent(btn.dataset.resendinv)}/resend`, { method: 'POST' }); toast('Resent ✓'); loadLeadsTab(); }
+      catch (e) { toast('Error: ' + e.message); btn.disabled = false; }
+    });
+  } catch { $('#lrPaymentsList').innerHTML = '<p class="muted">Error loading payments.</p>'; }
 
   setTimeout(loadLeadsTab, 30000);
 }
+
+$('#paymentsExport').onclick = async () => {
+  try {
+    const r = await fetch('/api/payments/export', { headers: { 'x-admin-pass': PASS } });
+    if (!r.ok) throw new Error('Export failed');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'payments.csv'; a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) { toast('Error: ' + e.message); }
+};
 
 $('#lrSaveCfg').onclick = async () => {
   await api('/api/config', { method: 'PUT', body: JSON.stringify({

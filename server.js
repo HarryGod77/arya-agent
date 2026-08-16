@@ -18,6 +18,8 @@ import {
 import * as leadResponder from './src/leadResponder.js';
 import * as LS from './src/leadStore.js';
 import * as backlogScan from './src/backlogScan.js';
+import * as invoicing from './src/invoicing.js';
+import * as PS from './src/paymentStore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -444,6 +446,34 @@ app.post('/api/backlog/:jid/remove', auth, (req, res) => {
   LS.logEvent({ jid, action: 'backlog_removed', detail: null });
   backlogScan.maybeClearFirstRun();
   res.json({ ok: true });
+});
+
+// ---------- PAYMENTS / INVOICING ----------
+// Operator-triggered only — see src/invoicing.js#confirmPayment for why the amount comes
+// from a human, never from the bot, and why the payment record is written before the
+// WhatsApp send is even attempted.
+app.post('/api/leads/:jid/confirm-payment', auth, async (req, res) => {
+  try {
+    const result = await invoicing.confirmPayment({ jid: req.params.jid, amount: req.body?.amount });
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get('/api/payments', auth, (req, res) => res.json(PS.getAllPayments()));
+
+app.get('/api/payments/export', auth, (req, res) => {
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="payments.csv"');
+  res.send(PS.toCsv());
+});
+
+// Retry delivery when confirmPayment() generated the invoice fine but the WhatsApp send
+// itself failed (waSent:false in the payments list).
+app.post('/api/payments/:invoiceNumber/resend', auth, async (req, res) => {
+  try {
+    const result = await invoicing.resendInvoice(req.params.invoiceNumber);
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // ---------- RUN JOBS MANUALLY ----------

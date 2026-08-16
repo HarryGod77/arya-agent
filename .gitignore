@@ -13,6 +13,10 @@ data/wa-chat-cache.json
 data/leads.json
 data/lead-log.jsonl
 
+# Payments/invoicing data — names, phone numbers, amounts, generated PDFs
+data/payments.json
+data/invoices/
+
 # Logs
 *.log
 logs/

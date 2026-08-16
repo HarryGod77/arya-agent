@@ -180,6 +180,46 @@ cache, the fail-closed gate's memory across restarts), `data/wa-chat-cache.json`
 - `npm run chat:test` exercises `classifyIntent`/`generateReply` directly and is the fastest way to
   iterate on `course-knowledge.md` wording — it does not touch `data/leads.json` or WhatsApp at all.
 
+## Payments / Invoicing
+
+A small subsystem layered on the lead responder: when a lead sends a WhatsApp image (a
+payment screenshot, almost always with no caption), the bot alerts the operator but
+**never confirms payment or generates anything itself** — invoice generation only ever
+runs from the operator's explicit "confirm payment" action in the Leads tab.
+
+- `src/whatsapp.js` — `messages.upsert` now detects `m.message.imageMessage` (`hasImage`)
+  and lets an inbound image through even with empty `extractText()` output, so a bare
+  screenshot isn't silently dropped before it reaches the lead responder. Also adds
+  `sendDocument()` (Baileys `{ document, mimetype, fileName, caption }`) for delivering
+  the generated PDF — no typing delay, unlike `sendWithTypingDelay`, since this is an
+  operator-triggered business document, not an auto-generated chat reply.
+- `src/leadResponder.js#handleInboundMessage` — a `hasImage` branch runs after the same
+  gates 1–3 as normal messages (fail-closed contact cache, saved-contact hard skip,
+  manual-override/converted check), but before classification: it appends a placeholder
+  message, flags the lead `payment_screenshot_received`, alerts the operator via
+  `WA.sendToOperatorAlert`, and returns — no Gemini call, no reply, no state change beyond
+  the flag.
+- `src/paymentStore.js` — data layer for `data/payments.json` (gitignored, PII), same
+  read-modify-write pattern as `leadStore.js`/`store.js`. Owns yearly-reset sequential
+  invoice numbering (`INV-2026-0001`, resets to `0001` on IST year rollover) and CSV
+  export. Generated PDFs live under `data/invoices/` (also gitignored), one file per
+  invoice number.
+- `src/invoicePdf.js` — builds the PDF via `pdfkit`. Deliberately prints amounts as
+  `INR 25,000` rather than `₹25,000` — pdfkit's standard-14 fonts don't include the Rupee
+  glyph without bundling a Unicode font, not worth the deploy weight for one symbol.
+- `src/invoicing.js` — orchestrates `confirmPayment({ jid, amount })`: generates the
+  invoice number + PDF, saves it locally, best-effort backs it up to Drive
+  (`DRIVE_INVOICES_FOLDER_ID`, silently skipped if unset or Google isn't configured),
+  **records the payment and marks the lead `converted` before attempting the WhatsApp
+  send** — the operator already confirmed the money was received, so that fact shouldn't
+  depend on delivery succeeding — then attempts `WA.sendDocument`. A failed send is
+  logged and left `waSent:false` (never silently treated as delivered) so the panel can
+  retry via `resendInvoice()`. Both are called only from `server.js`'s
+  `POST /api/leads/:jid/confirm-payment` and `POST /api/payments/:invoiceNumber/resend`.
+- Panel: the Leads tab shows an amount-entry mini-form on any lead flagged
+  `payment_screenshot_received` that isn't yet converted; a separate Payments card lists
+  every invoice (with a resend button when `waSent` is false) and an Export CSV button.
+
 ## Working in this codebase
 
 - Every external integration degrades gracefully when its env vars are missing: check the

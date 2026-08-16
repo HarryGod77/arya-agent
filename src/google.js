@@ -1,6 +1,7 @@
 // Google integrations: Calendar (auto Meet link), Drive, Gmail, YouTube.
 // All use ONE OAuth2 client (one refresh token).
 import { google } from 'googleapis';
+import { Readable } from 'stream';
 
 // --- Env fallbacks: works with BOTH old and new variable names ---
 const SENDER_EMAIL  = process.env.GOOGLE_SENDER_EMAIL || process.env.GOOGLE_EMAIL || '';
@@ -177,6 +178,18 @@ export async function moveIntoFolder(fileId, folderId) {
   await moveFile(fileId, folderId);
   const res = await drive().files.get({ fileId, fields: 'webViewLink' });
   return res.data.webViewLink;
+}
+
+// Generic small-file upload — used by src/invoicing.js to back up generated invoice
+// PDFs to Drive. Best-effort from the caller's side (see invoicing.js's try/catch); this
+// function itself just does the upload and returns the new file's id.
+export async function uploadFile(name, buffer, mimeType, folderId) {
+  const res = await drive().files.create({
+    requestBody: { name, parents: folderId ? [folderId] : undefined },
+    media: { mimeType, body: Readable.from(buffer) },
+    fields: 'id'
+  });
+  return res.data.id;
 }
 
 export async function makeShareable(fileId) {
