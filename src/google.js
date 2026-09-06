@@ -103,12 +103,28 @@ export async function sendEmail({ to, subject, html, text }) {
 }
 
 // ---------- DRIVE ----------
-// List videos in the Meet Recordings inbox folder.
+// Files manually dropped into the operator's own "inbox" folder — used only by the
+// Drive Organizer tool (server.js /api/organize/*), which sorts whatever the operator
+// puts there. Distinct from listVideosSince below: Meet's own auto-recordings never
+// land in this folder, which is the bug the Drive-wide search exists to work around.
 export async function listInboxVideos() {
   if (!INBOX_FOLDER) return [];
   const res = await drive().files.list({
     q: `'${INBOX_FOLDER}' in parents and mimeType contains 'video/' and trashed = false`,
     fields: 'files(id, name, mimeType, createdTime)'
+  });
+  return res.data.files || [];
+}
+
+// Drive-wide video search. Google Meet drops recordings into its own account-level
+// "Meet Recordings" folder (not any folder we control), so we can't filter by parent —
+// search all of Drive and let the caller narrow by time window / name match instead.
+export async function listVideosSince(sinceISO) {
+  const res = await drive().files.list({
+    q: `mimeType='video/mp4' and trashed=false and createdTime > '${sinceISO}'`,
+    fields: 'files(id, name, mimeType, createdTime)',
+    orderBy: 'createdTime desc',
+    pageSize: 100,
   });
   return res.data.files || [];
 }

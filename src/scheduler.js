@@ -93,46 +93,113 @@ async function checkClassReminders() {
 }
 
 // ===== 2) RECORDING DELIVERY (matches real Google Meet file names to finished classes) =====
+// Meet drops recordings into its own account-level "Meet Recordings" folder, which we don't
+// control and can't filter by parent — so this scans Drive-wide by time window instead, then
+// fuzzy-matches the class topic against Meet's auto-generated file name
+// ("<Meeting title> - YYYY/MM/DD HH:MM IST - Recording").
+const STOPWORDS = new Set(['a', 'an', 'the', 'of', 'for', 'and', 'or', 'to', 'in', 'on', 'with', 'class', 'session', 'part', 'day', 'batch', 'recording']);
+
+function normalizeWords(str) {
+  return String(str)
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 1 && !STOPWORDS.has(w));
+}
+
+const RECORDING_WINDOW_BEFORE_MS = 1 * 3600e3;  // class may start recording up to 1h "early" (clock drift, host started late slot)
+const RECORDING_WINDOW_AFTER_MS = 8 * 3600e3;   // Drive/Meet can take a while to finish processing
+
+// Shared by checkRecordings below and server.js's manual "send recording" endpoint, so
+// both paths pick the same file the same way instead of drifting out of sync.
+export function matchRecordingForClass(cls, files) {
+  const start = new Date(cls.startISO).getTime();
+  const windowStart = start - RECORDING_WINDOW_BEFORE_MS;
+  const windowEnd = start + RECORDING_WINDOW_AFTER_MS;
+  const inWindow = files.filter(f => {
+    const created = new Date(f.createdTime).getTime();
+    return created >= windowStart && created <= windowEnd;
+  });
+  if (!inWindow.length) return { chosen: null, scored: [], reason: 'no candidates in time window' };
+
+  const topicWords = normalizeWords(cls.topic);
+  const scored = inWindow.map(f => {
+    const fileWords = new Set(normalizeWords(f.name));
+    const overlapWords = topicWords.filter(w => fileWords.has(w));
+    return {
+      file: f,
+      overlapCount: overlapWords.length,
+      overlapWords,
+      score: topicWords.length ? overlapWords.length / topicWords.length : 0,
+    };
+  }).sort((a, b) => b.score - a.score || b.overlapCount - a.overlapCount);
+
+  if (scored[0]?.overlapCount >= 1) return { chosen: scored[0].file, scored, reason: 'topic word overlap' };
+  if (scored.length === 1) return { chosen: scored[0].file, scored, reason: 'only candidate in window' };
+  return { chosen: null, scored, reason: 'no topic word overlap and multiple candidates' };
+}
+
 async function checkRecordings() {
-  if (!googleReady() || !process.env.DRIVE_INBOX_FOLDER_ID) return;
-  let files;
-  try { files = await G.listInboxVideos(); } catch (e) { return console.error('Recording scan failed:', e.message); }
-  if (!files.length) return;
+  if (!googleReady()) return;
   const db = read();
+  const pending = [];
   for (const batch of db.batches) {
     for (const cls of batch.classes || []) {
       if (cls.recordingLink || cls.status === 'cancelled') continue;
       const start = new Date(cls.startISO).getTime();
       const end = start + (cls.durationMin || 60) * 60000;
       if (Date.now() < end) continue; // class not finished yet
-      const name = className(cls.topic).toLowerCase();
-      const bname = (batch.name || '').toLowerCase();
-      const candidates = files.filter(f => {
-        const created = new Date(f.createdTime).getTime();
-        const timeOk = created >= start - 2 * 3600e3 && created <= start + 2 * 86400e3;
-        return f.name.toLowerCase().includes(name) && timeOk;
-      });
-      const file = candidates.find(f => f.name.toLowerCase().includes(bname)) || candidates[0];
-      if (!file) continue;
-      try {
-        // Ensure the batch folder exists + students have viewer access, then move the recording in.
-        let folderId = batch.driveFolderId;
-        if (!folderId) {
-          folderId = await G.ensureBatchFolder(batch.name, null);
-          update(d => { const b = d.batches.find(x => x.id === batch.id); if (b) b.driveFolderId = folderId; });
-        }
-        await G.ensureFolderAccess(folderId, batch.emails);
-        const view = await G.moveIntoFolder(file.id, folderId);
-        const msg = recordingMessage(className(cls.topic), view);
-        await sendMessage({ text: msg, groupJid: batch.whatsappGroupJid, directToGroup: db.config.whatsappDirectToGroup });
-        if (batch.emails?.length) await G.sendEmail({ to: batch.emails, subject: `Recording: ${className(cls.topic)}`, text: msg }).catch(() => {});
-        update(d => {
-          const c = d.batches.find(b => b.id === batch.id)?.classes.find(x => x.id === cls.id);
-          if (c) c.recordingLink = view;
-        });
-        console.log(`✅ Recording delivered (private) : ${batch.name} / ${cls.topic}`);
-      } catch (e) { console.error('Recording delivery failed:', e.message); }
+      pending.push({ batch, cls, start });
     }
+  }
+  if (!pending.length) return;
+
+  // One Drive query covers every pending class: fetch from the earliest possible window
+  // start, then narrow per-class below. Cheaper than one API call per class.
+  const earliestStart = Math.min(...pending.map(p => p.start));
+  const sinceISO = new Date(earliestStart - RECORDING_WINDOW_BEFORE_MS).toISOString();
+
+  let files;
+  try { files = await G.listVideosSince(sinceISO); } catch (e) { return console.error('Recording scan failed:', e.message); }
+  files = files.filter(f => f.mimeType?.startsWith('video/') && !/notes by gemini/i.test(f.name));
+  if (!files.length) return console.log('Recording scan: no candidate videos found since', sinceISO);
+
+  for (const { batch, cls } of pending) {
+    const { chosen, scored, reason } = matchRecordingForClass(cls, files);
+
+    if (scored.length) {
+      console.log(
+        `Recording scan candidates for ${batch.name} / ${cls.topic}:`,
+        scored.map(s => `"${s.file.name}" (score=${s.score.toFixed(2)}, overlap=[${s.overlapWords.join(',')}])`).join(' | ')
+      );
+    }
+
+    if (!chosen) {
+      console.log(`Recording scan: no confident match for ${batch.name} / ${cls.topic} (${reason})${scored.length ? ' — rejected: ' + scored.map(s => `"${s.file.name}"`).join(', ') : ''}`);
+      continue;
+    }
+    console.log(`Recording scan: matched "${chosen.name}" to ${batch.name} / ${cls.topic} (${reason})`);
+
+    try {
+      // Ensure the batch folder exists + students have viewer access, then move the recording in.
+      let folderId = batch.driveFolderId;
+      if (!folderId) {
+        folderId = await G.ensureBatchFolder(batch.name, null);
+        update(d => { const b = d.batches.find(x => x.id === batch.id); if (b) b.driveFolderId = folderId; });
+      }
+      await G.ensureFolderAccess(folderId, batch.emails);
+      const view = await G.moveIntoFolder(chosen.id, folderId);
+      const msg = recordingMessage(className(cls.topic), view);
+      await sendMessage({ text: msg, groupJid: batch.whatsappGroupJid, directToGroup: db.config.whatsappDirectToGroup });
+      if (batch.emails?.length) await G.sendEmail({ to: batch.emails, subject: `Recording: ${className(cls.topic)}`, text: msg }).catch(() => {});
+      update(d => {
+        const c = d.batches.find(b => b.id === batch.id)?.classes.find(x => x.id === cls.id);
+        if (c) c.recordingLink = view;
+      });
+      console.log(`✅ Recording delivered (private) : ${batch.name} / ${cls.topic}`);
+      // Take it out of the shared pool so a later class this tick can't also claim it.
+      files = files.filter(f => f.id !== chosen.id);
+    } catch (e) { console.error('Recording delivery failed:', e.message); }
   }
 }
 

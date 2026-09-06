@@ -10,9 +10,9 @@ import {
   setInboundMessageHandler, setOutboundMessageHandler, getContactCacheStats, getKnownChatsStats
 } from './src/whatsapp.js';
 import * as G from './src/gemini.js';
-import { startScheduler, jobs } from './src/scheduler.js';
+import { startScheduler, jobs, matchRecordingForClass } from './src/scheduler.js';
 import {
-  createClassEvent, deleteClassEvent, sendEmail, listInboxVideos,
+  createClassEvent, deleteClassEvent, sendEmail, listInboxVideos, listVideosSince,
   ensureFolder, moveFile, ensureBatchFolder, ensureFolderAccess, moveIntoFolder
 } from './src/google.js';
 import * as leadResponder from './src/leadResponder.js';
@@ -281,10 +281,10 @@ app.post('/api/batches/:bid/classes/:cid/send-recording', auth, async (req, res)
     const cls = batch?.classes.find(c => c.id === req.params.cid);
     if (!cls) return res.status(404).json({ error: 'class not found' });
 
-    const files = await listInboxVideos();
-    const name = className(cls.topic).toLowerCase();
-    const match = files.find(f => (f.name || '').toLowerCase().includes(name)) || files[0];
-    if (!match) return res.status(404).json({ error: 'no recording found in Drive inbox' });
+    const sinceISO = new Date(new Date(cls.startISO).getTime() - 3600e3).toISOString();
+    const files = (await listVideosSince(sinceISO)).filter(f => f.mimeType?.startsWith('video/') && !/notes by gemini/i.test(f.name));
+    const { chosen: match, reason } = matchRecordingForClass(cls, files);
+    if (!match) return res.status(404).json({ error: `no recording found (${reason})` });
 
     let folderId = batch.driveFolderId;
     if (!folderId) {
