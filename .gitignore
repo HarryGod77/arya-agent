@@ -18,6 +18,8 @@ data/reply-engine-log.jsonl
 # Payments/invoicing data — names, phone numbers, amounts, generated PDFs
 data/payments.json
 data/invoices/
+data/payment-config.json
+data/student-payments.json
 
 # Logs
 *.log

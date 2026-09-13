@@ -31,7 +31,7 @@ function selectSubtab(name) {
   document.querySelectorAll('.subtab-panel').forEach(x => x.classList.toggle('hidden', x.id !== 'subtab-' + name));
 }
 
-async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); wireOrganizer(); loadLeadsTab(); loadSocialTab(); }
+async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); wireOrganizer(); loadLeadsTab(); loadSocialTab(); loadPaymentConfig(); loadStudents(); loadPaymentReminders(); loadPaymentsDashboard(); }
 
 // Wires the "Organize old Drive recordings" card, which now lives as static markup in
 // index.html (Actions tab) instead of being injected into the DOM at boot — keeps the
@@ -583,6 +583,318 @@ $('#paymentsExport').onclick = async () => {
     URL.revokeObjectURL(url);
   } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
 };
+
+// PAYMENT DETAILS SENDER (Part 1)
+let PM_CONFIG = {};
+
+async function loadPaymentConfig() {
+  try {
+    PM_CONFIG = await api('/api/payment-config');
+    $('#pmUpiId').value = PM_CONFIG.upiId || '';
+    $('#pmAccountName').value = PM_CONFIG.accountName || '';
+    $('#pmBankName').value = PM_CONFIG.bankName || '';
+    $('#pmAccountNumber').value = PM_CONFIG.accountNumber || '';
+    $('#pmIfsc').value = PM_CONFIG.ifsc || '';
+    $('#pmNote').value = PM_CONFIG.note || '';
+  } catch (e) { toast('Could not load payment config: ' + e.message, { tone: 'danger' }); }
+}
+
+$('#pmCfgToggle').onclick = () => $('#pmCfgForm').classList.toggle('hidden');
+
+$('#pmCfgSave').onclick = async () => {
+  try {
+    PM_CONFIG = await api('/api/payment-config', { method: 'PUT', body: JSON.stringify({
+      upiId: $('#pmUpiId').value.trim(), accountName: $('#pmAccountName').value.trim(),
+      bankName: $('#pmBankName').value.trim(), accountNumber: $('#pmAccountNumber').value.trim(),
+      ifsc: $('#pmIfsc').value.trim(), note: $('#pmNote').value.trim()
+    }) });
+    toast('Payment details saved ✓');
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+};
+
+async function refreshPaymentPreview() {
+  const amount = $('#pmSendAmount').value;
+  try {
+    const r = await api(`/api/payment-config/preview${amount ? '?amount=' + encodeURIComponent(amount) : ''}`);
+    $('#pmSendPreview').textContent = r.text || '';
+    return r;
+  } catch { return { text: '' }; }
+}
+$('#pmSendAmount').addEventListener('input', refreshPaymentPreview);
+
+$('#pmCopyBtn').onclick = async () => {
+  const r = await refreshPaymentPreview();
+  if (!r.text) return toast('Nothing to copy yet', { tone: 'danger' });
+  try { await navigator.clipboard.writeText(r.text); toast('Copied ✓'); }
+  catch { toast('Copy failed — select and copy manually', { tone: 'danger' }); }
+};
+
+$('#pmSendBtn').onclick = async () => {
+  const phone = $('#pmSendPhone').value.trim();
+  const amount = $('#pmSendAmount').value ? Number($('#pmSendAmount').value) : null;
+  if (!phone) return toast('Enter a phone number', { tone: 'danger' });
+  const btn = $('#pmSendBtn');
+  btn.disabled = true;
+  try {
+    const r = await api('/api/payment-config/send', { method: 'POST', body: JSON.stringify({ phone, amount }) });
+    if (r.sent) toast('Sent ✓');
+    else toast('Not sent: ' + (r.reason || 'unknown reason'), { tone: 'danger' });
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+  btn.disabled = false;
+};
+
+// STUDENT PAYMENT LEDGER (Part 2)
+let studentsExpanded = new Set(); // which rows are open — survives the 30s poll re-render
+
+$('#stAddToggle').onclick = () => $('#stAddForm').classList.toggle('hidden');
+$('#stPlanType').onchange = () => $('#stEmiFields').classList.toggle('hidden', $('#stPlanType').value !== 'emi');
+
+$('#stAddSave').onclick = async () => {
+  const planType = $('#stPlanType').value;
+  const body = {
+    name: $('#stName').value.trim(), phone: $('#stPhone').value.trim(),
+    batch: $('#stBatch').value.trim(), course: $('#stCourse').value.trim(),
+    language: $('#stLanguage').value, totalAmount: Number($('#stTotal').value),
+    planType, notes: $('#stNotes').value.trim()
+  };
+  if (planType === 'emi') {
+    body.emiCount = Number($('#stEmiCount').value);
+    body.emiStart = $('#stEmiStart').value || undefined;
+  }
+  if (!body.name || !body.phone || !body.totalAmount) return toast('Name, phone, and total amount are required', { tone: 'danger' });
+  const btn = $('#stAddSave');
+  btn.disabled = true;
+  try {
+    await api('/api/students', { method: 'POST', body: JSON.stringify(body) });
+    toast('Student added ✓');
+    ['stName','stPhone','stBatch','stCourse','stTotal','stEmiCount','stEmiStart','stNotes'].forEach(f => $('#' + f).value = '');
+    $('#stAddForm').classList.add('hidden');
+    loadStudents();
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+  btn.disabled = false;
+};
+
+function studentRowHtml(s) {
+  const pct = s.totalAmount ? Math.min(100, Math.round((s.amountPaid / s.totalAmount) * 100)) : 0;
+  const expanded = studentsExpanded.has(s.id) || !!s.pendingScreenshot; // surface a flagged screenshot without requiring a click
+  return `<div class="list-row stacked">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer" data-studenttoggle="${s.id}">
+      <div class="row-primary"><b>${s.name}</b> — ${s.phone}${s.batch ? ' · ' + s.batch : ''}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        ${badge(s.planType === 'emi' ? `EMI x${s.emiCount}` : 'Full')}
+        ${s.overdueCount ? badge(`${s.overdueCount} overdue`, 'danger') : ''}
+        ${s.pendingScreenshot ? badge('Screenshot pending', 'warning') : ''}
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="row-secondary">Paid INR ${s.amountPaid.toLocaleString('en-IN')} / ${s.totalAmount.toLocaleString('en-IN')} · Balance INR ${s.balance.toLocaleString('en-IN')}${s.nextDueDate ? ` · Next due: ${s.nextDueDate}` : ' · Fully paid'}</div>
+    <div data-studentdetail="${s.id}" class="${expanded ? '' : 'hidden'}" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--color-border)">
+      ${studentDetailHtml(s)}
+    </div>
+  </div>`;
+}
+
+let installmentEditsOpen = new Set(); // "studentId:number" keys currently showing the edit fields
+
+function studentDetailHtml(s) {
+  const rows = s.installments.map(inst => {
+    const editKey = `${s.id}:${inst.number}`;
+    const editing = inst.status !== 'paid' && installmentEditsOpen.has(editKey);
+    return `
+    <div class="list-row stacked">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div class="row-text" style="flex:1">
+          <div class="row-primary">#${inst.number} — INR ${inst.amount.toLocaleString('en-IN')} ${badge(inst.status, inst.status === 'paid' ? 'success' : inst.status === 'overdue' ? 'danger' : undefined)}</div>
+          <div class="row-secondary">Due: ${inst.dueDate}${inst.paidOn ? ` · Paid: ${shortDT(inst.paidOn)}` : ''}${inst.receiptNo ? ` · Receipt: ${inst.receiptNo}` : ''}</div>
+        </div>
+        <div class="row-actions">
+          ${inst.status !== 'paid' ? `<button class="btn btn-ghost btn-sm" data-toggleeditinst="${editKey}">${editing ? 'Cancel' : 'Edit'}</button>` : ''}
+          ${inst.status !== 'paid' ? `<button class="btn btn-primary btn-sm" data-markpaid="${s.id}:${inst.number}" data-defaultamount="${inst.amount}">Mark paid</button>` : ''}
+        </div>
+      </div>
+      ${editing ? `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <input type="number" min="1" class="input" data-editamount="${editKey}" value="${inst.amount}" style="width:150px">
+        <input type="date" class="input" data-editdue="${editKey}" value="${inst.dueDate}" style="width:160px">
+        <button class="btn btn-secondary btn-sm" data-saveinst="${editKey}">Save</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+  const screenshotBanner = s.pendingScreenshot ? `
+    <div style="margin-bottom:10px;padding:12px;border:1px solid var(--color-warning);border-radius:var(--radius-md);background:var(--color-warning-soft)">
+      <div style="font-size:.85em;margin-bottom:8px;display:flex;align-items:center;gap:6px">${icon('camera', { size: 14 })} Payment screenshot received for installment #${s.pendingScreenshot.installmentNumber} — confirm the real amount (do not trust the screenshot):</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="number" min="1" class="input" data-screenshotamount="${s.id}" placeholder="Amount" style="width:160px">
+        <button class="btn btn-primary btn-sm" data-confirmscreenshot="${s.id}">Confirm &amp; send receipt</button>
+      </div>
+    </div>` : '';
+  return `
+    ${screenshotBanner}
+    <div style="margin-bottom:8px"><span class="row-secondary">${s.course || ''}${s.notes ? ' · ' + s.notes : ''}</span></div>
+    <div class="list">${rows}</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-secondary btn-sm" data-sendstatement="${s.id}">Send statement</button>
+    </div>`;
+}
+
+async function onMarkInstallmentPaid(btn) {
+  const [studentId, number] = btn.dataset.markpaid.split(':');
+  const defaultAmount = btn.dataset.defaultamount;
+  const amountStr = await promptModal({ title: 'Mark installment paid', body: 'Amount received (INR):', value: defaultAmount });
+  if (amountStr === null) return;
+  const amount = Number(amountStr);
+  if (!amount || amount <= 0) return toast('Enter a valid amount', { tone: 'danger' });
+  btn.disabled = true; toast('Generating receipt…');
+  try {
+    const r = await api(`/api/students/${encodeURIComponent(studentId)}/installments/${number}/mark-paid`, { method: 'POST', body: JSON.stringify({ amount }) });
+    toast(r.waSent ? `Receipt ${r.receiptNo} sent ✓` : `Receipt ${r.receiptNo} generated, but WhatsApp send failed`);
+    studentsExpanded.add(studentId);
+    loadStudents();
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+}
+
+async function onConfirmScreenshot(btn) {
+  const studentId = btn.dataset.confirmscreenshot;
+  const amount = Number(document.querySelector(`[data-screenshotamount="${CSS.escape(studentId)}"]`).value);
+  if (!amount || amount <= 0) return toast('Enter a valid amount', { tone: 'danger' });
+  const ok = await confirmModal({ title: 'Confirm payment received?', body: `INR ${amount.toLocaleString('en-IN')} — this generates and sends a receipt.`, confirmLabel: 'Confirm & send' });
+  if (!ok) return;
+  btn.disabled = true; toast('Generating receipt…');
+  try {
+    const r = await api(`/api/students/${encodeURIComponent(studentId)}/confirm-screenshot`, { method: 'POST', body: JSON.stringify({ amount }) });
+    toast(r.waSent ? `Receipt ${r.receiptNo} sent ✓` : `Receipt ${r.receiptNo} generated, but WhatsApp send failed`);
+    studentsExpanded.add(studentId);
+    loadStudents();
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+}
+
+async function onSendStatement(btn) {
+  const studentId = btn.dataset.sendstatement;
+  btn.disabled = true; toast('Sending statement…');
+  try {
+    await api(`/api/students/${encodeURIComponent(studentId)}/statement/send`, { method: 'POST' });
+    toast('Statement sent ✓');
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+  btn.disabled = false;
+}
+
+async function loadStudents() {
+  try {
+    const students = await api('/api/students');
+    clearErrorBanner($('#stList'));
+    $('#stList').innerHTML = students.length ? students.map(studentRowHtml).join('') : '<div class="empty-state">No students added yet.</div>';
+
+    document.querySelectorAll('[data-studenttoggle]').forEach(el => el.onclick = () => {
+      const id = el.dataset.studenttoggle;
+      const detail = document.querySelector(`[data-studentdetail="${CSS.escape(id)}"]`);
+      const nowHidden = detail.classList.toggle('hidden');
+      if (nowHidden) studentsExpanded.delete(id); else studentsExpanded.add(id);
+    });
+
+    document.querySelectorAll('[data-markpaid]').forEach(btn => btn.onclick = () => onMarkInstallmentPaid(btn));
+    document.querySelectorAll('[data-sendstatement]').forEach(btn => btn.onclick = () => onSendStatement(btn));
+    document.querySelectorAll('[data-confirmscreenshot]').forEach(btn => btn.onclick = () => onConfirmScreenshot(btn));
+    document.querySelectorAll('[data-toggleeditinst]').forEach(btn => btn.onclick = () => {
+      const key = btn.dataset.toggleeditinst;
+      if (installmentEditsOpen.has(key)) installmentEditsOpen.delete(key); else installmentEditsOpen.add(key);
+      loadStudents();
+    });
+    document.querySelectorAll('[data-saveinst]').forEach(btn => btn.onclick = async () => {
+      const key = btn.dataset.saveinst;
+      const [studentId, number] = key.split(':');
+      const amount = Number(document.querySelector(`[data-editamount="${CSS.escape(key)}"]`).value);
+      const dueDate = document.querySelector(`[data-editdue="${CSS.escape(key)}"]`).value;
+      if (!amount || amount <= 0 || !dueDate) return toast('Enter a valid amount and due date', { tone: 'danger' });
+      btn.disabled = true;
+      try {
+        await api(`/api/students/${encodeURIComponent(studentId)}/installments/${number}`, { method: 'PUT', body: JSON.stringify({ amount, dueDate }) });
+        toast('Installment updated ✓');
+        installmentEditsOpen.delete(key);
+        studentsExpanded.add(studentId);
+        loadStudents();
+      } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+    });
+  } catch (e) {
+    showErrorBanner($('#stList'), 'Could not load students: ' + e.message, loadStudents);
+  }
+  setTimeout(loadStudents, 30000);
+}
+
+$('#studentsExport').onclick = async () => {
+  try {
+    const r = await fetch('/api/students/export', { headers: { 'x-admin-pass': getPass() } });
+    if (!r.ok) throw new Error('Export failed');
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'student-payments.csv'; a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+};
+
+// PAYMENT REMINDERS — approval queue (Part 4)
+const STAGE_LABEL = { before: '3 days before due', due: 'Due today', overdue: '2 days overdue' };
+
+async function loadPaymentReminders() {
+  try {
+    const queue = await api('/api/payment-reminders');
+    $('#pmReminderCard').style.display = queue.length ? 'block' : 'none';
+    $('#pmReminderList').innerHTML = queue.map(item => `
+      <div class="list-row stacked">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div class="row-primary"><b>${item.student.name}</b> — ${item.student.phone}</div>
+          ${badge(STAGE_LABEL[item.stage] || item.stage, item.stage === 'overdue' ? 'danger' : item.stage === 'due' ? 'warning' : undefined)}
+        </div>
+        <div class="row-secondary" style="margin:4px 0">Installment #${item.installment.number} — INR ${item.installment.amount.toLocaleString('en-IN')}, due ${item.installment.dueDate}</div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-primary btn-sm" data-sendreminder="${item.id}">Send</button>
+          <button class="btn btn-danger btn-sm" data-dismissreminder="${item.id}">Dismiss</button>
+        </div>
+      </div>`).join('');
+
+    document.querySelectorAll('[data-sendreminder]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true;
+      try {
+        const r = await api(`/api/payment-reminders/${encodeURIComponent(btn.dataset.sendreminder)}/send`, { method: 'POST' });
+        if (r.sent) { toast('Sent ✓'); loadPaymentReminders(); }
+        else { toast('Not sent: ' + (r.reason || 'unknown reason'), { tone: 'danger' }); btn.disabled = false; }
+      } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+    });
+    document.querySelectorAll('[data-dismissreminder]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true;
+      try { await api(`/api/payment-reminders/${encodeURIComponent(btn.dataset.dismissreminder)}/dismiss`, { method: 'POST' }); toast('Dismissed'); loadPaymentReminders(); }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+    });
+  } catch (e) {
+    showErrorBanner($('#pmReminderList'), 'Could not load reminders: ' + e.message, loadPaymentReminders);
+  }
+  setTimeout(loadPaymentReminders, 30000);
+}
+
+$('#pmReminderScan').onclick = async () => {
+  const btn = $('#pmReminderScan');
+  btn.disabled = true;
+  try {
+    const r = await api('/api/payment-reminders/scan', { method: 'POST' });
+    toast(`Scan done — ${r.queued} queued, ${r.escalated} escalated`);
+    loadPaymentReminders();
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+  btn.disabled = false;
+};
+
+// PAYMENTS DASHBOARD (Part 5)
+async function loadPaymentsDashboard() {
+  try {
+    const d = await api('/api/payments/dashboard');
+    $('#pmDashboard').innerHTML = [
+      ['INR ' + d.collectedThisMonth.toLocaleString('en-IN'), 'Collected this month'],
+      ['INR ' + d.totalOutstanding.toLocaleString('en-IN'), 'Total outstanding'],
+      [d.overdueInstallments, 'Overdue installments'],
+      [`${d.emiCount} / ${d.fullCount}`, 'EMI vs Full-payment students']
+    ].map(([value, label]) => `<div class="stat-tile"><div class="stat-value">${value}</div><div class="stat-label">${label}</div></div>`).join('');
+  } catch (e) { showErrorBanner($('#pmDashboard'), 'Could not load dashboard: ' + e.message, loadPaymentsDashboard); }
+  setTimeout(loadPaymentsDashboard, 30000);
+}
 
 $('#lrSaveCfg').onclick = async () => {
   await api('/api/config', { method: 'PUT', body: JSON.stringify({

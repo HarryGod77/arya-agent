@@ -14,6 +14,7 @@ import * as backlogScan from './backlogScan.js';
 import * as SS from './social/socialStore.js';
 import * as FB from './social/facebookApi.js';
 import { generateSocialCaption } from './social/captionGen.js';
+import * as studentPayments from './studentPayments.js';
 
 const googleReady = () => !!process.env.GOOGLE_REFRESH_TOKEN;
 const minsUntil = (iso) => (new Date(iso) - Date.now()) / 60000;
@@ -448,6 +449,18 @@ async function runBacklogScan() {
 // "Send" in the Leads tab, which calls src/backlogScan.js#sendBacklogItem directly via
 // server.js's POST /api/backlog/:jid/send.
 
+// ===== 7) PAYMENT REMINDER SCAN =====
+// Daily discovery run, same split as the backlog scan above: this only queues candidates
+// (3-days-before / due-today / 2-days-after, then an operator escalation alert if still
+// unpaid) — nothing here ever messages a student. See src/studentPayments.js#scanForReminders
+// and server.js's POST /api/payment-reminders/:id/send for the only actual send path.
+function runPaymentReminderScan() {
+  try {
+    const { queued, escalated } = studentPayments.scanForReminders();
+    if (queued || escalated) console.log(`Payment reminder scan: ${queued} queued, ${escalated} escalated to operator.`);
+  } catch (e) { console.error('Payment reminder scan failed:', e.message); }
+}
+
 export function startScheduler() {
   cron.schedule('* * * * *', () => { checkClassReminders(); });   // every minute (10-min accuracy)
   cron.schedule('*/15 * * * *', () => { checkRecordings(); });
@@ -458,11 +471,13 @@ export function startScheduler() {
   cron.schedule('* * * * *', () => { checkSocialQueue(); });      // every minute — publish due Facebook reels (no-op unless SOCIAL_ENABLED)
   cron.schedule('0 8 * * *', () => { refillSocialQueue(); });     // daily 08:00 — refill today's reel queue
   cron.schedule('0 */6 * * *', () => { refreshSocialInsights(); }); // every 6h — refresh published-reel insights
-  console.log('⏰ Scheduler: reminders every 1m, recordings 15m, social daily 10:00, lead follow-ups hourly, unanswered-questions digest Mondays 09:00, backlog scan daily 07:00 (discovery only, manual send), FB reel queue every 1m, FB reel refill daily 08:00, FB reel insights every 6h.');
+  cron.schedule('15 8 * * *', () => { runPaymentReminderScan(); }); // daily 08:15 — queue payment reminders, discovery only, manual send
+  console.log('⏰ Scheduler: reminders every 1m, recordings 15m, social daily 10:00, lead follow-ups hourly, unanswered-questions digest Mondays 09:00, backlog scan daily 07:00 (discovery only, manual send), FB reel queue every 1m, FB reel refill daily 08:00, FB reel insights every 6h, payment reminder scan daily 08:15 (discovery only, manual send).');
 }
 
 export const jobs = {
   checkClassReminders, checkRecordings, runSocialPost, checkLeadFollowUps,
   sendUnansweredQuestionsDigest, runBacklogScan,
-  checkSocialQueue, refillSocialQueue, refreshSocialInsights
+  checkSocialQueue, refillSocialQueue, refreshSocialInsights,
+  runPaymentReminderScan
 };

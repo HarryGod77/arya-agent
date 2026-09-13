@@ -22,6 +22,10 @@ import * as LS from './src/leadStore.js';
 import * as backlogScan from './src/backlogScan.js';
 import * as invoicing from './src/invoicing.js';
 import * as PS from './src/paymentStore.js';
+import * as PCS from './src/paymentConfigStore.js';
+import * as paymentSender from './src/paymentSender.js';
+import * as SPS from './src/studentPaymentStore.js';
+import * as studentPayments from './src/studentPayments.js';
 import * as SS from './src/social/socialStore.js';
 import * as FB from './src/social/facebookApi.js';
 import { generateSocialCaption } from './src/social/captionGen.js';
@@ -496,6 +500,115 @@ app.post('/api/payments/:invoiceNumber/resend', auth, async (req, res) => {
     res.json(result);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
+
+// ---------- PAYMENT DETAILS SENDER (Part 1) ----------
+// Editable UPI/bank block (data/payment-config.json) + a manual send-to-any-number tool.
+// Distinct from the lead-invoice flow above: this fires BEFORE a payment to give someone
+// something to pay against, not after one to confirm it.
+app.get('/api/payment-config', auth, (req, res) => res.json(PCS.getConfig()));
+
+app.put('/api/payment-config', auth, (req, res) => {
+  const { upiId, accountName, bankName, accountNumber, ifsc, note } = req.body || {};
+  res.json(PCS.updateConfig({ upiId, accountName, bankName, accountNumber, ifsc, note }));
+});
+
+// Text + UPI link for a given amount, no send — backs the panel's "Copy" button.
+app.get('/api/payment-config/preview', auth, (req, res) => {
+  res.json(paymentSender.previewPaymentDetails(req.query.amount ? Number(req.query.amount) : null));
+});
+
+app.post('/api/payment-config/send', auth, async (req, res) => {
+  const { phone, amount } = req.body || {};
+  if (!phone) return res.status(400).json({ error: 'phone is required' });
+  try {
+    const result = await paymentSender.sendPaymentDetails({ phone, amount: amount ? Number(amount) : null });
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ---------- STUDENT PAYMENT LEDGER (Part 2) ----------
+app.get('/api/students', auth, (req, res) => res.json(studentPayments.getAllStudents()));
+
+// Must come before the GET /api/students/:id route below — otherwise Express matches
+// "export" as an :id here first and this route is never reached.
+app.get('/api/students/export', auth, (req, res) => {
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="student-payments.csv"');
+  res.send(SPS.toCsv());
+});
+
+app.get('/api/students/:id', auth, (req, res) => {
+  const s = studentPayments.getStudentDetail(req.params.id);
+  if (!s) return res.status(404).json({ error: 'student not found' });
+  res.json(s);
+});
+
+app.post('/api/students', auth, (req, res) => {
+  try { res.json(studentPayments.addStudent(req.body || {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.put('/api/students/:id', auth, (req, res) => {
+  try { res.json(studentPayments.editStudent(req.params.id, req.body || {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Editing an installment's amount/due date directly — used for uneven EMI splits before
+// it's paid. Marking one paid goes through a dedicated route below (Part 3), not this one.
+app.put('/api/students/:id/installments/:number', auth, (req, res) => {
+  try { res.json(studentPayments.editInstallment(req.params.id, req.params.number, req.body || {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ---------- RECEIPTS / STATEMENTS / SCREENSHOT CONFIRMATION (Part 3) ----------
+// Manual "Mark paid" click in the ledger — amount defaults to the installment's own
+// amount but the operator can override it (e.g. a partial payment).
+app.post('/api/students/:id/installments/:number/mark-paid', auth, async (req, res) => {
+  try {
+    const result = await studentPayments.markInstallmentPaid(req.params.id, req.params.number, { amount: req.body?.amount });
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Confirming a screenshot-flagged installment — same "amount always typed by the operator,
+// never parsed from the image" guarantee as /api/leads/:jid/confirm-payment.
+app.post('/api/students/:id/confirm-screenshot', auth, async (req, res) => {
+  const student = studentPayments.getStudentDetail(req.params.id);
+  if (!student?.pendingScreenshot) return res.status(400).json({ error: 'No pending screenshot for this student' });
+  try {
+    const result = await studentPayments.confirmScreenshotPayment(req.params.id, student.pendingScreenshot.installmentNumber, req.body?.amount);
+    res.json(result);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post('/api/students/:id/statement/send', auth, async (req, res) => {
+  try { res.json(await studentPayments.sendStatement(req.params.id)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ---------- PAYMENT REMINDERS — approval queue (Part 4) ----------
+// Nothing here ever sends automatically — the daily cron (src/scheduler.js) only queues
+// candidates via scanForReminders(); the operator's explicit "Send" click on one item is
+// the one and only path that actually messages a student. Same pattern as the backlog
+// scan / backlog send split.
+app.get('/api/payment-reminders', auth, (req, res) => res.json(studentPayments.getReminderQueueWithDetails()));
+
+app.post('/api/payment-reminders/scan', auth, (req, res) => {
+  try { res.json(studentPayments.scanForReminders()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/payment-reminders/:id/send', auth, async (req, res) => {
+  try { res.json(await studentPayments.sendReminderQueueItem(req.params.id)); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/payment-reminders/:id/dismiss', auth, (req, res) => {
+  res.json(studentPayments.dismissReminderItem(req.params.id));
+});
+
+// ---------- PAYMENTS DASHBOARD (Part 5) ----------
+app.get('/api/payments/dashboard', auth, (req, res) => res.json(studentPayments.getDashboard()));
 
 // ---------- SOCIAL (Facebook Reels auto-posting) ----------
 // IST date-key helper, same fixed-offset approach used throughout the lead-responder

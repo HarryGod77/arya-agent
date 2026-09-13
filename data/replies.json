@@ -3593,6 +3593,38 @@
         "Note kar liya — team ko alert kar raha hoon certificate status check karne ke liye.",
         "Flag karne ke liye shukriya — team certificate pe follow up karegi."
       ]
+    },
+    "payment_reminder": {
+      "match": { "keywords": [], "patterns": [] },
+      "escalate": false,
+      "variants_en": [
+        "Hi {{name}}! 🙏\n\nJust a quick note on your {{course}} payment — installment #{{installment_number}} of INR {{amount}} is due on {{due_date}}. Balance after this one: INR {{balance}}.\n\nYou can pay anytime via UPI or bank transfer — do share the screenshot once done.\n\nThanks,\n{{manager_full_name}}\n{{agency_name}}",
+        "Hello {{name}},\n\nFriendly reminder — your {{course}} installment #{{installment_number}} of INR {{amount}} is due {{due_date}}. Remaining balance after payment: INR {{balance}}.\n\nUPI or bank transfer both work — please send the screenshot once paid.\n\nWarm regards,\n{{manager_name}}",
+        "Hi {{name}} 👋\n\nChecking in about installment #{{installment_number}} of your {{course}} fee — INR {{amount}}, due on {{due_date}}. Once this is in, your balance will be INR {{balance}}.\n\nNo rush at all, just wanted to keep you posted.\n\n{{manager_full_name}}",
+        "Hey {{name}},\n\nThis is regarding your {{course}} EMI — installment #{{installment_number}} of {{emi_count}}, amount INR {{amount}}, due {{due_date}}. Balance remaining after this: INR {{balance}}.\n\nWhenever it's convenient, UPI/bank transfer both work.\n\nThanks,\n{{manager_name}}",
+        "Hi {{name}},\n\nSharing a gentle reminder for your {{course}} payment — installment #{{installment_number}}, INR {{amount}}, due {{due_date}}. Balance after: INR {{balance}}.\n\nLet us know once it's done, and do send the screenshot.\n\nRegards,\n{{manager_full_name}}\n{{agency_name}}",
+        "Hello {{name}} 🙏\n\nQuick update — installment #{{installment_number}} of your {{course}} fee (INR {{amount}}) is due {{due_date}}. Balance remaining after this: INR {{balance}}.\n\nPay whenever suits you, via UPI or bank transfer.\n\n{{manager_name}}",
+        "Hi {{name}},\n\nJust flagging installment #{{installment_number}} of {{emi_count}} for your {{course}} — INR {{amount}}, due {{due_date}}. Balance after: INR {{balance}}.\n\nHappy to help if you have any questions about the payment.\n\nThanks,\n{{manager_full_name}}",
+        "Hello {{name}},\n\nA short reminder that installment #{{installment_number}} — INR {{amount}} for {{course}} — is due {{due_date}}. Your balance after paying this will be INR {{balance}}.\n\nUPI or bank transfer, whichever is easier for you.\n\nWarmly,\n{{manager_name}}\n{{agency_name}}",
+        "Hi {{name}} 👋\n\nWanted to remind you about installment #{{installment_number}} of your {{course}} payment plan — INR {{amount}}, due {{due_date}}. Balance remaining: INR {{balance}}.\n\nNo pressure — just a heads up so it doesn't slip.\n\n{{manager_full_name}}",
+        "Hello {{name}},\n\nInstallment #{{installment_number}} of {{emi_count}} for {{course}} — INR {{amount}} — is due {{due_date}}. Balance after this payment: INR {{balance}}.\n\nPlease share the screenshot once paid so we can update your record.\n\nThanks,\n{{manager_name}}",
+        "Hi {{name}},\n\nGentle reminder: your {{course}} installment #{{installment_number}}, INR {{amount}}, is due {{due_date}}. Balance after: INR {{balance}}.\n\nReach out anytime if you'd like to discuss the schedule.\n\nRegards,\n{{manager_full_name}}\n{{agency_name}}",
+        "Hey {{name}} 🙏\n\nJust a note that installment #{{installment_number}} of your {{course}} fee (INR {{amount}}) is due {{due_date}}. Balance remaining afterward: INR {{balance}}.\n\nUPI/bank transfer both work — send a screenshot once done.\n\n{{manager_name}}"
+      ],
+      "variants_hi": [
+        "Hi {{name}}! 🙏\n\n{{course}} ke payment ke baare mein ek chhota reminder — installment #{{installment_number}} ka INR {{amount}}, due date {{due_date}}. Iske baad balance rahega INR {{balance}}.\n\nUPI ya bank transfer, jo bhi aasan ho, kabhi bhi kar sakte hain — payment ke baad screenshot bhej dijiyega.\n\nDhanyavaad,\n{{manager_full_name}}\n{{agency_name}}",
+        "Hello {{name}},\n\nFriendly reminder — aapka {{course}} installment #{{installment_number}}, INR {{amount}}, due hai {{due_date}} ko. Payment ke baad balance: INR {{balance}}.\n\nUPI ya bank transfer dono chalega — screenshot zaroor bhej dijiyega.\n\nRegards,\n{{manager_name}}",
+        "Hi {{name}} 👋\n\nAapke {{course}} fee ke installment #{{installment_number}} ke baare mein bata raha hoon — INR {{amount}}, due date {{due_date}}. Ye ho jaane ke baad balance hoga INR {{balance}}.\n\nJaldi ki koi baat nahi, bas update dena chahta tha.\n\n{{manager_full_name}}",
+        "Hey {{name}},\n\nYe aapke {{course}} EMI ke baare mein hai — installment #{{installment_number}} of {{emi_count}}, amount INR {{amount}}, due {{due_date}}. Iske baad balance rahega INR {{balance}}.\n\nJab bhi convenient ho, UPI ya bank transfer dono chalega.\n\nDhanyavaad,\n{{manager_name}}",
+        "Hi {{name}},\n\nEk halka sa reminder aapke {{course}} payment ke liye — installment #{{installment_number}}, INR {{amount}}, due {{due_date}}. Iske baad balance: INR {{balance}}.\n\nHo jaaye to bata dijiyega, aur screenshot bhej dijiyega.\n\nRegards,\n{{manager_full_name}}\n{{agency_name}}",
+        "Hello {{name}} 🙏\n\nQuick update — aapke {{course}} fee ka installment #{{installment_number}} (INR {{amount}}) due hai {{due_date}} ko. Iske baad balance rahega INR {{balance}}.\n\nJab suit kare tab pay kar dijiyega, UPI ya bank transfer se.\n\n{{manager_name}}",
+        "Hi {{name}},\n\nBas flag kar raha hoon installment #{{installment_number}} of {{emi_count}} aapke {{course}} ke liye — INR {{amount}}, due {{due_date}}. Iske baad balance: INR {{balance}}.\n\nPayment ke baare mein koi sawal ho to zaroor bataiye.\n\nDhanyavaad,\n{{manager_full_name}}",
+        "Hello {{name}},\n\nChhota sa reminder ki installment #{{installment_number}} — INR {{amount}} {{course}} ke liye — due hai {{due_date}} ko. Ye pay karne ke baad balance hoga INR {{balance}}.\n\nUPI ya bank transfer, jo aapko easy lage.\n\nWarmly,\n{{manager_name}}\n{{agency_name}}",
+        "Hi {{name}} 👋\n\nAapko installment #{{installment_number}} ke baare mein yaad dilana chahta tha, aapke {{course}} payment plan ka — INR {{amount}}, due {{due_date}}. Balance rahega: INR {{balance}}.\n\nKoi pressure nahi — bas bhoolna nahi chahiye isliye bata diya.\n\n{{manager_full_name}}",
+        "Hello {{name}},\n\nInstallment #{{installment_number}} of {{emi_count}} {{course}} ke liye — INR {{amount}} — due hai {{due_date}}. Iske baad balance: INR {{balance}}.\n\nPay karne ke baad screenshot bhej dijiyega taaki record update ho jaaye.\n\nDhanyavaad,\n{{manager_name}}",
+        "Hi {{name}},\n\nHalka reminder: aapka {{course}} installment #{{installment_number}}, INR {{amount}}, due hai {{due_date}} ko. Iske baad balance: INR {{balance}}.\n\nSchedule ke baare mein baat karni ho to kabhi bhi bataiye.\n\nRegards,\n{{manager_full_name}}\n{{agency_name}}",
+        "Hey {{name}} 🙏\n\nBas ek note ki installment #{{installment_number}} aapke {{course}} fee ka (INR {{amount}}) due hai {{due_date}} ko. Iske baad balance: INR {{balance}}.\n\nUPI/bank transfer dono chalega — payment ke baad screenshot bhej dijiyega.\n\n{{manager_name}}"
+      ]
     }
   }
 }

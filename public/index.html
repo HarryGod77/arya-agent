@@ -117,8 +117,87 @@
 
     <!-- PAYMENTS -->
     <div id="subtab-payments" class="subtab-panel hidden">
+
+      <!-- DASHBOARD -->
       <div class="card">
-        <div class="card-header"><div class="card-title">Payments</div></div>
+        <div class="card-header"><div class="card-title">Dashboard</div></div>
+        <div id="pmDashboard" class="stat-grid"></div>
+        <button class="btn btn-secondary" id="studentsExport" style="margin-top:12px">Export students CSV</button>
+      </div>
+
+      <!-- SEND PAYMENT DETAILS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Send payment details</div>
+          <button class="btn btn-ghost btn-sm" id="pmCfgToggle">Edit details</button>
+        </div>
+
+        <div id="pmCfgForm" class="hidden" style="margin-bottom:16px">
+          <div class="field"><label class="field-label">UPI ID</label><input class="input" id="pmUpiId" placeholder="name@upi"></div>
+          <div class="field"><label class="field-label">Account Name</label><input class="input" id="pmAccountName"></div>
+          <div class="field"><label class="field-label">Bank Name</label><input class="input" id="pmBankName"></div>
+          <div class="field"><label class="field-label">Account Number</label><input class="input" id="pmAccountNumber"></div>
+          <div class="field"><label class="field-label">IFSC</label><input class="input" id="pmIfsc"></div>
+          <div class="field"><label class="field-label">Note</label><textarea class="textarea" id="pmNote" placeholder="e.g. Please share the screenshot after payment"></textarea></div>
+          <button class="btn btn-primary btn-sm" id="pmCfgSave">Save details</button>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div class="field" style="margin:0;min-width:160px"><label class="field-label">Phone</label><input class="input" id="pmSendPhone" placeholder="91XXXXXXXXXX"></div>
+          <div class="field" style="margin:0;min-width:140px"><label class="field-label">Amount</label><input class="input" type="number" min="1" id="pmSendAmount" placeholder="e.g. 25000"></div>
+          <button class="btn btn-primary" id="pmSendBtn">Send on WhatsApp</button>
+          <button class="btn btn-secondary" id="pmCopyBtn">Copy</button>
+        </div>
+        <div id="pmSendPreview" class="row-secondary" style="margin-top:10px;white-space:pre-wrap"></div>
+      </div>
+
+      <!-- STUDENT LEDGER -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Student payment ledger</div>
+          <button class="btn btn-primary btn-sm" id="stAddToggle">Add student payment</button>
+        </div>
+
+        <div id="stAddForm" class="hidden" style="margin-bottom:16px;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md)">
+          <div class="field"><label class="field-label">Name</label><input class="input" id="stName"></div>
+          <div class="field"><label class="field-label">Phone</label><input class="input" id="stPhone" placeholder="91XXXXXXXXXX"></div>
+          <div class="field"><label class="field-label">Batch</label><input class="input" id="stBatch"></div>
+          <div class="field"><label class="field-label">Course</label><input class="input" id="stCourse"></div>
+          <div class="field"><label class="field-label">Language for reminders</label>
+            <select class="input" id="stLanguage"><option value="en">English</option><option value="hi">Hindi/Hinglish</option></select>
+          </div>
+          <div class="field"><label class="field-label">Total amount (INR)</label><input class="input" type="number" min="1" id="stTotal"></div>
+          <div class="field">
+            <label class="field-label">Plan type</label>
+            <select class="input" id="stPlanType">
+              <option value="full">Full payment</option>
+              <option value="emi">EMI</option>
+            </select>
+          </div>
+          <div id="stEmiFields" class="hidden">
+            <div class="field"><label class="field-label">Number of installments</label><input class="input" type="number" min="2" id="stEmiCount"></div>
+            <div class="field"><label class="field-label">Start date</label><input class="input" type="date" id="stEmiStart"></div>
+          </div>
+          <div class="field"><label class="field-label">Notes</label><textarea class="textarea" id="stNotes"></textarea></div>
+          <button class="btn btn-primary btn-sm" id="stAddSave">Save student</button>
+        </div>
+
+        <div id="stList" class="list"></div>
+      </div>
+
+      <!-- REMINDER APPROVAL QUEUE -->
+      <div class="card" id="pmReminderCard" style="display:none">
+        <div class="card-header">
+          <div class="card-title">Payment reminders — approval queue</div>
+          <button class="btn btn-secondary btn-sm" id="pmReminderScan">Scan now</button>
+        </div>
+        <p class="muted">Nothing sends automatically — review each one and click Send.</p>
+        <div id="pmReminderList" class="list" style="margin-top:10px"></div>
+      </div>
+
+      <!-- LEAD INVOICES (existing confirm-payment flow) -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Lead invoices</div></div>
         <button class="btn btn-secondary" id="paymentsExport">Export CSV</button>
         <div id="lrPaymentsList" class="list" style="margin-top:12px"></div>
       </div>

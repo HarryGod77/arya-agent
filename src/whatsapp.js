@@ -409,6 +409,31 @@ export async function sendDocument({ jid, buffer, fileName, caption, mimetype = 
   await sock.sendMessage(jid, { document: buffer, mimetype, fileName, caption });
 }
 
+// Sends an image (e.g. a UPI QR code) with an optional caption — used by
+// src/paymentSender.js so the payment-details block and its QR arrive as one message.
+export async function sendImage({ jid, buffer, caption }) {
+  if (!ready || !sock) throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
+  await sock.sendMessage(jid, { image: buffer, caption });
+}
+
+// Plain text to an arbitrary jid, no typing delay — like sendDocument/sendImage, this is
+// for an operator-triggered explicit send (payment details with no UPI QR to attach,
+// payment reminders), not an auto-generated chat reply, so the ban-risk pacing behind
+// sendWithTypingDelay doesn't apply. Distinct from sendMessage() above, which always
+// targets the operator's OWN self/group chat, never an arbitrary lead/student jid.
+export async function sendText({ jid, text }) {
+  if (!ready || !sock) throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
+  await sock.sendMessage(jid, { text });
+}
+
+// Plain 10-digit-or-longer phone -> WhatsApp jid, same construction used inline in
+// sendToOperatorAlert above — centralized here so new callers (paymentSender.js,
+// studentPayments.js) don't each re-derive the @s.whatsapp.net suffix.
+export function phoneToJid(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  return digits ? `${digits}@s.whatsapp.net` : '';
+}
+
 // Immediate send to the operator's SECOND number (OPERATOR_ALERT_NUMBER in .env) — for
 // urgent internal alerts (hot leads, etc). Deliberately no typing delay: this isn't a
 // lead-facing message, there's no ban-risk reason to hold it back, and the whole point

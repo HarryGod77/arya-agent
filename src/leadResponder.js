@@ -6,13 +6,16 @@ import * as LS from './leadStore.js';
 import * as G from './gemini.js';
 import * as RE from './replyEngine.js';
 import { read as readDb } from './store.js';
+import * as studentPayments from './studentPayments.js';
 
 // ---------- outbound safety (Part 4) ----------
 // Scoped to deliver()'s AUTO-mode branch only — see that function below. Read live from
 // process.env (not cached at import time) so a change to .env + restart always applies,
 // same convention as every other env-gated toggle in this codebase.
-const outboundEnabled = () => process.env.OUTBOUND_ENABLED !== 'false';
-const dailyOutboundCap = () => Number(process.env.DAILY_OUTBOUND_CAP) || 20;
+// Exported — src/paymentSender.js (Part 1 payment-details sender) reuses this exact
+// kill-switch + cap + counter, per spec, rather than a second copy that could drift.
+export const outboundEnabled = () => process.env.OUTBOUND_ENABLED !== 'false';
+export const dailyOutboundCap = () => Number(process.env.DAILY_OUTBOUND_CAP) || 20;
 
 const DEFAULT_CONFIG = {
   mode: 'draft', dailyCap: 30, silentHours: { start: 23, end: 8 },
@@ -266,8 +269,20 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     LS.appendMessage(jid, { dir: 'in', text: text ? `[image] ${text}` : '[image attachment]' });
     LS.addFlag(jid, 'payment_screenshot_received');
     LS.logEvent({ jid, action: 'payment_screenshot_received', detail: null });
+
+    // Student ledger match (extends the existing lead-invoice screenshot alert above,
+    // doesn't replace it) — if this phone also has a student payment ledger record, flag
+    // their next unpaid installment for confirmation there too. Never auto-marks paid:
+    // amounts in screenshots are unreliable — see studentPayments.js#matchScreenshotToStudent.
+    let studentMatch = null;
+    try { studentMatch = studentPayments.matchScreenshotToStudent(phone); }
+    catch (e) { console.error('Student screenshot match failed:', e.message); }
+
     const link = `https://wa.me/${phone}`;
-    const alertText = `📸 PAYMENT SCREENSHOT — ${phone}${pushName ? ' (' + pushName + ')' : ''}\nAn image came in — open the chat, confirm the amount, then use the Leads tab to generate and send the invoice.\n\nOpen chat: ${link}`;
+    const studentLine = studentMatch
+      ? `\n\nMatched student ledger: ${studentMatch.name} — installment #${studentMatch.installmentNumber} flagged for your confirmation in the Payments tab.`
+      : '';
+    const alertText = `📸 PAYMENT SCREENSHOT — ${phone}${pushName ? ' (' + pushName + ')' : ''}\nAn image came in — open the chat, confirm the amount, then use the Leads tab to generate and send the invoice.${studentLine}\n\nOpen chat: ${link}`;
     const result = await WA.sendToOperatorAlert(alertText);
     LS.logEvent({ jid, action: result.sent ? 'payment_screenshot_alert_sent' : 'payment_screenshot_alert_failed', detail: result.sent ? null : result.reason });
     return;
