@@ -162,15 +162,28 @@ function localIntentCategory(intentKey) {
   return 'unclear';
 }
 
+// Which stat counter (if any) a delivered/undelivered reply lands on, for the unified
+// 'inbound_routed' diagnostic log below — mirrors deliver()'s own isReply/mode logic
+// exactly (WA.hasRecentInboundMessage is a pure cache read, safe to call again here)
+// rather than threading a return value through every deliver() call site.
+function counterLabel(jid, mode, delivered) {
+  if (!delivered) return 'none';
+  if (mode !== 'auto') return 'draft';
+  return WA.hasRecentInboundMessage(jid) ? 'reply' : 'initiated';
+}
+
 // Shared by the local-match branch of handleInboundMessage, the voice-note/sticker
 // special case, and handleMissedCall — picks a variant, delivers it through the same
 // deliver() funnel (and therefore the same outbound kill-switch/cap, typing delay, and
 // never-mark-sent-unless-confirmed guarantees as the Gemini path), and only advances
-// state/counters/flags once delivery is actually confirmed.
-async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, confidence, cfg, sourceMessage = '', lead = null }) {
+// state/counters/flags once delivery is actually confirmed. geminiCalled is passed
+// through only for the "Gemini failed, fall back to the local generic reply" case in
+// handleInboundMessage below — every other caller of this function never touched Gemini.
+async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, confidence, cfg, sourceMessage = '', lead = null, geminiCalled = false }) {
   const variant = RE.pickVariant(intentKey, language, jid);
   if (!variant) {
     LS.logEvent({ jid, action: 'local_reply_no_variant', detail: { intent: intentKey, language } });
+    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: intentKey, confidence, geminiCalled, counter: 'none' } });
     return false;
   }
 
@@ -183,6 +196,10 @@ async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, co
   });
 
   RE.logMatch({ jid, message: sourceMessage, intent: intentKey, confidence, language, variantIndex: variant.index });
+  // Single-line diagnostic covering exactly what a production quota-exhaustion incident
+  // needs to confirm at a glance: which intent matched (or didn't), whether Gemini was
+  // ever touched, and which counter (if any) this send was charged to.
+  LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: intentKey, confidence, geminiCalled, counter: counterLabel(jid, cfg.mode, delivered) } });
   if (!delivered) return false;
 
   LS.incrementReplySplit('local');
@@ -290,6 +307,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     const alertText = `📸 PAYMENT SCREENSHOT — ${phone}${pushName ? ' (' + pushName + ')' : ''}\nAn image came in — open the chat, confirm the amount, then use the Leads tab to generate and send the invoice.${studentLine}\n\nOpen chat: ${link}`;
     const result = await WA.sendToOperatorAlert(alertText);
     LS.logEvent({ jid, action: result.sent ? 'payment_screenshot_alert_sent' : 'payment_screenshot_alert_failed', detail: result.sent ? null : result.reason });
+    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: 'payment_screenshot', confidence: null, geminiCalled: false, counter: 'none' } });
     return;
   }
 
@@ -323,16 +341,36 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     return;
   }
 
-  // 6) Gemini fallback — classify.
-  const { intent, quotaExhausted: classifyQuotaExhausted } = await G.classifyIntent(LS.lastMessages(jid, 20));
-  LS.logEvent({ jid, action: 'classified', detail: { intent, quotaExhausted: !!classifyQuotaExhausted } });
+  // 6) Gemini fallback — classify. classifyIntent already turns a 429/quota-exhaustion
+  // into { quotaExhausted: true } internally, but any OTHER failure (network error, a
+  // non-2xx that isn't 429, a malformed response) currently rethrows — wrapped here too,
+  // and treated exactly the same way, so a Gemini outage of any shape still ends in the
+  // lead getting a reply instead of silence (this is the gap that let "Gemini is down"
+  // mean "no replies go out at all" in production, even though the local engine above
+  // never touches Gemini in the first place).
+  let intent, classifyQuotaExhausted = false, classifyFailed = false;
+  try {
+    ({ intent, quotaExhausted: classifyQuotaExhausted } = await G.classifyIntent(LS.lastMessages(jid, 20)));
+  } catch (e) {
+    console.error('Gemini classifyIntent failed:', e.message);
+    classifyFailed = true;
+  }
+  LS.logEvent({ jid, action: 'classified', detail: { intent: intent || null, quotaExhausted: !!classifyQuotaExhausted, failed: classifyFailed } });
 
-  if (classifyQuotaExhausted) {
-    await notifyOperator(`⚠️ Gemini quota exhausted while classifying a message from ${phone}. Message: "${text}"\nPlease handle manually.`);
+  if (classifyQuotaExhausted || classifyFailed) {
+    await notifyOperator(`⚠️ Gemini ${classifyFailed ? 'error' : 'quota exhausted'} while classifying a message from ${phone}. Message: "${text}"\nPlease handle manually.`);
+    await deliverLocalMatch({
+      jid, phone, pushName, cfg, lead, sourceMessage: text,
+      intentKey: 'fallback_gemini_unavailable', language: RE.detectLanguage(text), confidence: null,
+      geminiCalled: true
+    });
     return;
   }
 
-  if (intent === 'not_related') return; // stay silent — clearly not about the course at all (wrong number, spam, personal message)
+  if (intent === 'not_related') {
+    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent, confidence: null, geminiCalled: true, counter: 'none' } });
+    return; // stay silent — clearly not about the course at all (wrong number, spam, personal message)
+  }
 
   // 'unclear' no longer stays silent — every inbound message gets a reply. gemini.js's
   // generateReply has its own instruction branch for 'unclear' (acknowledge naturally /
@@ -344,12 +382,27 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   // real bank/UPI details wait for daytime.
   const silentNow = inSilentHours(cfg);
   const paymentDetailsAllowed = !silentNow && paymentDetailsEligible(cfg, lead);
-  const { reply, escalate, escalateReason, escalateType, hotLead, hotLeadSummary, paymentDetailsIncluded, quotaExhausted: replyQuotaExhausted, tier, model } =
-    await generateTieredReply({ jid, phone, text, leadState: lead.state, intent, paymentDetailsAllowed, offHours: silentNow });
+  // Same any-failure-not-just-quota treatment as the classify step above — generateReply
+  // only catches GeminiQuotaExhaustedError itself and rethrows everything else, so this
+  // try/catch is what stops a network blip or a malformed Gemini response from silently
+  // dropping the reply entirely.
+  let tieredResult = null, replyFailed = false;
+  try {
+    tieredResult = await generateTieredReply({ jid, phone, text, leadState: lead.state, intent, paymentDetailsAllowed, offHours: silentNow });
+  } catch (e) {
+    console.error('Gemini generateTieredReply failed:', e.message);
+    replyFailed = true;
+  }
+  const { reply, escalate, escalateReason, escalateType, hotLead, hotLeadSummary, paymentDetailsIncluded, quotaExhausted: replyQuotaExhausted, tier, model } = tieredResult || {};
 
-  if (replyQuotaExhausted || !reply) {
-    LS.logEvent({ jid, action: 'reply_skipped_quota', detail: { tier, model } });
-    await notifyOperator(`⚠️ Gemini quota exhausted while replying to ${phone}. Message: "${text}"\nPlease handle manually.`);
+  if (replyQuotaExhausted || replyFailed || !reply) {
+    LS.logEvent({ jid, action: 'reply_skipped_quota', detail: { tier, model, failed: replyFailed } });
+    await notifyOperator(`⚠️ Gemini ${replyFailed ? 'error' : 'quota exhausted'} while replying to ${phone}. Message: "${text}"\nPlease handle manually.`);
+    await deliverLocalMatch({
+      jid, phone, pushName, cfg, lead, sourceMessage: text,
+      intentKey: 'fallback_gemini_unavailable', language: RE.detectLanguage(text), confidence: null,
+      geminiCalled: true
+    });
     return;
   }
 
@@ -393,6 +446,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   // details when silentNow is true — see step 6 and gemini.js#generateReply's offHours.
   const delivered = await deliver({ jid, phone, pushName, reply, mode: cfg.mode, escalate, escalateReason, tier, model });
   if (delivered) LS.incrementReplySplit('gemini');
+  LS.logEvent({ jid, action: 'inbound_routed', detail: { intent, confidence: null, geminiCalled: true, counter: counterLabel(jid, cfg.mode, delivered) } });
 
   // 8) State transition.
   advanceState(jid, lead, intent);

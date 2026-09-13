@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "chat:test": "node scripts/test-reply.js"
+    "chat:test": "node scripts/test-reply.js",
+    "test:gemini-fallback": "node scripts/test-gemini-fallback.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.9",

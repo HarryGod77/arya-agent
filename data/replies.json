@@ -3625,6 +3625,22 @@
         "Hi {{name}},\n\nHalka reminder: aapka {{course}} installment #{{installment_number}}, INR {{amount}}, due hai {{due_date}} ko. Iske baad balance: INR {{balance}}.\n\nSchedule ke baare mein baat karni ho to kabhi bhi bataiye.\n\nRegards,\n{{manager_full_name}}\n{{agency_name}}",
         "Hey {{name}} 🙏\n\nBas ek note ki installment #{{installment_number}} aapke {{course}} fee ka (INR {{amount}}) due hai {{due_date}} ko. Iske baad balance: INR {{balance}}.\n\nUPI/bank transfer dono chalega — payment ke baad screenshot bhej dijiyega.\n\n{{manager_name}}"
       ]
+    },
+    "fallback_gemini_unavailable": {
+      "match": { "keywords": [], "patterns": [] },
+      "escalate": false,
+      "variants_en": [
+        "Thanks for your message! I'm having a brief technical hiccup on my end — someone from the team will follow up with you shortly.",
+        "Got your message, thank you — there's a small system delay on my side right now, but the team will get back to you very soon.",
+        "Thanks for reaching out! I'm facing a quick technical issue at the moment — you'll hear from the team shortly.",
+        "Got it, thank you — a brief system issue on my end right now, the team will follow up with you soon."
+      ],
+      "variants_hi": [
+        "Aapka message mil gaya, shukriya! Abhi mere yahan thoda technical issue chal raha hai — team jald hi aapse contact karegi.",
+        "Message mil gaya, dhanyavaad — abhi thoda system delay hai mere yahan, team jald follow up karegi.",
+        "Aapka message aa gaya! Chhota sa technical dikkat ho raha hai abhi — team bahot jald aapse baat karegi.",
+        "Ji, message mil gaya — thodi der ke liye system slow hai, team jald hi reply karegi."
+      ]
     }
   }
 }
