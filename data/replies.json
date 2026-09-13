@@ -1,50 +1,80 @@
 {
+  "config": {
+    "course_fee_current": "₹25,000",
+    "course_fee_standard": "₹30,000",
+    "promo_deadline": "2026-09-15",
+    "manager_name": "Harshit",
+    "whatsapp_number": "+91 84336 14140"
+  },
   "intents": {
     "greeting_hi": {
       "match": {
-        "keywords": ["hi", "hii", "hiii", "hiiii", "hello", "helo", "hey", "heyy", "yo", "hola"],
-        "patterns": ["^h+i+$", "^h+e+y+$", "^h+e+l+o+$"]
+        "keywords": [
+          "hi",
+          "hii",
+          "hiii",
+          "hiiii",
+          "hello",
+          "helo",
+          "hey",
+          "heyy",
+          "yo",
+          "hola"
+        ],
+        "patterns": [
+          "^h+i+$",
+          "^h+e+y+$",
+          "^h+e+l+o+$"
+        ]
       },
       "priority": 2,
       "variants_en": [
-        "Hey! This is Harshit, Dr Arya Chandel's manager — what can I help you with?",
-        "Hi there. Course enquiry or a show booking — which one brings you here?",
-        "Hello! Tell me what you're looking for and I'll take it from there.",
-        "Hey, good to hear from you. What do you need?",
-        "Hi! Go ahead, I'm listening.",
-        "Hello there — Harshit here, from Dr Arya Chandel's team. How can I help?",
-        "Hey! What can I get you started with?",
-        "Hi, tell me what's on your mind.",
-        "Hello! Happy to help — what are you looking for?",
-        "Hey there. Course info or a booking enquiry?",
-        "Hi! I'm here, go ahead.",
-        "Hello, thanks for reaching out. What would you like to know?"
+        "Hey! This is {{manager_name}}, Dr Arya Chandel's manager — what can I help you with?",
+        "Hi there — {{manager_name}} here, Dr Arya Chandel's manager. Course enquiry or a show booking?",
+        "Hello! {{manager_name}} here, managing enquiries for Dr Arya Chandel. What are you looking for?",
+        "Hey, {{manager_name}} here — I manage this number for Dr Arya Chandel. What do you need?",
+        "Hi! {{manager_name}}, Dr Arya Chandel's manager. Go ahead, I'm listening.",
+        "Hello there — {{manager_name}} here, from Dr Arya Chandel's team. How can I help?",
+        "Hey! This is {{manager_name}}, handling enquiries for Dr Arya Chandel. What can I get you started with?",
+        "Hi, {{manager_name}} here — Dr Arya Chandel's manager. Tell me what's on your mind.",
+        "Hello! {{manager_name}}, Dr Arya Chandel's manager, at your service. What are you looking for?",
+        "Hey there — {{manager_name}} here, I manage this number for Dr Arya Chandel. Course info or a booking enquiry?",
+        "Hi! {{manager_name}}, Dr Arya Chandel's manager — go ahead.",
+        "Hello, thanks for reaching out. This is {{manager_name}}, Dr Arya Chandel's manager — what would you like to know?"
       ],
       "variants_hi": [
-        "Hey! Harshit bol raha hoon, Arya Chandel Academy se — kaise madad karu?",
-        "Hi ji, batao course ke baare mein jaanna hai ya show booking ke liye poochh rahe ho?",
-        "Namaste! Kya jaankari chahiye aapko?",
-        "Hello ji, bataiye kis baare mein baat karni hai.",
-        "Hey, bolo kya help chahiye.",
-        "Hi! Course details ya show booking — kaunsa chahiye?",
-        "Namaste ji, main sun raha hoon, bataiye.",
-        "Hello! Kaise help kar sakta hoon aapki?",
-        "Hi, batao kya poochna hai.",
-        "Hey ji, course ya booking — kis baare mein baat karni hai?",
-        "Namaste! Kaam bataiye, turant dekhta hoon.",
-        "Hello ji, kya chahiye aapko, batao."
+        "Hey! {{manager_name}} bol raha hoon, Arya sir ka manager — kaise madad karu?",
+        "Hi ji, {{manager_name}} yahan hoon, Arya sir ka manager. Course ya show booking, kya chahiye?",
+        "Namaste! {{manager_name}}, Arya sir ka manager — kya jaankari chahiye aapko?",
+        "Hello ji, {{manager_name}} bol raha hoon, Arya sir ke liye ye number dekhta hoon. Bataiye kis baare mein baat karni hai.",
+        "Hey, {{manager_name}} hoon, Arya sir ka manager — bolo kya help chahiye.",
+        "Hi! {{manager_name}}, Arya sir ki team se — course details ya show booking, kaunsa chahiye?",
+        "Namaste ji, {{manager_name}} bol raha hoon, Arya sir ka manager. Main sun raha hoon, bataiye.",
+        "Hello! {{manager_name}} hoon, Arya sir ka manager — kaise help kar sakta hoon aapki?",
+        "Hi, {{manager_name}}, Arya sir ka manager — batao kya poochna hai.",
+        "Hey ji, {{manager_name}} bol raha hoon, Arya sir ke liye enquiries dekhta hoon. Course ya booking — kis baare mein baat karni hai?",
+        "Namaste! {{manager_name}}, Arya sir ka manager — kaam bataiye, turant dekhta hoon.",
+        "Hello ji, {{manager_name}} hoon, Arya sir ka manager — kya chahiye aapko, batao."
       ]
     },
     "greeting_morning": {
       "match": {
-        "keywords": ["gm", "morning", "suprabhat", "subhprabhat"],
-        "patterns": ["good\\s*morning", "shubh\\s*prabhat"]
+        "keywords": [
+          "gm",
+          "morning",
+          "suprabhat",
+          "subhprabhat"
+        ],
+        "patterns": [
+          "good\\s*morning",
+          "shubh\\s*prabhat"
+        ]
       },
       "priority": 2,
       "variants_en": [
         "Good morning! What can I help you with today?",
         "Morning! Course enquiry or a show booking?",
-        "Good morning — Harshit here, Dr Arya's manager. Go ahead.",
+        "Good morning — {{manager_name}} here, Dr Arya's manager. Go ahead.",
         "Morning! Tell me what you need.",
         "Good morning, how can I help?",
         "Morning to you too. What's on your mind?",
@@ -58,7 +88,7 @@
       "variants_hi": [
         "Good morning! Aaj kis baare mein baat karni hai?",
         "Morning ji! Course ya booking, kya chahiye?",
-        "Good morning — Harshit bol raha hoon, Arya sir ki team se. Batao.",
+        "Good morning — {{manager_name}} bol raha hoon, Arya sir ki team se. Batao.",
         "Morning! Bolo kya help chahiye.",
         "Good morning, kaise madad karu?",
         "Morning aapko bhi. Kya poochna hai?",
@@ -72,14 +102,21 @@
     },
     "greeting_evening": {
       "match": {
-        "keywords": ["ge", "evening", "shubhsandhya"],
-        "patterns": ["good\\s*evening", "shubh\\s*sandhya"]
+        "keywords": [
+          "ge",
+          "evening",
+          "shubhsandhya"
+        ],
+        "patterns": [
+          "good\\s*evening",
+          "shubh\\s*sandhya"
+        ]
       },
       "priority": 2,
       "variants_en": [
         "Good evening! What can I help you with?",
         "Evening! Course enquiry or a show booking?",
-        "Good evening — Harshit here, Dr Arya's manager. Go ahead.",
+        "Good evening — {{manager_name}} here, Dr Arya's manager. Go ahead.",
         "Evening! Tell me what you need.",
         "Good evening, how can I help?",
         "Evening to you too. What's on your mind?",
@@ -93,7 +130,7 @@
       "variants_hi": [
         "Good evening! Kis baare mein baat karni hai?",
         "Evening ji! Course ya booking, kya chahiye?",
-        "Good evening — Harshit bol raha hoon, Arya sir ki team se. Batao.",
+        "Good evening — {{manager_name}} bol raha hoon, Arya sir ki team se. Batao.",
         "Evening! Bolo kya help chahiye.",
         "Good evening, kaise madad karu?",
         "Evening aapko bhi. Kya poochna hai?",
@@ -106,7 +143,10 @@
       ]
     },
     "greeting_only_emoji": {
-      "match": { "keywords": [], "patterns": [] },
+      "match": {
+        "keywords": [],
+        "patterns": []
+      },
       "priority": 2,
       "variants_en": [
         "Hey! What can I help you with?",
@@ -139,8 +179,15 @@
     },
     "greeting_repeat": {
       "match": {
-        "keywords": ["hi", "hello", "hey"],
-        "patterns": ["^h+i+$", "^h+e+y+$"]
+        "keywords": [
+          "hi",
+          "hello",
+          "hey"
+        ],
+        "patterns": [
+          "^h+i+$",
+          "^h+e+y+$"
+        ]
       },
       "priority": 2,
       "variants_en": [
@@ -175,77 +222,107 @@
     "identity_are_you_arya": {
       "match": {
         "keywords": [],
-        "patterns": ["are you arya", "tum arya ho", "aap arya ho", "aap arya sir ho", "aap khud arya", "is this arya sir", "arya sir kya aap", "kya aap arya", "kya tum arya", "khud arya", "arya khud", "aap hi arya"]
+        "patterns": [
+          "are you arya",
+          "tum arya ho",
+          "aap arya ho",
+          "aap arya sir ho",
+          "aap khud arya",
+          "is this arya sir",
+          "arya sir kya aap",
+          "kya aap arya",
+          "kya tum arya",
+          "khud arya",
+          "arya khud",
+          "aap hi arya"
+        ]
       },
       "priority": 6,
       "variants_en": [
-        "No, I'm not Arya sir — I'm Harshit, his manager. What did you need?",
-        "This isn't Arya sir, it's Harshit, his manager. Go ahead, tell me.",
-        "Not Arya sir here — I'm his manager Harshit. What can I help with?",
-        "I manage this number for Dr Arya Chandel. I'm Harshit — what do you need?",
-        "That's not me — I'm Harshit, Arya sir's manager. Ask away.",
+        "No, I'm not Arya sir — I'm {{manager_name}}, his manager. What did you need?",
+        "This isn't Arya sir, it's {{manager_name}}, his manager. Go ahead, tell me.",
+        "Not Arya sir here — I'm his manager {{manager_name}}. What can I help with?",
+        "I manage this number for Dr Arya Chandel. I'm {{manager_name}} — what do you need?",
+        "That's not me — I'm {{manager_name}}, Arya sir's manager. Ask away.",
         "No, I handle this number on Arya sir's behalf. What's the query?",
         "I'm his manager, not Arya sir himself. Tell me what you need.",
-        "Not him — this is Harshit, his manager. How can I help?",
+        "Not him — this is {{manager_name}}, his manager. How can I help?",
         "I look after enquiries for Arya sir. What did you want to ask?",
-        "No, I'm his manager Harshit — Arya sir isn't on this chat directly.",
-        "This is Harshit, Dr Arya's manager, not Arya sir himself. Go ahead.",
+        "No, I'm his manager {{manager_name}} — Arya sir isn't on this chat directly.",
+        "This is {{manager_name}}, Dr Arya's manager, not Arya sir himself. Go ahead.",
         "I'm not Arya sir — I run this number for him. What can I do for you?"
       ],
       "variants_hi": [
-        "Nahi, main Arya sir nahi — Harshit hoon, unka manager. Batao kya chahiye.",
-        "Ye Arya sir nahi hai, main unka manager Harshit hoon. Bolo kya baat hai.",
+        "Nahi, main Arya sir nahi — {{manager_name}} hoon, unka manager. Batao kya chahiye.",
+        "Ye Arya sir nahi hai, main unka manager {{manager_name}} hoon. Bolo kya baat hai.",
         "Arya sir nahi — main unka manager hoon. Kaise help karu?",
-        "Main Arya sir ka manager Harshit hoon, ye number main hi dekhta hoon. Batao.",
+        "Main Arya sir ka manager {{manager_name}} hoon, ye number main hi dekhta hoon. Batao.",
         "Nahi ji, main manager hoon Arya sir ka. Poochho kya jaanna hai.",
-        "Ye main nahi — Harshit hoon, Arya sir ka manager. Kya chahiye batao.",
+        "Ye main nahi — {{manager_name}} hoon, Arya sir ka manager. Kya chahiye batao.",
         "Main unka manager hoon, khud Arya sir nahi. Bolo kya kaam hai.",
-        "Nahi, ye number Arya sir khud nahi dekhte — main dekhta hoon, Harshit. Batao.",
+        "Nahi, ye number Arya sir khud nahi dekhte — main dekhta hoon, {{manager_name}}. Batao.",
         "Main Arya sir ki taraf se enquiries handle karta hoon. Kya poochna tha?",
         "Nahi ji, main manager hoon — Arya sir seedhe is chat pe nahi hain.",
-        "Ye Harshit hai, Arya sir ka manager, khud Arya sir nahi. Bolo.",
+        "Ye {{manager_name}} hai, Arya sir ka manager, khud Arya sir nahi. Bolo.",
         "Main Arya sir nahi hoon — unka number main dekhta hoon. Kya chahiye?"
       ]
     },
     "identity_who_are_you": {
       "match": {
         "keywords": [],
-        "patterns": ["who are you", "who is this", "tum kaun ho", "aap kaun hai", "aap kaun ho", "ye kaun hai", "ye kon hai", "tu kaun hai"]
+        "patterns": [
+          "who are you",
+          "who is this",
+          "tum kaun ho",
+          "aap kaun hai",
+          "aap kaun ho",
+          "ye kaun hai",
+          "ye kon hai",
+          "tu kaun hai"
+        ]
       },
       "priority": 6,
       "variants_en": [
-        "I'm Harshit, Dr Arya Chandel's manager — this number handles class enquiries and show bookings.",
-        "Harshit here, I manage this number for Dr Arya Chandel. What did you need?",
+        "I'm {{manager_name}}, Dr Arya Chandel's manager — this number handles class enquiries and show bookings.",
+        "{{manager_name}} here, I manage this number for Dr Arya Chandel. What did you need?",
         "I'm his manager. I handle course and show booking enquiries on this number.",
-        "This is Harshit — I run Dr Arya Chandel's WhatsApp for enquiries. Go ahead.",
-        "I'm Arya sir's manager, Harshit. What can I help you with?",
-        "Harshit, manager for Dr Arya Chandel. What's your question?",
+        "This is {{manager_name}} — I run Dr Arya Chandel's WhatsApp for enquiries. Go ahead.",
+        "I'm Arya sir's manager, {{manager_name}}. What can I help you with?",
+        "{{manager_name}}, manager for Dr Arya Chandel. What's your question?",
         "I look after this number for Arya sir — course and booking enquiries.",
-        "I'm Harshit — I handle everything on this number for Dr Arya Chandel.",
-        "This number belongs to Dr Arya Chandel's academy — I'm his manager, Harshit.",
+        "I'm {{manager_name}} — I handle everything on this number for Dr Arya Chandel.",
+        "This number belongs to Dr Arya Chandel's academy — I'm his manager, {{manager_name}}.",
         "I'm his manager. Tell me what you're looking for.",
-        "Harshit, I manage enquiries for Dr Arya Chandel. What do you need?",
+        "{{manager_name}}, I manage enquiries for Dr Arya Chandel. What do you need?",
         "I handle this number on behalf of Dr Arya Chandel. Go ahead."
       ],
       "variants_hi": [
-        "Main Harshit hoon, Arya sir ka manager — ye number course aur show booking ke liye hai.",
-        "Harshit bol raha hoon, main Arya sir ka number dekhta hoon. Batao kya chahiye.",
+        "Main {{manager_name}} hoon, Arya sir ka manager — ye number course aur show booking ke liye hai.",
+        "{{manager_name}} bol raha hoon, main Arya sir ka number dekhta hoon. Batao kya chahiye.",
         "Main unka manager hoon, course aur booking enquiries yahin handle hoti hain.",
-        "Ye Harshit hai — Arya sir ke WhatsApp enquiries main dekhta hoon. Bolo.",
-        "Main Arya sir ka manager hoon, Harshit. Kaise help karu?",
-        "Harshit, Arya sir ka manager. Kya poochna hai?",
+        "Ye {{manager_name}} hai — Arya sir ke WhatsApp enquiries main dekhta hoon. Bolo.",
+        "Main Arya sir ka manager hoon, {{manager_name}}. Kaise help karu?",
+        "{{manager_name}}, Arya sir ka manager. Kya poochna hai?",
         "Main is number ko dekhta hoon Arya sir ki taraf se — course aur booking ke liye.",
-        "Main Harshit hoon — is number pe sab kuch main hi handle karta hoon.",
-        "Ye number Arya Chandel Academy ka hai — main unka manager hoon, Harshit.",
+        "Main {{manager_name}} hoon — is number pe sab kuch main hi handle karta hoon.",
+        "Ye number Arya Chandel Academy ka hai — main unka manager hoon, {{manager_name}}.",
         "Main unka manager hoon. Batao kya jaanna chahte ho.",
-        "Harshit, Arya sir ke liye enquiries dekhta hoon. Kya chahiye?",
+        "{{manager_name}}, Arya sir ke liye enquiries dekhta hoon. Kya chahiye?",
         "Main is number ko Arya sir ki taraf se handle karta hoon. Bolo."
       ]
     },
     "identity_want_to_talk_to_arya": {
       "match": {
         "keywords": [],
-        "patterns": ["talk to arya", "speak to arya", "arya se baat", "connect me to arya", "arya sir se baat karni", "arya sir se milna", "direct arya"]
+        "patterns": [
+          "talk to arya",
+          "speak to arya",
+          "arya se baat",
+          "connect me to arya",
+          "arya sir se baat karni",
+          "arya sir se milna",
+          "direct arya"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -279,8 +356,20 @@
     },
     "identity_call_request": {
       "match": {
-        "keywords": ["callback"],
-        "patterns": ["call me", "please call", "give me a call", "mujhe call", "call kar", "call karo", "phone karo", "phone kijiye", "call back karo"]
+        "keywords": [
+          "callback"
+        ],
+        "patterns": [
+          "call me",
+          "please call",
+          "give me a call",
+          "mujhe call",
+          "call kar",
+          "call karo",
+          "phone karo",
+          "phone kijiye",
+          "call back karo"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -314,8 +403,16 @@
     },
     "identity_video_call_request": {
       "match": {
-        "keywords": ["videocall"],
-        "patterns": ["video call", "video pe baat", "video call karo", "video call kijiye", "can we video call"]
+        "keywords": [
+          "videocall"
+        ],
+        "patterns": [
+          "video call",
+          "video pe baat",
+          "video call karo",
+          "video call kijiye",
+          "can we video call"
+        ]
       },
       "priority": 8,
       "variants_en": [
@@ -350,7 +447,15 @@
     "identity_wrong_number": {
       "match": {
         "keywords": [],
-        "patterns": ["wrong number", "galat number", "glt number", "who gave you this number", "kisne diya ye number", "i did not message you", "maine to message hi nahi kiya"]
+        "patterns": [
+          "wrong number",
+          "galat number",
+          "glt number",
+          "who gave you this number",
+          "kisne diya ye number",
+          "i did not message you",
+          "maine to message hi nahi kiya"
+        ]
       },
       "priority": 8,
       "variants_en": [
@@ -384,8 +489,23 @@
     },
     "course_inquiry": {
       "match": {
-        "keywords": ["course", "mentalism", "training", "mastercourse", "masterclass"],
-        "patterns": ["course ke baare", "course ki jankari", "tell me about the course", "course details", "course chahiye", "sikhna hai", "seekhna hai", "join karna hai"]
+        "keywords": [
+          "course",
+          "mentalism",
+          "training",
+          "mastercourse",
+          "masterclass"
+        ],
+        "patterns": [
+          "course ke baare",
+          "course ki jankari",
+          "tell me about the course",
+          "course details",
+          "course chahiye",
+          "sikhna hai",
+          "seekhna hai",
+          "join karna hai"
+        ]
       },
       "priority": 3,
       "variants_en": [
@@ -419,43 +539,63 @@
     },
     "course_fee": {
       "match": {
-        "keywords": ["fee", "price", "cost", "charge", "kharcha", "kimat"],
-        "patterns": ["kitna hai course", "course kitna", "kitne ka hai", "how much is the course"]
+        "keywords": [
+          "fee",
+          "price",
+          "cost",
+          "charge",
+          "kharcha",
+          "kimat"
+        ],
+        "patterns": [
+          "kitna hai course",
+          "course kitna",
+          "kitne ka hai",
+          "how much is the course"
+        ]
       },
       "priority": 6,
       "variants_en": [
-        "Fee is ₹25,000 for the full 3-month course. Outside India there's applicable tax on top.",
-        "₹25,000 for the complete course — 10 classes, 3 months, 3 years of support included.",
-        "It's ₹25,000 total, one-time. Covers everything for the full 3 months.",
-        "The course is ₹25,000 in India, plus tax if you're outside India.",
-        "₹25,000 flat for the whole 3-month program.",
-        "Fee stands at ₹25,000 for the complete training.",
-        "It's ₹25,000, covers the full 10-class course plus 3 years of support.",
-        "₹25,000 total — that includes everything, no hidden add-ons.",
-        "The full course is priced at ₹25,000.",
-        "₹25,000 for India-based students; add applicable tax if you're outside India.",
-        "Fee is ₹25,000 — one payment for the entire 3-month training.",
-        "₹25,000 total for the course, all 10 classes and the bonus sessions included."
+        "Fee is {{course_fee_current}} for the full 3-month course. Outside India there's applicable tax on top.",
+        "{{course_fee_current}} for the complete course — 10 classes, 3 months, 3 years of support included.",
+        "It's {{course_fee_current}} total, one-time. Covers everything for the full 3 months.",
+        "The course is {{course_fee_current}} in India, plus tax if you're outside India.",
+        "{{course_fee_current}} flat for the whole 3-month program.",
+        "Fee stands at {{course_fee_current}} for the complete training.",
+        "It's {{course_fee_current}}, covers the full 10-class course plus 3 years of support.",
+        "{{course_fee_current}} total — that includes everything, no hidden add-ons.",
+        "The full course is priced at {{course_fee_current}}.",
+        "{{course_fee_current}} for India-based students; add applicable tax if you're outside India.",
+        "Fee is {{course_fee_current}} — one payment for the entire 3-month training.",
+        "{{course_fee_current}} total for the course, all 10 classes and the bonus sessions included."
       ],
       "variants_hi": [
-        "Fee ₹25,000 hai poore 3 mahine ke course ke liye. India ke bahar tax extra lagega.",
-        "₹25,000 total hai — 10 classes, 3 mahine, 3 saal ka support bhi included.",
-        "₹25,000 ek baar mein, poore course ke liye.",
-        "Course ₹25,000 ka hai India mein, bahar se tax alag se.",
-        "₹25,000 flat hai poore 3 mahine ke program ke liye.",
-        "Fee ₹25,000 hai poori training ke liye.",
-        "₹25,000 hai, isme poora 10-class course aur 3 saal support bhi aata hai.",
-        "₹25,000 total — isme sab kuch cover ho jata hai, koi hidden charge nahi.",
-        "Poora course ₹25,000 ka hai.",
-        "₹25,000 India ke students ke liye; bahar se ho toh tax add hoga.",
-        "Fee ₹25,000 hai — ek hi payment poore 3 mahine ke training ke liye.",
-        "₹25,000 total course ke liye, saari 10 classes aur bonus sessions ke saath."
+        "Fee {{course_fee_current}} hai poore 3 mahine ke course ke liye. India ke bahar tax extra lagega.",
+        "{{course_fee_current}} total hai — 10 classes, 3 mahine, 3 saal ka support bhi included.",
+        "{{course_fee_current}} ek baar mein, poore course ke liye.",
+        "Course {{course_fee_current}} ka hai India mein, bahar se tax alag se.",
+        "{{course_fee_current}} flat hai poore 3 mahine ke program ke liye.",
+        "Fee {{course_fee_current}} hai poori training ke liye.",
+        "{{course_fee_current}} hai, isme poora 10-class course aur 3 saal support bhi aata hai.",
+        "{{course_fee_current}} total — isme sab kuch cover ho jata hai, koi hidden charge nahi.",
+        "Poora course {{course_fee_current}} ka hai.",
+        "{{course_fee_current}} India ke students ke liye; bahar se ho toh tax add hoga.",
+        "Fee {{course_fee_current}} hai — ek hi payment poore 3 mahine ke training ke liye.",
+        "{{course_fee_current}} total course ke liye, saari 10 classes aur bonus sessions ke saath."
       ]
     },
     "course_duration": {
       "match": {
-        "keywords": ["duration", "months", "mahine"],
-        "patterns": ["how long is the course", "kitna time lagega", "kitne time ka hai"]
+        "keywords": [
+          "duration",
+          "months",
+          "mahine"
+        ],
+        "patterns": [
+          "how long is the course",
+          "kitna time lagega",
+          "kitne time ka hai"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -489,8 +629,17 @@
     },
     "course_schedule_days": {
       "match": {
-        "keywords": ["saturday", "sunday", "weekend"],
-        "patterns": ["which day", "kis din", "kaunse din", "days classes"]
+        "keywords": [
+          "saturday",
+          "sunday",
+          "weekend"
+        ],
+        "patterns": [
+          "which day",
+          "kis din",
+          "kaunse din",
+          "days classes"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -524,8 +673,16 @@
     },
     "course_timing": {
       "match": {
-        "keywords": ["timing"],
-        "patterns": ["what time", "kis time", "kaunsa time", "time kya hai class", "evening ya"]
+        "keywords": [
+          "timing"
+        ],
+        "patterns": [
+          "what time",
+          "kis time",
+          "kaunsa time",
+          "time kya hai class",
+          "evening ya"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -559,8 +716,15 @@
     },
     "course_online_offline": {
       "match": {
-        "keywords": ["online", "offline"],
-        "patterns": ["in person class", "physical class", "online hai ya offline"]
+        "keywords": [
+          "online",
+          "offline"
+        ],
+        "patterns": [
+          "in person class",
+          "physical class",
+          "online hai ya offline"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -594,8 +758,16 @@
     },
     "course_syllabus": {
       "match": {
-        "keywords": ["syllabus", "curriculum"],
-        "patterns": ["kya sikhaya", "what will i learn", "classes kya hoti", "topics kya"]
+        "keywords": [
+          "syllabus",
+          "curriculum"
+        ],
+        "patterns": [
+          "kya sikhaya",
+          "what will i learn",
+          "classes kya hoti",
+          "topics kya"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -630,7 +802,13 @@
     "course_batch_start": {
       "match": {
         "keywords": [],
-        "patterns": ["next batch", "batch kab start", "naya batch", "when does the batch start", "batch start date"]
+        "patterns": [
+          "next batch",
+          "batch kab start",
+          "naya batch",
+          "when does the batch start",
+          "batch start date"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -665,7 +843,13 @@
     "course_seats_left": {
       "match": {
         "keywords": [],
-        "patterns": ["seats left", "kitni seats", "how many seats", "seats bachi", "limited seats"]
+        "patterns": [
+          "seats left",
+          "kitni seats",
+          "how many seats",
+          "seats bachi",
+          "limited seats"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -700,7 +884,13 @@
     "course_language_of_teaching": {
       "match": {
         "keywords": [],
-        "patterns": ["language of teaching", "kis language mein", "hindi ya english", "which language classes", "language mein padhate"]
+        "patterns": [
+          "language of teaching",
+          "kis language mein",
+          "hindi ya english",
+          "which language classes",
+          "language mein padhate"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -735,7 +925,14 @@
     "course_prior_experience": {
       "match": {
         "keywords": [],
-        "patterns": ["prior experience", "beginner", "zero se", "no experience", "pehle se kuch", "kuch nahi aata"]
+        "patterns": [
+          "prior experience",
+          "beginner",
+          "zero se",
+          "no experience",
+          "pehle se kuch",
+          "kuch nahi aata"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -770,7 +967,13 @@
     "course_age_limit": {
       "match": {
         "keywords": [],
-        "patterns": ["age limit", "minimum age", "kitni age", "age kya honi", "age requirement"]
+        "patterns": [
+          "age limit",
+          "minimum age",
+          "kitni age",
+          "age kya honi",
+          "age requirement"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -804,8 +1007,14 @@
     },
     "course_certificate": {
       "match": {
-        "keywords": ["certificate", "certification"],
-        "patterns": ["certificate milega", "certificate diya jaata"]
+        "keywords": [
+          "certificate",
+          "certification"
+        ],
+        "patterns": [
+          "certificate milega",
+          "certificate diya jaata"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -839,8 +1048,15 @@
     },
     "course_recording_available": {
       "match": {
-        "keywords": ["recording"],
-        "patterns": ["miss a class", "class miss", "record milega", "recording milegi"]
+        "keywords": [
+          "recording"
+        ],
+        "patterns": [
+          "miss a class",
+          "class miss",
+          "record milega",
+          "recording milegi"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -875,7 +1091,16 @@
     "course_post_support": {
       "match": {
         "keywords": [],
-        "patterns": ["post support", "support after", "after the course support", "doubt clearing", "saal ka support", "saal support", "kitne saal", "support milta"]
+        "patterns": [
+          "post support",
+          "support after",
+          "after the course support",
+          "doubt clearing",
+          "saal ka support",
+          "saal support",
+          "kitne saal",
+          "support milta"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -909,8 +1134,16 @@
     },
     "course_who_teaches": {
       "match": {
-        "keywords": ["instructor", "teacher"],
-        "patterns": ["who teaches", "kaun sikhayega", "kaun padhata", "teacher kaun"]
+        "keywords": [
+          "instructor",
+          "teacher"
+        ],
+        "patterns": [
+          "who teaches",
+          "kaun sikhayega",
+          "kaun padhata",
+          "teacher kaun"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -944,8 +1177,16 @@
     },
     "course_installment_emi": {
       "match": {
-        "keywords": ["emi", "installment", "installments", "kist"],
-        "patterns": ["do part mein payment", "parts mein pay"]
+        "keywords": [
+          "emi",
+          "installment",
+          "installments",
+          "kist"
+        ],
+        "patterns": [
+          "do part mein payment",
+          "parts mein pay"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -979,8 +1220,14 @@
     },
     "course_refund_policy": {
       "match": {
-        "keywords": ["refund"],
-        "patterns": ["money back", "paisa wapas", "refund milega"]
+        "keywords": [
+          "refund"
+        ],
+        "patterns": [
+          "money back",
+          "paisa wapas",
+          "refund milega"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -1015,7 +1262,13 @@
     "course_demo_class": {
       "match": {
         "keywords": [],
-        "patterns": ["demo class", "trial class", "free class", "demo lena", "trial lena"]
+        "patterns": [
+          "demo class",
+          "trial class",
+          "free class",
+          "demo lena",
+          "trial lena"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -1049,12 +1302,20 @@
     },
     "course_props_investment": {
       "match": {
-        "keywords": ["props"],
-        "patterns": ["props chahiye", "equipment needed", "samaan chahiye", "extra investment", "props ka kharcha"]
+        "keywords": [
+          "props"
+        ],
+        "patterns": [
+          "props chahiye",
+          "equipment needed",
+          "samaan chahiye",
+          "extra investment",
+          "props ka kharcha"
+        ]
       },
       "priority": 7,
       "variants_en": [
-        "Nothing extra to buy upfront — the ₹25,000 fee covers the training itself.",
+        "Nothing extra to buy upfront — the {{course_fee_current}} fee covers the training itself.",
         "No additional prop investment needed to start the course.",
         "You don't need to buy anything special before joining.",
         "The course fee covers the training — no separate prop costs to start.",
@@ -1068,7 +1329,7 @@
         "You don't need any equipment ready before day one."
       ],
       "variants_hi": [
-        "Upfront kuch extra nahi lena — ₹25,000 fee training cover kar leti hai.",
+        "Upfront kuch extra nahi lena — {{course_fee_current}} fee training cover kar leti hai.",
         "Course start karne ke liye extra prop investment nahi chahiye.",
         "Kuch special khareedne ki zaroorat nahi hai join karne se pehle.",
         "Course fee training cover kar leti hai — alag se prop cost nahi.",
@@ -1084,8 +1345,17 @@
     },
     "course_how_to_enroll": {
       "match": {
-        "keywords": ["enroll", "enrol", "registration"],
-        "patterns": ["how to join", "join kaise karu", "kaise enroll karu", "admission kaise"]
+        "keywords": [
+          "enroll",
+          "enrol",
+          "registration"
+        ],
+        "patterns": [
+          "how to join",
+          "join kaise karu",
+          "kaise enroll karu",
+          "admission kaise"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -1120,7 +1390,14 @@
     "course_payment_methods": {
       "match": {
         "keywords": [],
-        "patterns": ["payment method", "how to pay", "kaise pay karu", "upi details do", "bank details do", "account number do"]
+        "patterns": [
+          "payment method",
+          "how to pay",
+          "kaise pay karu",
+          "upi details do",
+          "bank details do",
+          "account number do"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1156,7 +1433,18 @@
     "course_payment_done": {
       "match": {
         "keywords": [],
-        "patterns": ["payment done", "maine pay kar diya", "payment ho gaya", "paisa bhej diya", "already paid", "maine paid kar diya", "payment kar diya", "maine payment kar diya", "paise pay kar diye", "screenshot bhej"]
+        "patterns": [
+          "payment done",
+          "maine pay kar diya",
+          "payment ho gaya",
+          "paisa bhej diya",
+          "already paid",
+          "maine paid kar diya",
+          "payment kar diya",
+          "maine payment kar diya",
+          "paise pay kar diye",
+          "screenshot bhej"
+        ]
       },
       "priority": 8,
       "escalate": true,
@@ -1192,42 +1480,56 @@
     "course_outside_india": {
       "match": {
         "keywords": [],
-        "patterns": ["outside india", "international student", "abroad se", "other country", "bahar se hoon"]
+        "patterns": [
+          "outside india",
+          "international student",
+          "abroad se",
+          "other country",
+          "bahar se hoon"
+        ]
       },
       "priority": 6,
       "variants_en": [
-        "Yes, fully open to international students — same ₹25,000 fee plus applicable tax.",
+        "Yes, fully open to international students — same {{course_fee_current}} fee plus applicable tax.",
         "Absolutely, you can join from outside India — just applicable tax on top of the fee.",
-        "Yes, it's live online so location doesn't matter — fee is ₹25,000 plus tax if outside India.",
-        "International students are welcome — ₹25,000 plus applicable tax for outside India.",
-        "Yes, you can join from anywhere — the fee stays ₹25,000, plus tax outside India.",
-        "It's open worldwide — same course, ₹25,000 plus applicable tax if you're abroad.",
+        "Yes, it's live online so location doesn't matter — fee is {{course_fee_current}} plus tax if outside India.",
+        "International students are welcome — {{course_fee_current}} plus applicable tax for outside India.",
+        "Yes, you can join from anywhere — the fee stays {{course_fee_current}}, plus tax outside India.",
+        "It's open worldwide — same course, {{course_fee_current}} plus applicable tax if you're abroad.",
         "Yes, since it's online, you can join from any country — tax applies on top outside India.",
-        "Fully open internationally — ₹25,000 plus applicable tax for students outside India.",
+        "Fully open internationally — {{course_fee_current}} plus applicable tax for students outside India.",
         "Yes, being live online means anyone anywhere can join — tax applies outside India.",
         "Absolutely — same course, same fee, plus applicable tax if you're joining from abroad.",
-        "Yes, international students join regularly — ₹25,000 plus tax for outside India.",
-        "Location isn't a barrier — it's online, ₹25,000 plus applicable tax outside India."
+        "Yes, international students join regularly — {{course_fee_current}} plus tax for outside India.",
+        "Location isn't a barrier — it's online, {{course_fee_current}} plus applicable tax outside India."
       ],
       "variants_hi": [
-        "Haan, international students bhi join kar sakte hain — same ₹25,000 fee plus applicable tax.",
+        "Haan, international students bhi join kar sakte hain — same {{course_fee_current}} fee plus applicable tax.",
         "Bilkul, bahar se bhi join kar sakte ho — bas fee ke upar tax lagega.",
-        "Haan, live online hai toh location matter nahi karta — fee ₹25,000 plus tax bahar se.",
-        "International students welcome hain — ₹25,000 plus applicable tax bahar se.",
-        "Haan, kahin se bhi join kar sakte ho — fee ₹25,000 hi rehti hai, bas tax extra.",
-        "Ye worldwide open hai — same course, ₹25,000 plus tax agar bahar se ho.",
+        "Haan, live online hai toh location matter nahi karta — fee {{course_fee_current}} plus tax bahar se.",
+        "International students welcome hain — {{course_fee_current}} plus applicable tax bahar se.",
+        "Haan, kahin se bhi join kar sakte ho — fee {{course_fee_current}} hi rehti hai, bas tax extra.",
+        "Ye worldwide open hai — same course, {{course_fee_current}} plus tax agar bahar se ho.",
         "Haan, online hone ki wajah se kisi bhi country se join kar sakte ho — tax lagega bahar se.",
-        "Fully international students ke liye open hai — ₹25,000 plus applicable tax.",
+        "Fully international students ke liye open hai — {{course_fee_current}} plus applicable tax.",
         "Haan, live online hone ki wajah se kahin se bhi join ho sakta hai — bahar se tax lagega.",
         "Bilkul — same course, same fee, bas bahar se ho toh tax add hoga.",
-        "Haan, international students regularly join karte hain — ₹25,000 plus tax bahar se.",
-        "Location koi rukawat nahi hai — online hai, ₹25,000 plus applicable tax bahar se."
+        "Haan, international students regularly join karte hain — {{course_fee_current}} plus tax bahar se.",
+        "Location koi rukawat nahi hai — online hai, {{course_fee_current}} plus applicable tax bahar se."
       ]
     },
     "skill_hypnosis": {
       "match": {
-        "keywords": ["hypnosis", "hypnotize", "hypnotise"],
-        "patterns": ["hypnosis sikhaya", "hypnosis sikhate", "teach hypnosis"]
+        "keywords": [
+          "hypnosis",
+          "hypnotize",
+          "hypnotise"
+        ],
+        "patterns": [
+          "hypnosis sikhaya",
+          "hypnosis sikhate",
+          "teach hypnosis"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -1262,7 +1564,12 @@
     "skill_instant_hypnosis": {
       "match": {
         "keywords": [],
-        "patterns": ["instant hypnosis", "rapid hypnosis", "fast hypnosis", "turant hypnotize"]
+        "patterns": [
+          "instant hypnosis",
+          "rapid hypnosis",
+          "fast hypnosis",
+          "turant hypnotize"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -1297,7 +1604,11 @@
     "skill_stage_hypnosis": {
       "match": {
         "keywords": [],
-        "patterns": ["stage hypnosis", "stage pe hypnotize", "hypnotize on stage"]
+        "patterns": [
+          "stage hypnosis",
+          "stage pe hypnotize",
+          "hypnotize on stage"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -1331,7 +1642,9 @@
     },
     "skill_telekinesis": {
       "match": {
-        "keywords": ["telekinesis"],
+        "keywords": [
+          "telekinesis"
+        ],
         "patterns": []
       },
       "priority": 7,
@@ -1366,8 +1679,15 @@
     },
     "skill_mind_reading": {
       "match": {
-        "keywords": ["mindreading"],
-        "patterns": ["mind reading", "padh sakte", "thoughts padhna", "man ki baat"]
+        "keywords": [
+          "mindreading"
+        ],
+        "patterns": [
+          "mind reading",
+          "padh sakte",
+          "thoughts padhna",
+          "man ki baat"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -1402,7 +1722,11 @@
     "skill_spoon_bending": {
       "match": {
         "keywords": [],
-        "patterns": ["spoon bending", "spoon modna", "chammach modna"]
+        "patterns": [
+          "spoon bending",
+          "spoon modna",
+          "chammach modna"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -1437,7 +1761,12 @@
     "skill_lie_detection": {
       "match": {
         "keywords": [],
-        "patterns": ["lie detection", "lie detect", "jhoot pakadna", "jhoot pakadne"]
+        "patterns": [
+          "lie detection",
+          "lie detect",
+          "jhoot pakadna",
+          "jhoot pakadne"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -1472,7 +1801,12 @@
     "skill_card_magic": {
       "match": {
         "keywords": [],
-        "patterns": ["card magic", "card tricks", "cards ki magic", "taash ke trick"]
+        "patterns": [
+          "card magic",
+          "card tricks",
+          "cards ki magic",
+          "taash ke trick"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -1506,8 +1840,14 @@
     },
     "skill_hallucinations": {
       "match": {
-        "keywords": ["hallucination", "hallucinations"],
-        "patterns": ["hallucinate karna", "banawati drishya"]
+        "keywords": [
+          "hallucination",
+          "hallucinations"
+        ],
+        "patterns": [
+          "hallucinate karna",
+          "banawati drishya"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -1542,7 +1882,13 @@
     "skill_proxy_hypnosis": {
       "match": {
         "keywords": [],
-        "patterns": ["proxy hypnosis", "hypnotize without", "hypnotize remotely", "duur se hypnotize", "bina saamne"]
+        "patterns": [
+          "proxy hypnosis",
+          "hypnotize without",
+          "hypnotize remotely",
+          "duur se hypnotize",
+          "bina saamne"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -1576,7 +1922,15 @@
     },
     "skill_not_taught": {
       "match": {
-        "keywords": ["tarot", "astrology", "palmistry", "numerology", "jyotish", "hastrekha", "kundli"],
+        "keywords": [
+          "tarot",
+          "astrology",
+          "palmistry",
+          "numerology",
+          "jyotish",
+          "hastrekha",
+          "kundli"
+        ],
         "patterns": []
       },
       "priority": 7,
@@ -1612,7 +1966,14 @@
     "show_booking_general": {
       "match": {
         "keywords": [],
-        "patterns": ["book arya", "booking arya", "arya ko book", "show book karna", "book for a show", "hire arya"]
+        "patterns": [
+          "book arya",
+          "booking arya",
+          "arya ko book",
+          "show book karna",
+          "book for a show",
+          "hire arya"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1648,7 +2009,17 @@
     "show_charges": {
       "match": {
         "keywords": [],
-        "patterns": ["show charges", "show ka kharcha", "kitna lete ho show", "show fee", "booking charges", "kitna charge show", "show ka charge", "show.*charge", "charge.*\\bshow\\b"]
+        "patterns": [
+          "show charges",
+          "show ka kharcha",
+          "kitna lete ho show",
+          "show fee",
+          "booking charges",
+          "kitna charge show",
+          "show ka charge",
+          "show.*charge",
+          "charge.*\\bshow\\b"
+        ]
       },
       "priority": 8,
       "escalate": true,
@@ -1684,7 +2055,13 @@
     "show_availability_date": {
       "match": {
         "keywords": [],
-        "patterns": ["available on", "us date ko free", "kya arya free hai", "date pe available", "check availability"]
+        "patterns": [
+          "available on",
+          "us date ko free",
+          "kya arya free hai",
+          "date pe available",
+          "check availability"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1719,8 +2096,15 @@
     },
     "show_wedding": {
       "match": {
-        "keywords": ["wedding", "shaadi"],
-        "patterns": ["wedding show", "shaadi mein show", "sangeet mein perform"]
+        "keywords": [
+          "wedding",
+          "shaadi"
+        ],
+        "patterns": [
+          "wedding show",
+          "shaadi mein show",
+          "sangeet mein perform"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1755,8 +2139,14 @@
     },
     "show_corporate": {
       "match": {
-        "keywords": ["corporate"],
-        "patterns": ["corporate event", "corporate show", "office event"]
+        "keywords": [
+          "corporate"
+        ],
+        "patterns": [
+          "corporate event",
+          "corporate show",
+          "office event"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1791,8 +2181,15 @@
     },
     "show_college_event": {
       "match": {
-        "keywords": ["college", "fest"],
-        "patterns": ["college fest", "college event", "university event"]
+        "keywords": [
+          "college",
+          "fest"
+        ],
+        "patterns": [
+          "college fest",
+          "college event",
+          "university event"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1827,8 +2224,14 @@
     },
     "show_birthday_private": {
       "match": {
-        "keywords": ["birthday"],
-        "patterns": ["private party", "birthday party show", "house party"]
+        "keywords": [
+          "birthday"
+        ],
+        "patterns": [
+          "private party",
+          "birthday party show",
+          "house party"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1864,7 +2267,12 @@
     "show_duration": {
       "match": {
         "keywords": [],
-        "patterns": ["show kitni der", "how long is the show", "show duration", "performance kitni der"]
+        "patterns": [
+          "show kitni der",
+          "how long is the show",
+          "show duration",
+          "performance kitni der"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1900,7 +2308,12 @@
     "show_stage_requirements": {
       "match": {
         "keywords": [],
-        "patterns": ["stage requirement", "sound system chahiye", "setup requirement", "technical requirement show"]
+        "patterns": [
+          "stage requirement",
+          "sound system chahiye",
+          "setup requirement",
+          "technical requirement show"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1936,7 +2349,18 @@
     "show_outstation_travel": {
       "match": {
         "keywords": [],
-        "patterns": ["outstation", "travel karte", "dusre city", "dusre shehar", "international show", "abroad show", "bahar desh", "doosre desh", "dusre desh", "kisi aur desh"]
+        "patterns": [
+          "outstation",
+          "travel karte",
+          "dusre city",
+          "dusre shehar",
+          "international show",
+          "abroad show",
+          "bahar desh",
+          "doosre desh",
+          "dusre desh",
+          "kisi aur desh"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -1972,7 +2396,15 @@
     "show_video_samples": {
       "match": {
         "keywords": [],
-        "patterns": ["video samples", "performance video", "show ka video", "shows ka video", "pichhle shows", "purane show", "past performance"]
+        "patterns": [
+          "video samples",
+          "performance video",
+          "show ka video",
+          "shows ka video",
+          "pichhle shows",
+          "purane show",
+          "past performance"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -2008,49 +2440,61 @@
     "ot_show_me_magic": {
       "match": {
         "keywords": [],
-        "patterns": ["show me magic", "kuch trick dikhao", "koi jaadu dikhao", "kuch magic dikhao", "ek trick karke dikhao"]
+        "patterns": [
+          "show me magic",
+          "kuch trick dikhao",
+          "koi jaadu dikhao",
+          "kuch magic dikhao",
+          "ek trick karke dikhao"
+        ]
       },
       "priority": 7,
       "variants_en": [
-        "I don't perform over chat — I'm Harshit, Arya sir's manager, handling course and show enquiries here.",
+        "I don't perform over chat — I'm {{manager_name}}, Arya sir's manager, handling course and show enquiries here.",
         "Not something I can do over WhatsApp — I just manage enquiries for classes and bookings.",
         "I'm his manager, not a performer — I only handle enquiries on this number.",
         "Can't show tricks here — I handle course and show enquiries only.",
-        "I don't perform — I'm Harshit, managing this number for course and booking questions.",
+        "I don't perform — I'm {{manager_name}}, managing this number for course and booking questions.",
         "That's not what I do here — enquiries about classes or shows only.",
         "I'm not the performer, just the manager — course and booking enquiries land here.",
         "No tricks from me — I just handle enquiries for classes and shows.",
         "I manage this number, I don't perform — happy to help with a course or booking question though.",
         "Not on chat — I'm his manager, handling enquiries only.",
         "That's outside what I do here — I only take course and show enquiries.",
-        "I'm Harshit, the manager — tricks aren't something I do, enquiries are."
+        "I'm {{manager_name}}, the manager — tricks aren't something I do, enquiries are."
       ],
       "variants_hi": [
-        "Main chat pe perform nahi karta — Harshit hoon, Arya sir ka manager, sirf enquiries dekhta hoon.",
+        "Main chat pe perform nahi karta — {{manager_name}} hoon, Arya sir ka manager, sirf enquiries dekhta hoon.",
         "Ye WhatsApp pe possible nahi — main sirf course aur booking enquiries handle karta hoon.",
         "Main manager hoon, performer nahi — is number pe sirf enquiries hoti hain.",
         "Yahan trick nahi dikha sakta — main sirf course aur show enquiries dekhta hoon.",
-        "Main perform nahi karta — Harshit hoon, is number pe course aur booking questions dekhta hoon.",
+        "Main perform nahi karta — {{manager_name}} hoon, is number pe course aur booking questions dekhta hoon.",
         "Ye main yahan nahi karta — sirf classes ya shows ke enquiries.",
         "Main performer nahi, sirf manager hoon — course aur booking enquiries yahin aati hain.",
         "Mujhse trick nahi milegi — main sirf classes aur shows ki enquiries handle karta hoon.",
         "Main ye number manage karta hoon, perform nahi karta — course ya booking sawaal ho toh bolo.",
         "Chat pe nahi — main unka manager hoon, sirf enquiries dekhta hoon.",
         "Ye mere kaam ke bahar hai — main sirf course aur show enquiries leta hoon.",
-        "Main Harshit hoon, manager — trick nahi, enquiries meri jagah hai."
+        "Main {{manager_name}} hoon, manager — trick nahi, enquiries meri jagah hai."
       ]
     },
     "ot_read_my_mind": {
       "match": {
         "keywords": [],
-        "patterns": ["read my mind", "mera mann padho", "mera dimag padho", "guess what i am thinking", "kya soch raha hoon batao"]
+        "patterns": [
+          "read my mind",
+          "mera mann padho",
+          "mera dimag padho",
+          "guess what i am thinking",
+          "kya soch raha hoon batao"
+        ]
       },
       "priority": 7,
       "variants_en": [
-        "I'm not Arya sir — I'm his manager Harshit, and I only handle course and show enquiries here.",
+        "I'm not Arya sir — I'm his manager {{manager_name}}, and I only handle course and show enquiries here.",
         "That's not something I do — I manage this number for enquiries, not performances.",
         "I don't do that over chat — I'm his manager, handling classes and bookings only.",
-        "Not my thing — I'm Harshit, managing enquiries for Dr Arya Chandel's team.",
+        "Not my thing — I'm {{manager_name}}, managing enquiries for Dr Arya Chandel's team.",
         "Can't do that here — course and show enquiries are what I handle.",
         "I'm the manager, not the performer — that's not something I can do.",
         "Not possible over WhatsApp — I only take enquiries on this number.",
@@ -2058,13 +2502,13 @@
         "That's outside what I do — I'm his manager, here for classes and bookings.",
         "Not something I can do — enquiries about courses or shows only, on this number.",
         "I'm not the one performing here — I manage enquiries for Arya sir's team.",
-        "Can't do that — I'm Harshit, handling course and booking enquiries only."
+        "Can't do that — I'm {{manager_name}}, handling course and booking enquiries only."
       ],
       "variants_hi": [
-        "Main Arya sir nahi hoon — unka manager Harshit hoon, sirf course aur show enquiries dekhta hoon.",
+        "Main Arya sir nahi hoon — unka manager {{manager_name}} hoon, sirf course aur show enquiries dekhta hoon.",
         "Ye main nahi karta — main is number pe enquiries dekhta hoon, performance nahi.",
         "Chat pe ye nahi hota — main manager hoon, sirf classes aur bookings handle karta hoon.",
-        "Ye mera kaam nahi — Harshit hoon, Arya sir ki team ke enquiries dekhta hoon.",
+        "Ye mera kaam nahi — {{manager_name}} hoon, Arya sir ki team ke enquiries dekhta hoon.",
         "Yahan ye possible nahi — main sirf course aur show enquiries handle karta hoon.",
         "Main manager hoon, performer nahi — ye main nahi kar sakta.",
         "WhatsApp pe possible nahi — main sirf enquiries leta hoon is number pe.",
@@ -2072,23 +2516,27 @@
         "Ye mere kaam ke bahar hai — main manager hoon, classes aur bookings ke liye.",
         "Ye main nahi kar sakta — sirf course ya show enquiries is number pe.",
         "Main yahan perform nahi karta — Arya sir ki team ke enquiries dekhta hoon.",
-        "Ye nahi ho sakta — Harshit hoon, sirf course aur booking enquiries dekhta hoon."
+        "Ye nahi ho sakta — {{manager_name}} hoon, sirf course aur booking enquiries dekhta hoon."
       ]
     },
     "ot_guess_my_name": {
       "match": {
         "keywords": [],
-        "patterns": ["guess my name", "mera naam batao", "mera naam guess karo"]
+        "patterns": [
+          "guess my name",
+          "mera naam batao",
+          "mera naam guess karo"
+        ]
       },
       "priority": 7,
       "variants_en": [
         "I'm his manager, not a performer — I only handle course and show enquiries here.",
-        "Not something I do over chat — I'm Harshit, managing enquiries for classes and bookings.",
+        "Not something I do over chat — I'm {{manager_name}}, managing enquiries for classes and bookings.",
         "That's not my role — I take care of enquiries, not guessing games.",
         "I manage this number for enquiries — course or booking questions, happy to help.",
         "Not my thing — I'm his manager, here for classes and shows only.",
         "That's outside what I do — enquiries about courses or bookings only.",
-        "I'm not the performer — I'm Harshit, handling enquiries on this number.",
+        "I'm not the performer — I'm {{manager_name}}, handling enquiries on this number.",
         "Can't do that — I just manage course and booking enquiries here.",
         "Not something I can do — I'm here for enquiries, not performances.",
         "That's not my job — I handle classes and show enquiries only.",
@@ -2097,12 +2545,12 @@
       ],
       "variants_hi": [
         "Main unka manager hoon, performer nahi — sirf course aur show enquiries yahan dekhta hoon.",
-        "Chat pe ye nahi hota — Harshit hoon, classes aur bookings ki enquiries manage karta hoon.",
+        "Chat pe ye nahi hota — {{manager_name}} hoon, classes aur bookings ki enquiries manage karta hoon.",
         "Ye mera role nahi hai — main enquiries dekhta hoon, guessing games nahi.",
         "Main is number ki enquiries manage karta hoon — course ya booking sawaal ho toh bolo.",
         "Ye mera kaam nahi — main manager hoon, sirf classes aur shows ke liye.",
         "Ye mere kaam ke bahar hai — sirf course ya booking enquiries.",
-        "Main performer nahi hoon — Harshit hoon, is number pe enquiries dekhta hoon.",
+        "Main performer nahi hoon — {{manager_name}} hoon, is number pe enquiries dekhta hoon.",
         "Ye nahi ho sakta — main sirf course aur booking enquiries handle karta hoon.",
         "Ye main nahi kar sakta — main enquiries ke liye hoon, performance ke liye nahi.",
         "Ye mera kaam nahi — sirf classes aur show enquiries yahan hoti hain.",
@@ -2113,11 +2561,16 @@
     "ot_tell_my_future": {
       "match": {
         "keywords": [],
-        "patterns": ["tell my future", "mera future batao", "meri kismat batao", "mera bhavishya batao"]
+        "patterns": [
+          "tell my future",
+          "mera future batao",
+          "meri kismat batao",
+          "mera bhavishya batao"
+        ]
       },
       "priority": 8,
       "variants_en": [
-        "This academy teaches technique and skill, not fortune telling — I'm Harshit, his manager, here for course and show enquiries.",
+        "This academy teaches technique and skill, not fortune telling — I'm {{manager_name}}, his manager, here for course and show enquiries.",
         "That's not what we do here — this is mentalism training, not fortune telling.",
         "Not something on offer — the course is technique-based, not predicting the future.",
         "That's outside this academy's scope — course and show enquiries are what I handle.",
@@ -2131,7 +2584,7 @@
         "That's not something I can help with — I manage course and show enquiries only."
       ],
       "variants_hi": [
-        "Ye academy technique aur skill sikhaati hai, future batana nahi — Harshit hoon, course aur show enquiries ke liye.",
+        "Ye academy technique aur skill sikhaati hai, future batana nahi — {{manager_name}} hoon, course aur show enquiries ke liye.",
         "Ye hum nahi karte — ye mentalism training hai, fortune telling nahi.",
         "Ye offer nahi hai — course technique-based hai, future predict karna nahi.",
         "Ye academy ke scope se bahar hai — course aur show enquiries hi main dekhta hoon.",
@@ -2147,8 +2600,14 @@
     },
     "ot_lottery_number": {
       "match": {
-        "keywords": ["lottery"],
-        "patterns": ["lottery number", "satta number", "jeetne wala number"]
+        "keywords": [
+          "lottery"
+        ],
+        "patterns": [
+          "lottery number",
+          "satta number",
+          "jeetne wala number"
+        ]
       },
       "priority": 8,
       "variants_en": [
@@ -2182,8 +2641,15 @@
     },
     "ot_vashikaran_blackmagic": {
       "match": {
-        "keywords": ["vashikaran", "kaalajadu"],
-        "patterns": ["black magic", "spirit bulwao", "tantra mantra karo"]
+        "keywords": [
+          "vashikaran",
+          "kaalajadu"
+        ],
+        "patterns": [
+          "black magic",
+          "spirit bulwao",
+          "tantra mantra karo"
+        ]
       },
       "priority": 9,
       "variants_en": [
@@ -2218,7 +2684,12 @@
     "ot_bring_back_my_ex": {
       "match": {
         "keywords": [],
-        "patterns": ["bring back my ex", "mera ex wapas", "ex ko wapas lao", "ex se milwa do"]
+        "patterns": [
+          "bring back my ex",
+          "mera ex wapas",
+          "ex ko wapas lao",
+          "ex se milwa do"
+        ]
       },
       "priority": 8,
       "variants_en": [
@@ -2253,12 +2724,17 @@
     "ot_love_problem": {
       "match": {
         "keywords": [],
-        "patterns": ["love problem", "pyar ki problem", "love marriage solution", "relationship problem solve"]
+        "patterns": [
+          "love problem",
+          "pyar ki problem",
+          "love marriage solution",
+          "relationship problem solve"
+        ]
       },
       "priority": 8,
       "variants_en": [
         "That's outside what this academy does — course and show enquiries only, on this number.",
-        "Not something I can help with here — I'm Harshit, his manager, handling enquiries only.",
+        "Not something I can help with here — I'm {{manager_name}}, his manager, handling enquiries only.",
         "We don't handle that — this academy teaches mentalism and hypnosis technique only.",
         "Not my area — happy to help with a course question or show booking instead.",
         "That's not something this academy offers — skill-based training only.",
@@ -2272,7 +2748,7 @@
       ],
       "variants_hi": [
         "Ye is academy ke kaam ke bahar hai — sirf course aur show enquiries is number pe.",
-        "Isme main help nahi kar sakta — Harshit hoon, unka manager, sirf enquiries dekhta hoon.",
+        "Isme main help nahi kar sakta — {{manager_name}} hoon, unka manager, sirf enquiries dekhta hoon.",
         "Hum ye handle nahi karte — ye academy sirf mentalism aur hypnosis technique sikhaati hai.",
         "Ye mera area nahi — iski jagah course ka sawaal ya show booking poochho.",
         "Ye is academy offer nahi karti — sirf skill-based training.",
@@ -2288,7 +2764,12 @@
     "ot_make_someone_call_me": {
       "match": {
         "keywords": [],
-        "patterns": ["make someone call me", "kisi ko call karwao", "kisi se call karwana hai", "usse call karwa do"]
+        "patterns": [
+          "make someone call me",
+          "kisi ko call karwao",
+          "kisi se call karwana hai",
+          "usse call karwa do"
+        ]
       },
       "priority": 8,
       "variants_en": [
@@ -2300,7 +2781,7 @@
         "That's not something I do — I only handle enquiries about classes and shows.",
         "Not something I can arrange — I manage this number for course and show enquiries.",
         "That's outside my scope — course and booking enquiries only, on this number.",
-        "Not my job — I'm Harshit, his manager, handling enquiries only.",
+        "Not my job — I'm {{manager_name}}, his manager, handling enquiries only.",
         "That's not something I handle here — I only take care of enquiries.",
         "Not possible from my end — I manage course and show enquiries only.",
         "That's outside what I do — enquiries about courses or shows only, on this number."
@@ -2314,7 +2795,7 @@
         "Ye main nahi karta — main sirf classes aur shows ki enquiries handle karta hoon.",
         "Ye arrange nahi kar sakta — main is number ko course aur show enquiries ke liye manage karta hoon.",
         "Ye mere scope ke bahar hai — sirf course aur booking enquiries is number pe.",
-        "Ye mera kaam nahi — main Harshit hoon, unka manager, sirf enquiries dekhta hoon.",
+        "Ye mera kaam nahi — main {{manager_name}} hoon, unka manager, sirf enquiries dekhta hoon.",
         "Ye main yahan handle nahi karta — main sirf enquiries dekhta hoon.",
         "Mere taraf se possible nahi — main sirf course aur show enquiries dekhta hoon.",
         "Ye mere kaam ke bahar hai — sirf course ya show enquiries is number pe."
@@ -2323,7 +2804,12 @@
     "ot_hypnotise_someone_for_me": {
       "match": {
         "keywords": [],
-        "patterns": ["hypnotize someone for me", "kisi ko hypnotize kar do", "mere dost ko hypnotize karo", "usko hypnotize kar do"]
+        "patterns": [
+          "hypnotize someone for me",
+          "kisi ko hypnotize kar do",
+          "mere dost ko hypnotize karo",
+          "usko hypnotize kar do"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -2335,7 +2821,7 @@
         "That's not something I do — I only handle enquiries about classes and shows.",
         "Not possible over chat — I manage this number for course and show enquiries.",
         "That's outside my scope — course and booking enquiries only, on this number.",
-        "Not my job — I'm Harshit, his manager, handling enquiries only.",
+        "Not my job — I'm {{manager_name}}, his manager, handling enquiries only.",
         "That's not something I handle here — I only take care of enquiries.",
         "Not something I can do — I manage course and show enquiries only.",
         "That's outside what I do — enquiries about courses or shows only, on this number."
@@ -2349,7 +2835,7 @@
         "Ye main nahi karta — main sirf classes aur shows ki enquiries handle karta hoon.",
         "Chat pe possible nahi — main is number ko course aur show enquiries ke liye manage karta hoon.",
         "Ye mere scope ke bahar hai — sirf course aur booking enquiries is number pe.",
-        "Ye mera kaam nahi — main Harshit hoon, unka manager, sirf enquiries dekhta hoon.",
+        "Ye mera kaam nahi — main {{manager_name}} hoon, unka manager, sirf enquiries dekhta hoon.",
         "Ye main yahan handle nahi karta — main sirf enquiries dekhta hoon.",
         "Ye main nahi kar sakta — main sirf course aur show enquiries dekhta hoon.",
         "Ye mere kaam ke bahar hai — sirf course ya show enquiries is number pe."
@@ -2358,46 +2844,57 @@
     "ot_teach_me_free": {
       "match": {
         "keywords": [],
-        "patterns": ["teach me free", "free mein sikha do", "bina paise ke sikha do", "free mein course de do"]
+        "patterns": [
+          "teach me free",
+          "free mein sikha do",
+          "bina paise ke sikha do",
+          "free mein course de do"
+        ]
       },
       "priority": 8,
       "variants_en": [
-        "The course isn't free — it's ₹25,000 for the full 3-month program.",
-        "There's no free version — the fee is ₹25,000 for the complete training.",
-        "It's a paid course, ₹25,000 — no free option available.",
-        "Not free, no — ₹25,000 covers the full 3 months of training.",
-        "There isn't a free option — the course is ₹25,000 total.",
-        "No free version exists — ₹25,000 is the fee for the complete course.",
-        "It's ₹25,000, not free — that covers the full 10-class program.",
-        "No, it's not free — ₹25,000 for the full training, no exceptions.",
-        "The course fee is ₹25,000 — there's no free way to access it.",
-        "Not something offered for free — ₹25,000 for the complete 3-month course.",
-        "It's a paid program, ₹25,000 — no free access available.",
-        "No free option — ₹25,000 covers everything for the full course."
+        "The course isn't free — it's {{course_fee_current}} for the full 3-month program.",
+        "There's no free version — the fee is {{course_fee_current}} for the complete training.",
+        "It's a paid course, {{course_fee_current}} — no free option available.",
+        "Not free, no — {{course_fee_current}} covers the full 3 months of training.",
+        "There isn't a free option — the course is {{course_fee_current}} total.",
+        "No free version exists — {{course_fee_current}} is the fee for the complete course.",
+        "It's {{course_fee_current}}, not free — that covers the full 10-class program.",
+        "No, it's not free — {{course_fee_current}} for the full training, no exceptions.",
+        "The course fee is {{course_fee_current}} — there's no free way to access it.",
+        "Not something offered for free — {{course_fee_current}} for the complete 3-month course.",
+        "It's a paid program, {{course_fee_current}} — no free access available.",
+        "No free option — {{course_fee_current}} covers everything for the full course."
       ],
       "variants_hi": [
-        "Course free nahi hai — poore 3 mahine ke program ke liye ₹25,000 hai.",
-        "Free version nahi hai — fee ₹25,000 hai poori training ke liye.",
-        "Ye paid course hai, ₹25,000 ka — free option nahi hai.",
-        "Free nahi hai, nahi — ₹25,000 poore 3 mahine ki training cover karti hai.",
-        "Free option nahi hai — course total ₹25,000 ka hai.",
-        "Free version exist nahi karta — poore course ki fee ₹25,000 hai.",
-        "₹25,000 hai, free nahi — ye poora 10-class program cover karti hai.",
-        "Nahi, free nahi hai — poori training ke liye ₹25,000, koi exception nahi.",
-        "Course fee ₹25,000 hai — free mein access karne ka koi tareeka nahi.",
-        "Free mein offer nahi hota — poore 3-mahine ke course ke liye ₹25,000.",
-        "Ye paid program hai, ₹25,000 ka — free access nahi hai.",
-        "Free option nahi hai — ₹25,000 mein poora course cover hota hai."
+        "Course free nahi hai — poore 3 mahine ke program ke liye {{course_fee_current}} hai.",
+        "Free version nahi hai — fee {{course_fee_current}} hai poori training ke liye.",
+        "Ye paid course hai, {{course_fee_current}} ka — free option nahi hai.",
+        "Free nahi hai, nahi — {{course_fee_current}} poore 3 mahine ki training cover karti hai.",
+        "Free option nahi hai — course total {{course_fee_current}} ka hai.",
+        "Free version exist nahi karta — poore course ki fee {{course_fee_current}} hai.",
+        "{{course_fee_current}} hai, free nahi — ye poora 10-class program cover karti hai.",
+        "Nahi, free nahi hai — poori training ke liye {{course_fee_current}}, koi exception nahi.",
+        "Course fee {{course_fee_current}} hai — free mein access karne ka koi tareeka nahi.",
+        "Free mein offer nahi hota — poore 3-mahine ke course ke liye {{course_fee_current}}.",
+        "Ye paid program hai, {{course_fee_current}} ka — free access nahi hai.",
+        "Free option nahi hai — {{course_fee_current}} mein poora course cover hota hai."
       ]
     },
     "ot_personal_chat": {
       "match": {
         "keywords": [],
-        "patterns": ["kaise ho aap", "kya kar rahe ho", "how are you doing", "what are you doing", "free ho kya baat karein"]
+        "patterns": [
+          "kaise ho aap",
+          "kya kar rahe ho",
+          "how are you doing",
+          "what are you doing",
+          "free ho kya baat karein"
+        ]
       },
       "priority": 5,
       "variants_en": [
-        "I'm good, thanks — I'm Harshit, Dr Arya Chandel's manager, here for course and show enquiries.",
+        "I'm good, thanks — I'm {{manager_name}}, Dr Arya Chandel's manager, here for course and show enquiries.",
         "Doing fine — this number handles course and booking enquiries, in case you need anything.",
         "All good here — what can I help you with, course or show booking?",
         "I'm well — I manage enquiries for Dr Arya Chandel's academy. What do you need?",
@@ -2405,13 +2902,13 @@
         "Doing well — I'm here for enquiries about classes and shows.",
         "I'm fine, thanks — this is a business number for course and show enquiries.",
         "All good — what can I do for you today, course or booking-wise?",
-        "I'm good — Harshit here, managing enquiries. What did you need?",
+        "I'm good — {{manager_name}} here, managing enquiries. What did you need?",
         "Doing fine, thanks — I handle course and show enquiries on this number.",
         "I'm well, thanks — anything I can help with, course or booking?",
         "All good — this number's for class and show enquiries, let me know what you need."
       ],
       "variants_hi": [
-        "Main theek hoon, shukriya — Harshit hoon, Arya sir ka manager, course aur show enquiries ke liye.",
+        "Main theek hoon, shukriya — {{manager_name}} hoon, Arya sir ka manager, course aur show enquiries ke liye.",
         "Sab badhiya — ye number course aur booking enquiries ke liye hai, kuch chahiye toh batao.",
         "Sab theek — kaise help karu, course ya show booking?",
         "Main theek hoon — Arya sir ki academy ke enquiries dekhta hoon. Kya chahiye?",
@@ -2419,7 +2916,7 @@
         "Badhiya — main yahan classes aur shows ki enquiries ke liye hoon.",
         "Main theek hoon, shukriya — ye business number hai course aur show enquiries ke liye.",
         "Sab theek — aaj kya karu aapke liye, course ya booking?",
-        "Main theek hoon — Harshit hoon, enquiries manage karta hoon. Kya chahiye tha?",
+        "Main theek hoon — {{manager_name}} hoon, enquiries manage karta hoon. Kya chahiye tha?",
         "Achha hoon, shukriya — is number pe course aur show enquiries handle karta hoon.",
         "Theek hoon, shukriya — koi help chahiye, course ya booking?",
         "Sab badhiya — ye number class aur show enquiries ke liye hai, batao kya chahiye."
@@ -2428,11 +2925,22 @@
     "ot_flirting": {
       "match": {
         "keywords": [],
-        "patterns": ["you are cute", "you are beautiful", "single ho kya", "tum single ho", "date pe chalein", "i love you", "you are.*cute", "you.*beautiful", "so cute", "so hot"]
+        "patterns": [
+          "you are cute",
+          "you are beautiful",
+          "single ho kya",
+          "tum single ho",
+          "date pe chalein",
+          "i love you",
+          "you are.*cute",
+          "you.*beautiful",
+          "so cute",
+          "so hot"
+        ]
       },
       "priority": 8,
       "variants_en": [
-        "This is a business number — I'm Harshit, Dr Arya Chandel's manager, handling course and show enquiries only.",
+        "This is a business number — I'm {{manager_name}}, Dr Arya Chandel's manager, handling course and show enquiries only.",
         "This number's strictly for enquiries — course and show bookings, nothing else.",
         "I'm his manager, handling enquiries here — that's the only thing this number's for.",
         "This is a professional line — course and show enquiries only.",
@@ -2446,7 +2954,7 @@
         "This is strictly an enquiry line — classes and shows, nothing else."
       ],
       "variants_hi": [
-        "Ye business number hai — Harshit hoon, Arya sir ka manager, sirf course aur show enquiries ke liye.",
+        "Ye business number hai — {{manager_name}} hoon, Arya sir ka manager, sirf course aur show enquiries ke liye.",
         "Ye number strictly enquiries ke liye hai — course aur show bookings, aur kuch nahi.",
         "Main manager hoon, sirf enquiries dekhta hoon — yehi is number ka kaam hai.",
         "Ye professional line hai — sirf course aur show enquiries.",
@@ -2463,7 +2971,15 @@
     "ot_abusive": {
       "match": {
         "keywords": [],
-        "patterns": ["bhenchod", "madarchod", "chutiya", "gandu", "fuck you", "you idiot", "stupid bot"]
+        "patterns": [
+          "bhenchod",
+          "madarchod",
+          "chutiya",
+          "gandu",
+          "fuck you",
+          "you idiot",
+          "stupid bot"
+        ]
       },
       "priority": 9,
       "variants_en": [
@@ -2497,8 +3013,18 @@
     },
     "ot_forwarded_spam_link": {
       "match": {
-        "keywords": ["www", "http", "https", "bitly"],
-        "patterns": ["bit ly", "click this link", "forward this message", "click here"]
+        "keywords": [
+          "www",
+          "http",
+          "https",
+          "bitly"
+        ],
+        "patterns": [
+          "bit ly",
+          "click this link",
+          "forward this message",
+          "click here"
+        ]
       },
       "priority": 6,
       "variants_en": [
@@ -2533,7 +3059,13 @@
     "ot_job_application": {
       "match": {
         "keywords": [],
-        "patterns": ["job chahiye", "hiring ho rahe ho", "job vacancy", "naukri chahiye", "job opening"]
+        "patterns": [
+          "job chahiye",
+          "hiring ho rahe ho",
+          "job vacancy",
+          "naukri chahiye",
+          "job opening"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -2567,8 +3099,15 @@
     },
     "ot_collaboration_promo": {
       "match": {
-        "keywords": ["collaboration", "sponsorship"],
-        "patterns": ["collab karna hai", "promotion karna hai", "brand partnership"]
+        "keywords": [
+          "collaboration",
+          "sponsorship"
+        ],
+        "patterns": [
+          "collab karna hai",
+          "promotion karna hai",
+          "brand partnership"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -2602,8 +3141,16 @@
     },
     "ot_media_interview": {
       "match": {
-        "keywords": ["journalist", "reporter"],
-        "patterns": ["media interview", "press enquiry", "interview lena hai", "news coverage"]
+        "keywords": [
+          "journalist",
+          "reporter"
+        ],
+        "patterns": [
+          "media interview",
+          "press enquiry",
+          "interview lena hai",
+          "news coverage"
+        ]
       },
       "priority": 7,
       "variants_en": [
@@ -2636,7 +3183,14 @@
       ]
     },
     "ot_random_gibberish": {
-      "match": { "keywords": [], "patterns": ["^[a-z]{1,3}$", "^[qwertyuiopasdfghjklzxcvbnm]{5,}$", "^\\d+$"] },
+      "match": {
+        "keywords": [],
+        "patterns": [
+          "^[a-z]{1,3}$",
+          "^[qwertyuiopasdfghjklzxcvbnm]{5,}$",
+          "^\\d+$"
+        ]
+      },
       "priority": 1,
       "variants_en": [
         "Not sure what you mean — if you have a course or show enquiry, let me know.",
@@ -2668,7 +3222,10 @@
       ]
     },
     "ot_voice_note_received": {
-      "match": { "keywords": [], "patterns": [] },
+      "match": {
+        "keywords": [],
+        "patterns": []
+      },
       "priority": 5,
       "variants_en": [
         "Can't play voice notes on my end right now — could you type it out?",
@@ -2700,7 +3257,10 @@
       ]
     },
     "ot_sticker_only": {
-      "match": { "keywords": [], "patterns": [] },
+      "match": {
+        "keywords": [],
+        "patterns": []
+      },
       "priority": 5,
       "variants_en": [
         "Got the sticker! What can I help you with?",
@@ -2732,7 +3292,10 @@
       ]
     },
     "ot_missed_call": {
-      "match": { "keywords": [], "patterns": [] },
+      "match": {
+        "keywords": [],
+        "patterns": []
+      },
       "priority": 5,
       "variants_en": [
         "Saw your call — I don't take calls on this number, but type your question here and I'll answer.",
@@ -2766,7 +3329,14 @@
     "student_recording_request": {
       "match": {
         "keywords": [],
-        "patterns": ["meri recording", "mujhe recording chahiye", "meri last class ki recording", "recording bhejo", "recording chahiye mujhe", "recording nahi mili"]
+        "patterns": [
+          "meri recording",
+          "mujhe recording chahiye",
+          "meri last class ki recording",
+          "recording bhejo",
+          "recording chahiye mujhe",
+          "recording nahi mili"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -2802,7 +3372,13 @@
     "student_class_timing": {
       "match": {
         "keywords": [],
-        "patterns": ["meri agli class", "meri class kab hai", "mera batch ka time", "meri class ka time", "meri next class"]
+        "patterns": [
+          "meri agli class",
+          "meri class kab hai",
+          "mera batch ka time",
+          "meri class ka time",
+          "meri next class"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -2838,7 +3414,13 @@
     "student_missed_class": {
       "match": {
         "keywords": [],
-        "patterns": ["maine class miss kar di", "class miss ho gayi meri", "i missed my class", "i missed the class", "mera class chhoot gaya"]
+        "patterns": [
+          "maine class miss kar di",
+          "class miss ho gayi meri",
+          "i missed my class",
+          "i missed the class",
+          "mera class chhoot gaya"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -2874,7 +3456,13 @@
     "student_doubt": {
       "match": {
         "keywords": [],
-        "patterns": ["mujhe doubt hai", "ek doubt hai class", "doubt clear karna hai", "confusion hai class mein", "meri class ka doubt"]
+        "patterns": [
+          "mujhe doubt hai",
+          "ek doubt hai class",
+          "doubt clear karna hai",
+          "confusion hai class mein",
+          "meri class ka doubt"
+        ]
       },
       "priority": 7,
       "escalate": true,
@@ -2910,7 +3498,13 @@
     "student_certificate_request": {
       "match": {
         "keywords": [],
-        "patterns": ["mera certificate", "meri certificate", "certificate kab milega mujhe", "certificate abhi tak nahi mila", "mera certificate nahi aaya"]
+        "patterns": [
+          "mera certificate",
+          "meri certificate",
+          "certificate kab milega mujhe",
+          "certificate abhi tak nahi mila",
+          "mera certificate nahi aaya"
+        ]
       },
       "priority": 7,
       "escalate": true,

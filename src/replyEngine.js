@@ -23,6 +23,50 @@ function loadReplies() {
   catch (e) { console.error('replyEngine: failed to load data/replies.json:', e.message); return {}; }
 }
 
+function loadConfig() {
+  try { return JSON.parse(fs.readFileSync(REPLIES_PATH, 'utf-8')).config || {}; }
+  catch (e) { console.error('replyEngine: failed to load data/replies.json config:', e.message); return {}; }
+}
+
+// ---------- template substitution ----------
+// Same idea as gemini.js's {{FEE}}/{{PAYMENT_DETAILS}} tokens — variant text carries a
+// token, never the real value, so a fee change or a manager handover is a one-line edit
+// to config, not a find-and-replace across 80+ intents. IST calendar-day comparison,
+// same offset-arithmetic convention as leadResponder.js's silentHours / leadStore.js's
+// istDateKey — not Intl or the host TZ.
+function istDateKey(d = new Date()) {
+  return new Date(d.getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// {{course_fee_current}} resolves to config.course_fee_current while today is on or
+// before promo_deadline, then automatically flips to course_fee_standard the day after —
+// the whole point of tracking a deadline instead of just overwriting the price by hand,
+// since a promo that "expires" only when someone remembers to edit the JSON isn't really
+// an expiry. Falls back to whichever fee value actually exists if promo_deadline is
+// missing/malformed, rather than leaving the raw token in a lead-facing message.
+function effectiveCourseFee(cfg) {
+  if (cfg.promo_deadline && istDateKey() > cfg.promo_deadline) {
+    return cfg.course_fee_standard || cfg.course_fee_current || '{{course_fee_current}}';
+  }
+  return cfg.course_fee_current || cfg.course_fee_standard || '{{course_fee_current}}';
+}
+
+export function fillTemplates(text) {
+  if (!text || !text.includes('{{')) return text;
+  const cfg = loadConfig();
+  const tokens = {
+    '{{course_fee_current}}': effectiveCourseFee(cfg),
+    '{{course_fee_standard}}': cfg.course_fee_standard || '{{course_fee_standard}}',
+    '{{manager_name}}': cfg.manager_name || '{{manager_name}}',
+    '{{whatsapp_number}}': cfg.whatsapp_number || '{{whatsapp_number}}'
+  };
+  let out = text;
+  for (const [token, value] of Object.entries(tokens)) {
+    if (out.includes(token)) out = out.split(token).join(value);
+  }
+  return out;
+}
+
 // ---------- rotation state (data/reply-rotation.json) ----------
 // Same read-modify-write pattern as store.js/leadStore.js. Separate small file rather
 // than adding fields onto leads.json — rotation history is per (contact, intent,
@@ -168,7 +212,7 @@ export function pickVariant(intent, language, contactJid) {
   if (!def) return null;
   const list = language === 'hi' ? (def.variants_hi || []) : (def.variants_en || []);
   if (!list.length) return null;
-  if (list.length === 1) return { text: list[0], index: 0 };
+  if (list.length === 1) return { text: fillTemplates(list[0]), index: 0 };
 
   const rotationKey = `${contactJid || 'unknown'}::${intent}::${language}`;
   const db = readRotation();
@@ -184,7 +228,7 @@ export function pickVariant(intent, language, contactJid) {
   db[rotationKey] = [...history, index].slice(-10);
   writeRotation(db);
 
-  return { text: list[index], index };
+  return { text: fillTemplates(list[index]), index };
 }
 
 // ---------- audit log (append-only JSONL, same convention as leadStore.js's lead-log) ----------
