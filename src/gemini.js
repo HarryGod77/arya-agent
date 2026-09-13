@@ -338,7 +338,8 @@ export function appendFaqPair(question, answer, { dryRun = false } = {}) {
 // messages: [{dir:'in'|'out', text}], oldest first (src/leadStore.js#lastMessages).
 const INTENTS = ['class_inquiry', 'greeting', 'not_related', 'unclear'];
 
-export async function classifyIntent(messages) {
+// maxRetries: see generateReply's comment above — same override, same reasoning.
+export async function classifyIntent(messages, { maxRetries } = {}) {
   const kb = loadKnowledgeBase();
   const isFirstMessage = messages.length === 1;
   const prompt = `KNOWLEDGE BASE (context on the business this WhatsApp number represents):
@@ -365,7 +366,7 @@ ${transcript(messages)}
 Return ONLY JSON, no markdown: {"intent": "class_inquiry" | "greeting" | "not_related" | "unclear"}`;
 
   try {
-    const parsed = await callGeminiJSON(prompt, { model: CLASSIFY_MODEL });
+    const parsed = await callGeminiJSON(prompt, { model: CLASSIFY_MODEL, maxRetries });
     const intent = INTENTS.includes(parsed.intent) ? parsed.intent : 'unclear';
     return { intent };
   } catch (e) {
@@ -398,7 +399,14 @@ Return ONLY JSON, no markdown: {"intent": "class_inquiry" | "greeting" | "not_re
 // model: the resolved tier model from routeTier() — leadResponder.js decides the tier,
 // this function just uses whatever it's given. Defaults to REPLY_MODEL for callers that
 // don't tier-route (scripts/test-reply.js, generateFollowUp).
-export async function generateReply({ messages, leadState, intent = 'class_inquiry', paymentDetailsAllowed = false, offHours = false, model = REPLY_MODEL }) {
+// maxRetries: passed straight through to callGeminiJSON (default there is 4, with
+// exponential backoff up to 30s per attempt) — leadResponder.js's live inbound path
+// overrides this to 0 so a Gemini outage fails in one fast round trip instead of ~15-50s
+// of retries, since that time would otherwise be spent before the local fallback reply
+// (which must never wait on Gemini) even starts its own send delay. Callers outside the
+// live reply SLA (generateFollowUp, backlogScan.js) don't pass this and keep the patient
+// default.
+export async function generateReply({ messages, leadState, intent = 'class_inquiry', paymentDetailsAllowed = false, offHours = false, model = REPLY_MODEL, maxRetries }) {
   const kb = loadKnowledgeBase();
 
   const instruction = intent === 'greeting'
@@ -502,7 +510,7 @@ Return ONLY JSON, no markdown:
 {"reply": "the WhatsApp message text to send", "escalate": true or false, "escalateReason": "short reason or null", "escalateType": "unanswered_question" or "hard_stop" or null, "hotLead": true or false, "hotLeadSummary": "one-line summary or null"}`;
 
   try {
-    const parsed = await callGeminiJSON(prompt, { model });
+    const parsed = await callGeminiJSON(prompt, { model, maxRetries });
     const rawReply = parsed.reply || '';
     // Code-verified, not model-self-reported: did the model actually place the token,
     // was it actually eligible to, AND is there real content to substitute? Only true

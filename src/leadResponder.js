@@ -99,6 +99,17 @@ function isNearDuplicateOfRecent(jid, candidateText, { threshold = 0.85, lookbac
 // type a real number), not from detecting and blocking after the fact. Any tier can use
 // those tokens. Used by handleInboundMessage below and by backlogScan.js's opener
 // generation (exported for that reuse).
+//
+// Every G.generateReply call here passes maxRetries: 0 — this is on the live inbound
+// reply path, which must land a reply within the REPLY_DELAY window (see
+// src/whatsapp.js#sendWithTypingDelay), and gemini.js's default 4-retry exponential
+// backoff can alone burn 15-50s on a single exhausted model before even reaching the
+// tier2->tier3 fallback below. maxRetries: 0 still lets a real 429 surface as
+// quotaExhausted (see callGeminiJSON) so the tier2->tier3 fallback and the caller's
+// local-reply fallback both still work correctly — it just fails each individual attempt
+// in one round trip instead of retrying the same starved model five times first.
+const LIVE_MAX_RETRIES = 0;
+
 export async function generateTieredReply({ jid, phone, text, leadState, intent, paymentDetailsAllowed, offHours }) {
   const { tier, model, answer } = G.routeTier({ text, intent });
 
@@ -121,18 +132,18 @@ export async function generateTieredReply({ jid, phone, text, leadState, intent,
     // generation, so escalate straight to Tier 2 instead of sending the same line twice.
     LS.logEvent({ jid, action: 'tier0_dedup_escalated', detail: { deterministicAnswer: answer } });
     const dedupModel = G.getTierModel(2);
-    const dedupResult = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model: dedupModel });
+    const dedupResult = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model: dedupModel, maxRetries: LIVE_MAX_RETRIES });
     LS.logEvent({ jid, action: 'tier_routed', detail: { tier: 2, model: dedupModel } });
     return { ...dedupResult, tier: 2, model: dedupModel };
   }
 
   let usedTier = tier, usedModel = model;
-  let result = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model });
+  let result = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model, maxRetries: LIVE_MAX_RETRIES });
 
   if (result.quotaExhausted && tier === 2) {
     usedTier = 3; usedModel = G.getTierModel(3);
     LS.logEvent({ jid, action: 'tier_fallback', detail: { from: 2, to: 3 } });
-    result = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model: usedModel });
+    result = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model: usedModel, maxRetries: LIVE_MAX_RETRIES });
   }
 
   // Same safety net for a generated reply — rarer than Tier 0's guaranteed-identical
@@ -142,7 +153,7 @@ export async function generateTieredReply({ jid, phone, text, leadState, intent,
   if (result.reply && usedTier !== 2 && isNearDuplicateOfRecent(jid, result.reply)) {
     LS.logEvent({ jid, action: 'reply_dedup_escalated', detail: { from: usedTier } });
     usedTier = 2; usedModel = G.getTierModel(2);
-    result = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model: usedModel });
+    result = await G.generateReply({ messages: LS.lastMessages(jid, 20), leadState, intent, paymentDetailsAllowed, offHours, model: usedModel, maxRetries: LIVE_MAX_RETRIES });
   }
 
   LS.logEvent({ jid, action: 'tier_routed', detail: { tier: usedTier, model: usedModel } });
@@ -172,6 +183,17 @@ function counterLabel(jid, mode, delivered) {
   return WA.hasRecentInboundMessage(jid) ? 'reply' : 'initiated';
 }
 
+// receivedAt: when the inbound message actually arrived (the WhatsApp message timestamp,
+// passed through from src/whatsapp.js's messages.upsert — see handleInboundMessage's
+// `ts` param), not when this line of code happens to run. sentAt: right after deliver()
+// resolves, i.e. after sendWithTypingDelay's own wait has already elapsed and the
+// WhatsApp send call itself has returned. elapsedMs is the true end-to-end latency this
+// was added to make visible after a production incident where it reached ~4 minutes
+// despite a 20-40s configured delay — see REPLY_DELAY_MIN_MS/MAX_MS in .env.example.
+function timingDetail({ receivedAt, replyComputedAt, sentAt }) {
+  return { receivedAt, replyComputedAt, sentAt, elapsedMs: sentAt != null ? sentAt - receivedAt : null };
+}
+
 // Shared by the local-match branch of handleInboundMessage, the voice-note/sticker
 // special case, and handleMissedCall — picks a variant, delivers it through the same
 // deliver() funnel (and therefore the same outbound kill-switch/cap, typing delay, and
@@ -179,13 +201,14 @@ function counterLabel(jid, mode, delivered) {
 // state/counters/flags once delivery is actually confirmed. geminiCalled is passed
 // through only for the "Gemini failed, fall back to the local generic reply" case in
 // handleInboundMessage below — every other caller of this function never touched Gemini.
-async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, confidence, cfg, sourceMessage = '', lead = null, geminiCalled = false }) {
+async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, confidence, cfg, sourceMessage = '', lead = null, geminiCalled = false, receivedAt = Date.now() }) {
   const variant = RE.pickVariant(intentKey, language, jid);
   if (!variant) {
     LS.logEvent({ jid, action: 'local_reply_no_variant', detail: { intent: intentKey, language } });
-    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: intentKey, confidence, geminiCalled, counter: 'none' } });
+    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: intentKey, confidence, geminiCalled, counter: 'none', ...timingDetail({ receivedAt, replyComputedAt: null, sentAt: null }) } });
     return false;
   }
+  const replyComputedAt = Date.now(); // the reply TEXT is already fully decided here — everything after this is transport (deliver()'s send delay, the actual WhatsApp call)
 
   const { escalate } = RE.getIntentMeta(intentKey);
   const escalateReason = escalate ? `local_intent:${intentKey}` : null;
@@ -194,12 +217,14 @@ async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, co
     jid, phone, pushName, reply: variant.text, mode: cfg.mode,
     escalate, escalateReason, tier: 'local', model: intentKey
   });
+  const sentAt = delivered ? Date.now() : null;
 
   RE.logMatch({ jid, message: sourceMessage, intent: intentKey, confidence, language, variantIndex: variant.index });
   // Single-line diagnostic covering exactly what a production quota-exhaustion incident
   // needs to confirm at a glance: which intent matched (or didn't), whether Gemini was
-  // ever touched, and which counter (if any) this send was charged to.
-  LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: intentKey, confidence, geminiCalled, counter: counterLabel(jid, cfg.mode, delivered) } });
+  // ever touched, which counter (if any) this send was charged to, and the full receive
+  // -> compute -> send timing breakdown.
+  LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: intentKey, confidence, geminiCalled, counter: counterLabel(jid, cfg.mode, delivered), ...timingDetail({ receivedAt, replyComputedAt, sentAt }) } });
   if (!delivered) return false;
 
   LS.incrementReplySplit('local');
@@ -212,7 +237,14 @@ async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, co
   return true;
 }
 
-export async function handleInboundMessage({ jid, phone, pushName, text, hasImage = false, hasAudio = false, hasSticker = false }) {
+export async function handleInboundMessage({ jid, phone, pushName, text, hasImage = false, hasAudio = false, hasSticker = false, ts = null }) {
+  // The actual moment this message arrived, per WhatsApp's own timestamp (src/whatsapp.js
+  // passes this through from Baileys' messageTimestamp) — not "whenever this line of code
+  // happens to run", which is what every 'inbound_routed' timing field below is measured
+  // against. Falls back to now() for callers that don't have a WhatsApp timestamp handy
+  // (handleMissedCall, scripts/test-gemini-fallback.js).
+  const receivedAt = ts || Date.now();
+
   // 1) Fail-closed contact-cache gate — see src/whatsapp.js#isContactCacheReady.
   if (!WA.isContactCacheReady()) {
     LS.logEvent({ jid, action: 'skipped_contact_cache_not_ready', detail: null });
@@ -265,13 +297,13 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
         if (welcomeDelivered) {
           LS.markWelcomed(jid);
           LS.logEvent({ jid, action: 'welcome_sent', detail: { language: welcomeLanguage, variantIndex: welcomeVariant.index } });
-          // A payment screenshot alert is time-sensitive for the operator — only pace the
-          // welcome-then-reply gap for cases where what follows is itself a lead-facing
-          // reply (text, voice note, sticker), not an internal alert.
-          if (!hasImage) {
-            const waitMs = 20000 + Math.random() * 20000; // 20-40s, per spec
-            await new Promise(res => setTimeout(res, waitMs));
-          }
+          // No extra pacing wait here on purpose: deliver() above already ran the welcome
+          // message through WA.sendWithTypingDelay's own REPLY_DELAY_MIN/MAX_MS human-like
+          // wait, and the actual reply below will go through the exact same delay again
+          // via its own deliver() call. Stacking a THIRD independent 20-40s wait on top of
+          // both of those (as this used to do) was the single largest contributor to the
+          // ~4-minute production latency — a first-time contact still gets two paced
+          // messages, but no longer three back-to-back random delays for one inbound text.
         } else {
           LS.logEvent({ jid, action: 'welcome_send_failed', detail: { language: welcomeLanguage } });
         }
@@ -307,7 +339,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     const alertText = `📸 PAYMENT SCREENSHOT — ${phone}${pushName ? ' (' + pushName + ')' : ''}\nAn image came in — open the chat, confirm the amount, then use the Leads tab to generate and send the invoice.${studentLine}\n\nOpen chat: ${link}`;
     const result = await WA.sendToOperatorAlert(alertText);
     LS.logEvent({ jid, action: result.sent ? 'payment_screenshot_alert_sent' : 'payment_screenshot_alert_failed', detail: result.sent ? null : result.reason });
-    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: 'payment_screenshot', confidence: null, geminiCalled: false, counter: 'none' } });
+    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent: 'payment_screenshot', confidence: null, geminiCalled: false, counter: 'none', ...timingDetail({ receivedAt, replyComputedAt: null, sentAt: null }) } });
     return;
   }
 
@@ -317,7 +349,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     LS.appendMessage(jid, { dir: 'in', text: hasAudio ? '[voice note]' : '[sticker]' });
     const lead = LS.getLead(jid);
     await deliverLocalMatch({
-      jid, phone, pushName, cfg, lead,
+      jid, phone, pushName, cfg, lead, receivedAt,
       intentKey: hasAudio ? 'ot_voice_note_received' : 'ot_sticker_only',
       language: 'en', confidence: 1, sourceMessage: hasAudio ? '[voice note]' : '[sticker]'
     });
@@ -335,7 +367,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   const local = RE.detectIntent(text, { hasGreetedBefore });
   if (local) {
     await deliverLocalMatch({
-      jid, phone, pushName, cfg, lead, sourceMessage: text,
+      jid, phone, pushName, cfg, lead, sourceMessage: text, receivedAt,
       intentKey: local.intent, language: local.language, confidence: local.confidence
     });
     return;
@@ -348,9 +380,14 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   // lead getting a reply instead of silence (this is the gap that let "Gemini is down"
   // mean "no replies go out at all" in production, even though the local engine above
   // never touches Gemini in the first place).
+  // maxRetries: 0 — see LIVE_MAX_RETRIES's comment above generateTieredReply. A message
+  // that reaches this point has already missed the local engine, so if Gemini is also
+  // down, the fallback reply below must not wait through classifyIntent's default 4-retry
+  // backoff (up to ~50s) first — every "local reply" leaving late, not just the Gemini-
+  // generated ones, was the actual latency bug this whole investigation was for.
   let intent, classifyQuotaExhausted = false, classifyFailed = false;
   try {
-    ({ intent, quotaExhausted: classifyQuotaExhausted } = await G.classifyIntent(LS.lastMessages(jid, 20)));
+    ({ intent, quotaExhausted: classifyQuotaExhausted } = await G.classifyIntent(LS.lastMessages(jid, 20), { maxRetries: LIVE_MAX_RETRIES }));
   } catch (e) {
     console.error('Gemini classifyIntent failed:', e.message);
     classifyFailed = true;
@@ -360,7 +397,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   if (classifyQuotaExhausted || classifyFailed) {
     await notifyOperator(`⚠️ Gemini ${classifyFailed ? 'error' : 'quota exhausted'} while classifying a message from ${phone}. Message: "${text}"\nPlease handle manually.`);
     await deliverLocalMatch({
-      jid, phone, pushName, cfg, lead, sourceMessage: text,
+      jid, phone, pushName, cfg, lead, sourceMessage: text, receivedAt,
       intentKey: 'fallback_gemini_unavailable', language: RE.detectLanguage(text), confidence: null,
       geminiCalled: true
     });
@@ -368,7 +405,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   }
 
   if (intent === 'not_related') {
-    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent, confidence: null, geminiCalled: true, counter: 'none' } });
+    LS.logEvent({ jid, action: 'inbound_routed', detail: { intent, confidence: null, geminiCalled: true, counter: 'none', ...timingDetail({ receivedAt, replyComputedAt: null, sentAt: null }) } });
     return; // stay silent — clearly not about the course at all (wrong number, spam, personal message)
   }
 
@@ -399,7 +436,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     LS.logEvent({ jid, action: 'reply_skipped_quota', detail: { tier, model, failed: replyFailed } });
     await notifyOperator(`⚠️ Gemini ${replyFailed ? 'error' : 'quota exhausted'} while replying to ${phone}. Message: "${text}"\nPlease handle manually.`);
     await deliverLocalMatch({
-      jid, phone, pushName, cfg, lead, sourceMessage: text,
+      jid, phone, pushName, cfg, lead, sourceMessage: text, receivedAt,
       intentKey: 'fallback_gemini_unavailable', language: RE.detectLanguage(text), confidence: null,
       geminiCalled: true
     });
@@ -444,9 +481,11 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   // reasoning that still holds back backlogScan.js's sender and sendFollowUp doesn't
   // apply here. The reply itself already carries the off-hours note and omits payment
   // details when silentNow is true — see step 6 and gemini.js#generateReply's offHours.
+  const replyComputedAt = Date.now();
   const delivered = await deliver({ jid, phone, pushName, reply, mode: cfg.mode, escalate, escalateReason, tier, model });
+  const sentAt = delivered ? Date.now() : null;
   if (delivered) LS.incrementReplySplit('gemini');
-  LS.logEvent({ jid, action: 'inbound_routed', detail: { intent, confidence: null, geminiCalled: true, counter: counterLabel(jid, cfg.mode, delivered) } });
+  LS.logEvent({ jid, action: 'inbound_routed', detail: { intent, confidence: null, geminiCalled: true, counter: counterLabel(jid, cfg.mode, delivered), ...timingDetail({ receivedAt, replyComputedAt, sentAt }) } });
 
   // 8) State transition.
   advanceState(jid, lead, intent);

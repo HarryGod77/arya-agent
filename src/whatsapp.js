@@ -410,7 +410,15 @@ export function isSavedContact(jid) {
 // For actual 1:1 sends to a lead's own jid (AUTO mode) — shows a typing indicator, waits
 // a random human-like delay, then sends. Distinct from sendMessage() below, which targets
 // the operator's own Note-to-Self/group chats for batch notifications and DRAFT-mode notes.
-export async function sendWithTypingDelay({ jid, text, minMs = 45000, maxMs = 150000 }) {
+// Read live from process.env (not cached at import time), same convention as
+// leadResponder.js's outboundEnabled/dailyInitiatedCap — a .env change + restart applies
+// without a code edit. The composing/waiting/paused sequence below is the ENTIRE delay:
+// the presence update is a single fire-and-forget call, not something that adds its own
+// extra wait on top of waitMs — the typing indicator is shown for the duration of the
+// delay, not in addition to it.
+const replyDelayMinMs = () => Number(process.env.REPLY_DELAY_MIN_MS) || 20000;
+const replyDelayMaxMs = () => Number(process.env.REPLY_DELAY_MAX_MS) || 40000;
+export async function sendWithTypingDelay({ jid, text, minMs = replyDelayMinMs(), maxMs = replyDelayMaxMs() }) {
   if (!ready || !sock) throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
   try { await sock.sendPresenceUpdate('composing', jid); } catch {}
   const waitMs = minMs + Math.random() * (maxMs - minMs);
