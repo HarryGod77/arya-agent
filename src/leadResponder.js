@@ -9,13 +9,18 @@ import { read as readDb } from './store.js';
 import * as studentPayments from './studentPayments.js';
 
 // ---------- outbound safety (Part 4) ----------
-// Scoped to deliver()'s AUTO-mode branch only — see that function below. Read live from
-// process.env (not cached at import time) so a change to .env + restart always applies,
-// same convention as every other env-gated toggle in this codebase.
-// Exported — src/paymentSender.js (Part 1 payment-details sender) reuses this exact
-// kill-switch + cap + counter, per spec, rather than a second copy that could drift.
+// Read live from process.env (not cached at import time) so a change to .env + restart
+// always applies, same convention as every other env-gated toggle in this codebase.
+// Exported — src/paymentSender.js and src/studentPayments.js's reminder sender reuse
+// these exact same helpers rather than a second copy that could drift.
+//
+// outboundEnabled is a global kill switch that applies to EVERY AUTO-mode send, reply or
+// initiated alike — deliberately the one stop-everything valve. dailyInitiatedCap only
+// gates bot-INITIATED sends (see deliver()'s isReply check below) — a reply to a contact
+// who just messaged (or called) us carries none of the WhatsApp ban risk this cap exists
+// for, so it is never capped, only counted for the panel stat.
 export const outboundEnabled = () => process.env.OUTBOUND_ENABLED !== 'false';
-export const dailyOutboundCap = () => Number(process.env.DAILY_OUTBOUND_CAP) || 20;
+export const dailyInitiatedCap = () => Number(process.env.DAILY_INITIATED_CAP) || 20;
 
 const DEFAULT_CONFIG = {
   mode: 'draft', dailyCap: 30, silentHours: { start: 23, end: 8 },
@@ -436,18 +441,32 @@ export async function deliver({ jid, phone, pushName, reply, mode, escalate, esc
   const who = pushName ? `${phone} (${pushName})` : phone;
   const label = isFollowUp ? 'follow-up' : 'reply';
 
+  // isReply: has this contact messaged us (text OR a missed call — both update the chat
+  // cache's fromMe:false entry) within the last 24 hours? That, not the code path that
+  // got us here, is the actual ban-risk signal — WhatsApp restricts accounts for
+  // INITIATING chats, not for replying to one. A reactive reply/welcome/local-match send
+  // is computed here as "recent" because whatsapp.js's messages.upsert listener updates
+  // the chat cache with the fresh inbound entry BEFORE handleInboundMessage (and this
+  // deliver() call) ever runs. A follow-up only fires after real silence (see
+  // scheduler.js's checkLeadFollowUps) and a backlog item is, by construction, an old
+  // unanswered chat (see backlogScan.js) — both naturally land on the far side of the 24h
+  // window without needing a special case here.
+  const isReply = WA.hasRecentInboundMessage(jid);
+
   // DRAFT-mode notes go to the operator's own Note-to-Self, never reaching the lead's
   // real number — zero ban risk, so the kill switch and cap below deliberately don't
-  // apply to that branch, only to an actual AUTO-mode send.
+  // apply to that branch, only to an actual AUTO-mode send. The kill switch still applies
+  // to a reply (per spec: it's the one global stop-everything valve); the daily cap
+  // never does — replies are never capped, only bot-initiated sends are.
   if (mode === 'auto') {
     if (!outboundEnabled()) {
       LS.logEvent({ jid, action: 'outbound_blocked_kill_switch', detail: null });
       console.warn(`OUTBOUND_ENABLED is false — skipping ${label} to ${who}`);
       return false;
     }
-    if (LS.getOutboundSentToday() >= dailyOutboundCap()) {
-      LS.logEvent({ jid, action: 'outbound_blocked_daily_cap', detail: { cap: dailyOutboundCap() } });
-      console.warn(`Daily outbound cap (${dailyOutboundCap()}) reached — skipping ${label} to ${who}`);
+    if (!isReply && LS.getInitiatedSentToday() >= dailyInitiatedCap()) {
+      LS.logEvent({ jid, action: 'initiated_blocked_daily_cap', detail: { cap: dailyInitiatedCap() } });
+      console.warn(`Daily initiated-message cap (${dailyInitiatedCap()}) reached — skipping ${label} to ${who}`);
       return false;
     }
   }
@@ -459,7 +478,13 @@ export async function deliver({ jid, phone, pushName, reply, mode, escalate, esc
       // operator, so marking the chat "replied" there would be wrong until (if) they
       // manually forward it, which Baileys' own message reflection already captures.
       WA.markChatReplied(jid);
-      LS.incrementOutboundSentToday();
+      if (isReply) {
+        LS.incrementReplySentToday();
+        LS.logEvent({ jid, action: 'counted_as_reply', detail: null });
+      } else {
+        LS.incrementInitiatedSentToday();
+        LS.logEvent({ jid, action: 'counted_as_initiated', detail: { cap: dailyInitiatedCap() } });
+      }
       if (escalate) await notifyOperator(`⚠️ Auto-replied to ${who}, but this needs you: ${escalateReason || 'see Leads tab'}`);
     } else {
       const note = `📋 DRAFT ${label} for ${who}:\n\n${reply}\n\n(forward this manually if it looks good)` +

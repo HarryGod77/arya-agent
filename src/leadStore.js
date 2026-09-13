@@ -21,7 +21,14 @@ const DEFAULT_DB = {
     backlogFirstRunCleared: false,                // false until every first-scan item has been approved/removed at least once
     learningQueue: [],                            // [{id, jid, phone, pushName, question, answer, createdAt}] — see appendMessage/handleOutboundMessage
     replySplit: { date: '', local: 0, gemini: 0 }, // local-reply-engine vs Gemini split for today's panel counter
-    outboundSentToday: { date: '', count: 0 }      // every lead-facing AUTO send (reply/follow-up/backlog open) — DAILY_OUTBOUND_CAP in .env
+    // Split in two because only one of them carries WhatsApp ban risk: WhatsApp restricts
+    // accounts for INITIATING chats, not for replying to one. initiatedSentToday is
+    // capped by DAILY_INITIATED_CAP (backlog opens, follow-ups, payment reminders,
+    // payment-details sends — anything the bot sends to a contact who hasn't messaged us
+    // in the last 24h); replySentToday is a reactive reply/welcome to someone who just
+    // messaged (or called) us and is NEVER capped — tracked here only for the panel stat.
+    initiatedSentToday: { date: '', count: 0 },
+    replySentToday: { date: '', count: 0 }
   }
 };
 
@@ -177,20 +184,41 @@ export function incrementReplySplit(kind) {
 }
 
 // ---------- outbound safety: hard daily cap on lead-facing AUTO sends (IST calendar day) ----------
-// Scoped to src/leadResponder.js#deliver's AUTO-mode branch only — DRAFT-mode notes to the
-// operator's own Note-to-Self never reach a lead's real number, so they carry none of the
-// ban-risk this cap exists for and are deliberately not counted here.
-export function getOutboundSentToday() {
+// Scoped to src/leadResponder.js#deliver's AUTO-mode branch (and the other proactive
+// senders that reuse the same kill-switch/cap: src/paymentSender.js, src/studentPayments.js's
+// reminder sender) — DRAFT-mode notes to the operator's own Note-to-Self never reach a
+// lead's real number, so they carry none of the ban-risk this cap exists for and are
+// deliberately not counted here. This is the CAPPED counter (DAILY_INITIATED_CAP) — for
+// the never-capped reply counter, see getReplySentToday below.
+export function getInitiatedSentToday() {
   const db = read();
-  const c = db.meta.outboundSentToday || { date: '', count: 0 };
+  const c = db.meta.initiatedSentToday || { date: '', count: 0 };
   return c.date === istDateKey() ? c.count : 0;
 }
 
-export function incrementOutboundSentToday() {
+export function incrementInitiatedSentToday() {
   update(d => {
     const today = istDateKey();
-    if (!d.meta.outboundSentToday || d.meta.outboundSentToday.date !== today) d.meta.outboundSentToday = { date: today, count: 0 };
-    d.meta.outboundSentToday.count++;
+    if (!d.meta.initiatedSentToday || d.meta.initiatedSentToday.date !== today) d.meta.initiatedSentToday = { date: today, count: 0 };
+    d.meta.initiatedSentToday.count++;
+  });
+}
+
+// Reactive replies (and the first-contact welcome) to a contact who messaged — or
+// called — us within the last 24 hours. Never checked against a cap; tracked purely for
+// the panel's stat display, kept separate from initiatedSentToday so the two can never be
+// confused with each other.
+export function getReplySentToday() {
+  const db = read();
+  const c = db.meta.replySentToday || { date: '', count: 0 };
+  return c.date === istDateKey() ? c.count : 0;
+}
+
+export function incrementReplySentToday() {
+  update(d => {
+    const today = istDateKey();
+    if (!d.meta.replySentToday || d.meta.replySentToday.date !== today) d.meta.replySentToday = { date: today, count: 0 };
+    d.meta.replySentToday.count++;
   });
 }
 

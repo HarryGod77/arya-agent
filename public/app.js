@@ -354,7 +354,7 @@ async function loadLeadsTab() {
     $('#lrStats').innerHTML = `New leads today: ${stats.dailyCount}/${stats.dailyCap} · Contact cache: ` +
       (stats.contactCache.ready ? `${stats.contactCache.size} loaded ✓` : '⚠️ not ready yet — bot stays silent for everyone until synced') +
       `<br>Replies today — local: ${split.local} · Gemini: ${split.gemini} (${splitPct}% local)` +
-      `<br>Outbound sent today: ${ob.sentToday ?? 0}/${ob.dailyCap ?? 20}` +
+      `<br>Initiated today (capped): ${ob.initiatedToday ?? 0}/${ob.initiatedCap ?? 20} · Replies today (never capped): ${ob.repliesToday ?? 0}` +
       (ob.enabled === false ? ` · <span style="color:var(--color-danger)">OUTBOUND_ENABLED=false — all AUTO-mode sends are blocked</span>` : '');
     const kc = stats.knownChats;
     if (kc) {

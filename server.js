@@ -354,9 +354,14 @@ app.get('/api/leads/stats', auth, (req, res) => {
     contactCache: getContactCacheStats(),
     knownChats: getKnownChatsStats(),
     replySplit: LS.getReplySplitToday(),
+    // Split per the ban-risk split itself: initiated sends are capped (backlog opens,
+    // follow-ups, payment reminders, payment-details sends — anything going to a contact
+    // who hasn't messaged us in the last 24h), replies to someone who just messaged/called
+    // us are never capped, only counted. See src/leadResponder.js#deliver.
     outbound: {
-      sentToday: LS.getOutboundSentToday(),
-      dailyCap: Number(process.env.DAILY_OUTBOUND_CAP) || 20,
+      initiatedToday: LS.getInitiatedSentToday(),
+      initiatedCap: Number(process.env.DAILY_INITIATED_CAP) || 20,
+      repliesToday: LS.getReplySentToday(),
       enabled: process.env.OUTBOUND_ENABLED !== 'false'
     }
   });

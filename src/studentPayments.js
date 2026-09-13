@@ -8,7 +8,8 @@ import * as WA from './whatsapp.js';
 import * as SPS from './studentPaymentStore.js';
 import * as G from './google.js';
 import * as RE from './replyEngine.js';
-import { outboundEnabled } from './leadResponder.js';
+import * as LS from './leadStore.js';
+import { outboundEnabled, dailyInitiatedCap } from './leadResponder.js';
 import { buildReceiptPdf, buildStatementPdf } from './invoicePdf.js';
 
 const googleReady = () => !!process.env.GOOGLE_REFRESH_TOKEN;
@@ -201,7 +202,11 @@ export function getReminderQueueWithDetails() {
 // fired exclusively from the operator's explicit "Send" click (server.js's
 // POST /api/payment-reminders/:id/send). Respects the same OUTBOUND_ENABLED kill switch
 // as every other proactive send in this app; the account got restricted once for
-// automated outbound, so a human click doesn't bypass that final safety net.
+// automated outbound, so a human click doesn't bypass that final safety net. A reminder is
+// normally bot-INITIATED (that's the whole point — nudging someone who hasn't paid), so it
+// counts against DAILY_INITIATED_CAP by default; if this student happens to have messaged
+// us in the last 24h it's counted as a reply instead and isn't capped, same rule as every
+// other proactive sender now uses (see WA.hasRecentInboundMessage).
 export async function sendReminderQueueItem(id) {
   if (!outboundEnabled()) return { sent: false, reason: 'outbound_disabled' };
 
@@ -213,12 +218,21 @@ export async function sendReminderQueueItem(id) {
   if (!student || !inst) { SPS.dismissReminder(id); return { sent: false, reason: 'not_found' }; }
   if (inst.status === 'paid') { SPS.dismissReminder(id); return { sent: false, reason: 'already_paid' }; }
 
-  const variant = RE.pickVariant('payment_reminder', student.language === 'hi' ? 'hi' : 'en', WA.phoneToJid(student.phone));
+  const jid = WA.phoneToJid(student.phone);
+  const isReply = WA.hasRecentInboundMessage(jid);
+  if (!isReply && LS.getInitiatedSentToday() >= dailyInitiatedCap()) {
+    return { sent: false, reason: 'daily_cap' }; // leave queued — operator can retry once the cap resets
+  }
+
+  const variant = RE.pickVariant('payment_reminder', student.language === 'hi' ? 'hi' : 'en', jid);
   if (!variant) return { sent: false, reason: 'no_variant' };
   const text = fillReminderTokens(variant.text, student, inst);
 
   try {
-    await WA.sendWithTypingDelay({ jid: WA.phoneToJid(student.phone), text });
+    await WA.sendWithTypingDelay({ jid, text });
+    if (isReply) LS.incrementReplySentToday();
+    else LS.incrementInitiatedSentToday();
+    console.log(`Payment reminder sent to ${student.phone} — counted as ${isReply ? 'reply' : 'initiated'}.`);
     SPS.markReminderSent(id);
     return { sent: true };
   } catch (e) {

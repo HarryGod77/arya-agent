@@ -105,6 +105,26 @@ export function getChatCacheEntries() {
   return [...chatCache.entries()].map(([jid, v]) => ({ jid, ...v }));
 }
 
+// Has this jid sent us an actual message within the last windowMs? Used by
+// leadResponder.js#deliver and every other proactive sender to decide whether a send
+// carries WhatsApp's initiating-a-chat ban risk or is a safe reply — that risk is about
+// INITIATING a chat, not replying to one, so this is the one signal that matters, not
+// which code path triggered the send. Conservative on missing/stale data: no cache entry,
+// or a cache entry whose LAST message was actually from us (fromMe:true) rather than them,
+// both return false ("not recent inbound") — a missed call alone doesn't register here
+// (the 'call' handler below doesn't touch the chat cache), so a reply to a missed call
+// with no accompanying text counts as initiating, which is the conservative/correct call.
+// A follow-up only fires after real silence and a backlog item is by construction an old
+// unanswered chat, so both naturally land here as "not recent" without a special case.
+// The chat cache is updated (see messages.upsert below) BEFORE the inbound handler runs,
+// so a reactive reply/welcome sent from inside handleInboundMessage always sees its own
+// just-arrived message and correctly counts as "recent".
+export function hasRecentInboundMessage(jid, windowMs = 24 * 3600 * 1000) {
+  const entry = chatCache.get(jid);
+  if (!entry || entry.fromMe) return false;
+  return (Date.now() - entry.ts) < windowMs;
+}
+
 // jid -> { ts, unreadCount } — every 1:1 chat WhatsApp's servers have told us about via
 // 'chats.upsert' or the 'chats' array of 'messaging-history.set', REGARDLESS of whether
 // we have actual message text for it in chatCache above. This is a diagnostic overlay,

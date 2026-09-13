@@ -5,7 +5,7 @@
 import QRCode from 'qrcode';
 import * as WA from './whatsapp.js';
 import * as PCS from './paymentConfigStore.js';
-import { outboundEnabled, dailyOutboundCap } from './leadResponder.js';
+import { outboundEnabled, dailyInitiatedCap } from './leadResponder.js';
 import * as LS from './leadStore.js';
 
 // Text + UPI link only, no send — backs the panel's "Copy" button and the pre-send preview.
@@ -17,16 +17,21 @@ export function previewPaymentDetails(amount) {
   };
 }
 
-// Reuses the exact same outbound kill-switch + daily cap + counter as the AUTO-mode lead
-// responder (src/leadResponder.js's deliver()) — per spec, this is "the existing outbound
-// cap", not a second one. A blocked send returns { sent:false, reason } rather than
-// throwing, matching every other best-effort WhatsApp send in this codebase.
+// Reuses the exact same outbound kill-switch as the AUTO-mode lead responder
+// (src/leadResponder.js's deliver()). A "send payment details" click is normally a
+// bot/operator-INITIATED message (the whole point is giving someone something to pay
+// against before they've necessarily asked again), so it's capped by DAILY_INITIATED_CAP
+// by default — but if this phone number happens to have messaged us in the last 24h, it's
+// counted as a reply instead and isn't capped, via the same hasRecentInboundMessage rule
+// every proactive sender in this app uses now. A blocked send returns { sent:false,
+// reason } rather than throwing, matching every other best-effort WhatsApp send here.
 export async function sendPaymentDetails({ phone, amount }) {
   const jid = WA.phoneToJid(phone);
   if (!jid) return { sent: false, reason: 'invalid_phone' };
 
   if (!outboundEnabled()) return { sent: false, reason: 'outbound_disabled' };
-  if (LS.getOutboundSentToday() >= dailyOutboundCap()) return { sent: false, reason: 'daily_cap' };
+  const isReply = WA.hasRecentInboundMessage(jid);
+  if (!isReply && LS.getInitiatedSentToday() >= dailyInitiatedCap()) return { sent: false, reason: 'daily_cap' };
 
   const cfg = PCS.getConfig();
   const text = PCS.formatPaymentBlock(cfg, amount);
@@ -39,7 +44,9 @@ export async function sendPaymentDetails({ phone, amount }) {
     } else {
       await WA.sendText({ jid, text }); // no UPI ID configured yet — nothing to attach a QR to
     }
-    LS.incrementOutboundSentToday();
+    if (isReply) LS.incrementReplySentToday();
+    else LS.incrementInitiatedSentToday();
+    console.log(`Payment details sent to ${phone} — counted as ${isReply ? 'reply' : 'initiated'}.`);
     return { sent: true };
   } catch (e) {
     console.error('Payment details send failed:', e.message);
