@@ -75,10 +75,18 @@ export function createLead(jid, { phone, pushName } = {}) {
       flagsAcknowledgedAt: null,
       manualOverride: null,                  // 'ignore' | 'converted' | null
       pendingSend: null,                     // {text, intent, escalate, escalateReason, createdAt} — held back by silent hours
-      lastResolvedUnansweredAt: null         // last time an 'unanswered_question' escalation for this jid was captured/resolved
+      lastResolvedUnansweredAt: null,        // last time an 'unanswered_question' escalation for this jid was captured/resolved
+      welcomedAt: null                       // set once the first-contact welcome message is confirmed delivered — see leadResponder.js
     };
   });
   return lead;
+}
+
+// Set only after deliver() confirms the welcome actually went out — same never-mark-sent-
+// unless-confirmed rule as everything else in this store. If it stays null (delivery
+// failed), the next inbound message from this jid retries the welcome once more.
+export function markWelcomed(jid) {
+  update(d => { if (d.leads[jid]) d.leads[jid].welcomedAt = Date.now(); });
 }
 
 // isFollowUp: a reminder still belongs in the transcript (so Gemini sees it, so the

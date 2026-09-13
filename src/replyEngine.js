@@ -28,6 +28,15 @@ function loadConfig() {
   catch (e) { console.error('replyEngine: failed to load data/replies.json config:', e.message); return {}; }
 }
 
+// First-contact welcome variants live in their own top-level block (data/replies.json's
+// "welcome" key), not inside "intents" — the welcome isn't triggered by keyword/pattern
+// matching at all, so it has no place in the detectIntent scoring loop below. See
+// pickWelcomeVariant / leadResponder.js's first-contact hook in handleInboundMessage.
+function loadWelcome() {
+  try { return JSON.parse(fs.readFileSync(REPLIES_PATH, 'utf-8')).welcome || {}; }
+  catch (e) { console.error('replyEngine: failed to load data/replies.json welcome block:', e.message); return {}; }
+}
+
 // ---------- template substitution ----------
 // Same idea as gemini.js's {{FEE}}/{{PAYMENT_DETAILS}} tokens — variant text carries a
 // token, never the real value, so a fee change or a manager handover is a one-line edit
@@ -58,6 +67,8 @@ export function fillTemplates(text) {
     '{{course_fee_current}}': effectiveCourseFee(cfg),
     '{{course_fee_standard}}': cfg.course_fee_standard || '{{course_fee_standard}}',
     '{{manager_name}}': cfg.manager_name || '{{manager_name}}',
+    '{{manager_full_name}}': cfg.manager_full_name || '{{manager_full_name}}',
+    '{{agency_name}}': cfg.agency_name || '{{agency_name}}',
     '{{whatsapp_number}}': cfg.whatsapp_number || '{{whatsapp_number}}'
   };
   let out = text;
@@ -124,6 +135,27 @@ export function detectLanguage(raw) {
   return 'en';
 }
 
+// Three-way variant, used only by the first-contact welcome (see pickWelcomeVariant) —
+// every other intent in this library is a binary hi/en choice (detectLanguage above), but
+// the welcome ships a dedicated Roman-script Hinglish set as well, so it needs its own
+// classifier rather than collapsing Hinglish into "hi". A short/ambiguous message (a bare
+// "hi", emoji, empty text) can't be confidently called pure English, so it falls to the
+// hinglish default per spec rather than guessing.
+function looksPureEnglish(t) {
+  if (!/^[\x00-\x7F]+$/.test(t)) return false; // non-ASCII (Devanagari already handled above)
+  if (HINGLISH_MARKERS.test(t)) return false;
+  const words = t.trim().split(/\s+/).filter(Boolean);
+  return words.length >= 2; // a single bare word ("hi", "ok") is too ambiguous to call English
+}
+
+export function detectWelcomeLanguage(raw) {
+  const t = (raw || '').trim();
+  if (DEVANAGARI_RE.test(t)) return 'hi';
+  if (HINGLISH_MARKERS.test(t)) return 'hinglish';
+  if (looksPureEnglish(t)) return 'en';
+  return 'hinglish'; // cannot tell -> default, per spec
+}
+
 // ---------- emoji-only detection ----------
 const EMOJI_ONLY_RE = /^[\p{Extended_Pictographic}‍️\s]+$/u;
 export function isEmojiOnly(raw) {
@@ -156,6 +188,18 @@ function countPatternHits(normText, patterns = []) {
   return hits;
 }
 
+// "COURSE" / "BOOKING" are the exact call-to-action words the first-contact welcome tells
+// every lead to reply with (see the "welcome" block's CTA lines). Routing them here, ahead
+// of the generic priority race below, means they always land on course_inquiry /
+// show_booking_general regardless of that intent's own (often deliberately low, since it's
+// a broad catch-all) priority — bumping course_inquiry's priority instead would risk it
+// outranking more specific intents like course_fee for any message that merely mentions
+// "course". A bare "COURSE"/"BOOKING" reply is the one case that needs to win outright.
+const HIGH_PRIORITY_TRIGGERS = [
+  { re: /^course$/, intent: 'course_inquiry' },
+  { re: /^booking$/, intent: 'show_booking_general' }
+];
+
 // messageText: the raw inbound WhatsApp text. conversationState: { hasGreetedBefore } —
 // leadResponder.js passes this from lead history; only used to promote a bare greeting
 // into greeting_repeat when this isn't the lead's first hello. Returns
@@ -172,6 +216,10 @@ export function detectIntent(messageText, conversationState = {}) {
 
   const norm = normalizeText(raw);
   if (!norm) return null;
+
+  for (const { re, intent } of HIGH_PRIORITY_TRIGGERS) {
+    if (re.test(norm) && intents[intent]) return { intent, confidence: 0.95, language };
+  }
 
   let best = null;
   for (const [key, def] of Object.entries(intents)) {
@@ -204,17 +252,14 @@ export function detectIntent(messageText, conversationState = {}) {
 
 // ---------- variant rotation ----------
 // Rotates so the same contact never gets the same variant twice in a row, and avoids
-// repeating anything from its last 5 sends of this exact (intent, language) whenever
-// there are enough variants to make that possible.
-export function pickVariant(intent, language, contactJid) {
-  const intents = loadReplies();
-  const def = intents[intent];
-  if (!def) return null;
-  const list = language === 'hi' ? (def.variants_hi || []) : (def.variants_en || []);
+// repeating anything from its last 5 sends of this exact (list, language) whenever
+// there are enough variants to make that possible. Shared by pickVariant (per-intent
+// replies) and pickWelcomeVariant (the first-contact welcome) — same algorithm, just a
+// different source list and rotation-key namespace.
+function pickFromRotation(list, rotationKey) {
   if (!list.length) return null;
   if (list.length === 1) return { text: fillTemplates(list[0]), index: 0 };
 
-  const rotationKey = `${contactJid || 'unknown'}::${intent}::${language}`;
   const db = readRotation();
   const history = db[rotationKey] || [];
 
@@ -229,6 +274,25 @@ export function pickVariant(intent, language, contactJid) {
   writeRotation(db);
 
   return { text: fillTemplates(list[index]), index };
+}
+
+export function pickVariant(intent, language, contactJid) {
+  const intents = loadReplies();
+  const def = intents[intent];
+  if (!def) return null;
+  const list = def[`variants_${language}`] || def.variants_en || [];
+  const rotationKey = `${contactJid || 'unknown'}::${intent}::${language}`;
+  return pickFromRotation(list, rotationKey);
+}
+
+// First-contact welcome — same rotation guarantee (no repeat variant across a contact's
+// last 5 sends of this language), scoped to its own "welcome" rotation-key namespace so it
+// never collides with a per-intent history for the same jid.
+export function pickWelcomeVariant(language, contactJid) {
+  const welcome = loadWelcome();
+  const list = welcome[`variants_${language}`] || welcome.variants_hinglish || welcome.variants_en || [];
+  const rotationKey = `${contactJid || 'unknown'}::welcome::${language}`;
+  return pickFromRotation(list, rotationKey);
 }
 
 // ---------- audit log (append-only JSONL, same convention as leadStore.js's lead-log) ----------

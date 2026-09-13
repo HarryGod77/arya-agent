@@ -220,6 +220,42 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     LS.incrementDailyCount();
   }
 
+  // 4a) First-contact welcome — fires exactly once per contact, ever, before anything
+  // else. isNewContact is "!existing" rather than "!lead.welcomedAt" so a contact who
+  // already has history never gets welcomed retroactively; the welcomedAt flag itself
+  // (checked below) only exists so a failed send can retry on this same first message
+  // without re-triggering on every later one. Language is detected from the raw first
+  // message (see RE.detectWelcomeLanguage) — image/audio/sticker-only first contacts fall
+  // through to the hinglish default since there's no text to read.
+  if (!existing) {
+    const freshLead = LS.getLead(jid);
+    if (!freshLead.welcomedAt) {
+      const welcomeLanguage = RE.detectWelcomeLanguage(text || '');
+      const welcomeVariant = RE.pickWelcomeVariant(welcomeLanguage, jid);
+      if (welcomeVariant) {
+        const welcomeDelivered = await deliver({
+          jid, phone, pushName, reply: welcomeVariant.text, mode: cfg.mode,
+          escalate: false, escalateReason: null, tier: 'welcome', model: welcomeLanguage
+        });
+        if (welcomeDelivered) {
+          LS.markWelcomed(jid);
+          LS.logEvent({ jid, action: 'welcome_sent', detail: { language: welcomeLanguage, variantIndex: welcomeVariant.index } });
+          // A payment screenshot alert is time-sensitive for the operator — only pace the
+          // welcome-then-reply gap for cases where what follows is itself a lead-facing
+          // reply (text, voice note, sticker), not an internal alert.
+          if (!hasImage) {
+            const waitMs = 20000 + Math.random() * 20000; // 20-40s, per spec
+            await new Promise(res => setTimeout(res, waitMs));
+          }
+        } else {
+          LS.logEvent({ jid, action: 'welcome_send_failed', detail: { language: welcomeLanguage } });
+        }
+      } else {
+        LS.logEvent({ jid, action: 'welcome_no_variant', detail: { language: welcomeLanguage } });
+      }
+    }
+  }
+
   // 4b) Payment screenshot short-circuit — a screenshot is usually sent with no caption
   // at all, so there's rarely any text for Gemini to classify, and per the business rule
   // the bot must never confirm payment or issue an invoice itself. Just alert the
