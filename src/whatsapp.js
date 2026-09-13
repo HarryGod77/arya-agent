@@ -176,6 +176,11 @@ export function setInboundMessageHandler(fn) { inboundHandler = fn; }
 let outboundHandler = async () => {};
 export function setOutboundMessageHandler(fn) { outboundHandler = fn; }
 
+// Registered by server.js at boot (src/leadResponder.js#handleMissedCall) — fires when
+// Baileys reports a call that rang and went unanswered. Defaults to a no-op.
+let missedCallHandler = async () => {};
+export function setMissedCallHandler(fn) { missedCallHandler = fn; }
+
 // jid -> {text, ts} — the last text this server itself sent to that jid via
 // sendWithTypingDelay (AUTO-mode lead-facing sends). Baileys reflects our own outgoing
 // messages back through messages.upsert with fromMe:true, exactly like a message typed
@@ -275,8 +280,16 @@ export async function startWhatsApp() {
         // operator (see the "payment screenshot" branch there) without needing Gemini
         // to classify anything.
         const hasImage = !!m.message?.imageMessage;
+        // Same reasoning as hasImage: a voice note or sticker carries no extractText()
+        // output, so without these flags the message would look empty and get dropped
+        // before ever reaching leadResponder.js's ot_voice_note_received/ot_sticker_only
+        // local-reply handling.
+        const hasAudio = !!m.message?.audioMessage;
+        const hasSticker = !!m.message?.stickerMessage;
         const ts = m.messageTimestamp ? Number(m.messageTimestamp) * 1000 : Date.now();
-        if (text || hasImage) updateChatCache(jid, { fromMe: m.key?.fromMe, text: text || '[image]', ts });
+        if (text || hasImage || hasAudio || hasSticker) {
+          updateChatCache(jid, { fromMe: m.key?.fromMe, text: text || (hasImage ? '[image]' : hasAudio ? '[voice note]' : '[sticker]'), ts });
+        }
 
         if (m.key?.fromMe) {
           // Could be Baileys echoing our own sendWithTypingDelay() send back to us, or
@@ -292,7 +305,7 @@ export async function startWhatsApp() {
           continue;
         }
         if (!jid || jid.endsWith('@g.us') || jid.endsWith('@broadcast') || jid.endsWith('@newsletter')) continue;
-        if (!text && !hasImage) continue; // no plain-text content and no image (sticker, etc.)
+        if (!text && !hasImage && !hasAudio && !hasSticker) continue; // no usable content at all
 
         const payload = {
           jid,
@@ -300,9 +313,26 @@ export async function startWhatsApp() {
           pushName: m.pushName || '',
           text,
           hasImage,
+          hasAudio,
+          hasSticker,
           ts
         };
         Promise.resolve(inboundHandler(payload)).catch(e => console.error('Inbound message handler failed:', e.message));
+      }
+    });
+
+    // A call that rang and went unanswered ('timeout') — reported once per call, not on
+    // every status change ('offer'/'ringing' fire first but aren't "missed" yet). Feeds
+    // leadResponder.js's ot_missed_call local reply through the same gate chain as a
+    // real message (contact cache ready, saved-contact skip, manual override).
+    const seenMissedCalls = new Set();
+    sock.ev.on('call', (calls) => {
+      for (const c of calls || []) {
+        if (c.status !== 'timeout' || !c.from || !isTrackable1to1(c.from)) continue;
+        if (seenMissedCalls.has(c.id)) continue;
+        seenMissedCalls.add(c.id);
+        Promise.resolve(missedCallHandler({ jid: c.from, phone: c.from.split('@')[0] }))
+          .catch(e => console.error('Missed call handler failed:', e.message));
       }
     });
 
@@ -360,7 +390,7 @@ export function isSavedContact(jid) {
 // For actual 1:1 sends to a lead's own jid (AUTO mode) — shows a typing indicator, waits
 // a random human-like delay, then sends. Distinct from sendMessage() below, which targets
 // the operator's own Note-to-Self/group chats for batch notifications and DRAFT-mode notes.
-export async function sendWithTypingDelay({ jid, text, minMs = 20000, maxMs = 90000 }) {
+export async function sendWithTypingDelay({ jid, text, minMs = 45000, maxMs = 150000 }) {
   if (!ready || !sock) throw new Error('WhatsApp client taiyar nahi hai. Pehle /qr par jaakar scan karein.');
   try { await sock.sendPresenceUpdate('composing', jid); } catch {}
   const waitMs = minMs + Math.random() * (maxMs - minMs);
@@ -384,8 +414,12 @@ export async function sendDocument({ jid, buffer, fileName, caption, mimetype = 
 // lead-facing message, there's no ban-risk reason to hold it back, and the whole point
 // is the operator sees it right away. Falls back to self (myJid) on any failure so the
 // alert isn't lost, same fallback pattern as sendMessage() below.
-export async function sendToOperatorAlert(text) {
-  const number = (process.env.OPERATOR_ALERT_NUMBER || '').replace(/\D/g, '');
+// targetNumber: optional override of OPERATOR_ALERT_NUMBER — e.g. src/scheduler.js's
+// social-posting stock-empty alert uses SOCIAL_OWNER_NUMBER when set, so a different
+// person can own "content stock is low" alerts than "hot lead" alerts, while still
+// reusing this same primitive (and its self-fallback behavior) rather than duplicating it.
+export async function sendToOperatorAlert(text, targetNumber) {
+  const number = (targetNumber || process.env.OPERATOR_ALERT_NUMBER || '').replace(/\D/g, '');
   if (!number) {
     console.error('OPERATOR_ALERT_NUMBER not set — cannot send alert.');
     return { sent: false, reason: 'OPERATOR_ALERT_NUMBER not set' };

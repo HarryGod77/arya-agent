@@ -1,7 +1,10 @@
-// Backlog Scan — finds old, unanswered 1:1 chats and reopens them, rate-limited and
-// reviewable in the panel. runBacklogScan() finds candidates and queues them (once at
-// startup, then daily via scheduler.js). trySendNextBacklogItem() is a separate, frequent
-// low-cost tick (also wired from scheduler.js) that checks whether it's this queue's turn.
+// Backlog Scan — finds old, unanswered 1:1 chats and surfaces them in the panel for
+// review. runBacklogScan() finds candidates and queues them (once at startup, then daily
+// via scheduler.js) — discovery only, never sends anything. sendBacklogItem() is the only
+// way a backlog message actually goes out, and it only ever runs from an operator's
+// explicit "Send" click in the Leads tab (server.js's POST /api/backlog/:jid/send) — the
+// account got restricted once for auto-sending into old chats on a cron tick, so that
+// tick (previously trySendNextBacklogItem, on a */15 min cron) has been removed entirely.
 import * as WA from './whatsapp.js';
 import * as LS from './leadStore.js';
 import * as G from './gemini.js';
@@ -9,7 +12,6 @@ import * as leadResponder from './leadResponder.js';
 
 const MAX_AGE_DAYS = Number(process.env.BACKLOG_MAX_AGE_DAYS) || 60;
 const DAILY_CAP = 5;
-const MIN_GAP_MS = 3 * 3600e3; // spread sends out across the day instead of bursting
 
 // If every item from the initial review batch has been resolved (sent or removed),
 // future scans no longer need per-chat approval. Also correct for the "nothing found"
@@ -68,17 +70,20 @@ export async function runBacklogScan() {
   return { skipped: false, scanned, queued, firstRun };
 }
 
-// ---------- sender: rate-limited, spread out, silent-hours-aware ----------
-export async function trySendNextBacklogItem() {
+// ---------- sender: manual only, one item at a time, per the operator's explicit click ----------
+// Nothing here fires on a cron anymore (see the removed trySendNextBacklogItem / the
+// deleted */15 min cron in scheduler.js) — the account got restricted for auto-sending
+// into old, unanswered chats, so every backlog open now requires a "Send" click in the
+// Leads tab. Still enforces the same daily cap and silent-hours/kill-switch/outbound-cap
+// safety (via leadResponder.deliver) as before — a human click doesn't bypass those.
+export async function sendBacklogItem(jid) {
   const cfg = leadResponder.getConfig();
-  if (leadResponder.inSilentHours(cfg)) return;
-  if (LS.getBacklogSentToday() >= DAILY_CAP) return;
-  const lastSend = LS.getBacklogLastSendAt();
-  if (lastSend && Date.now() - lastSend < MIN_GAP_MS) return;
-  if (!WA.isContactCacheReady()) return; // re-check — cache state can change between scan and send time
+  if (leadResponder.inSilentHours(cfg)) return { sent: false, reason: 'silent_hours' };
+  if (LS.getBacklogSentToday() >= DAILY_CAP) return { sent: false, reason: 'backlog_daily_cap' };
+  if (!WA.isContactCacheReady()) return { sent: false, reason: 'contact_cache_not_ready' };
 
-  const item = LS.getNextApprovedBacklogItem();
-  if (!item) return;
+  const item = LS.getBacklogQueue().find(e => e.jid === jid);
+  if (!item) return { sent: false, reason: 'not_in_queue' };
 
   // Re-check saved-contact at send time too — the queue could be stale if the operator
   // saved this number as a contact sometime after it was originally queued.
@@ -86,7 +91,7 @@ export async function trySendNextBacklogItem() {
     LS.removeFromBacklogQueue(item.jid);
     LS.logEvent({ jid: item.jid, action: 'backlog_filtered_saved_contact', detail: 'caught at send time' });
     maybeClearFirstRun();
-    return;
+    return { sent: false, reason: 'saved_contact' };
   }
 
   LS.createLead(item.jid, { phone: item.phone, pushName: item.pushName });
@@ -103,25 +108,26 @@ export async function trySendNextBacklogItem() {
     });
   } catch (e) {
     console.error('Backlog reply generation failed for', item.jid, ':', e.message);
-    return; // leave queued, retry next tick
+    return { sent: false, reason: 'generation_failed' }; // leave queued, operator can retry
   }
   const { reply, escalate, escalateReason, quotaExhausted, tier, model } = result;
   if (quotaExhausted || !reply) {
     LS.logEvent({ jid: item.jid, action: 'backlog_send_skipped_quota', detail: { tier, model } });
-    return; // leave queued, retry next tick
+    return { sent: false, reason: 'quota_exhausted' }; // leave queued, operator can retry
   }
 
   const delivered = await leadResponder.deliver({
     jid: item.jid, phone: item.phone, pushName: item.pushName,
     reply, mode: cfg.mode, escalate, escalateReason, tier, model
   });
-  if (!delivered) return; // leave queued, retry next tick — don't burn today's slot on a failed send
+  if (!delivered) return { sent: false, reason: 'send_failed' }; // leave queued — don't burn today's slot on a failed send
 
   LS.removeFromBacklogQueue(item.jid);
   LS.setBacklogLastSendAt(Date.now());
   LS.incrementBacklogSentToday();
   LS.logEvent({ jid: item.jid, action: 'backlog_opened', detail: null });
   maybeClearFirstRun();
+  return { sent: true };
 }
 
 // Exported for server.js's "remove from queue" route — removing an item can also be

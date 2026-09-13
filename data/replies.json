@@ -1,0 +1,2947 @@
+{
+  "intents": {
+    "greeting_hi": {
+      "match": {
+        "keywords": ["hi", "hii", "hiii", "hiiii", "hello", "helo", "hey", "heyy", "yo", "hola"],
+        "patterns": ["^h+i+$", "^h+e+y+$", "^h+e+l+o+$"]
+      },
+      "priority": 2,
+      "variants_en": [
+        "Hey! This is Harshit, Dr Arya Chandel's manager — what can I help you with?",
+        "Hi there. Course enquiry or a show booking — which one brings you here?",
+        "Hello! Tell me what you're looking for and I'll take it from there.",
+        "Hey, good to hear from you. What do you need?",
+        "Hi! Go ahead, I'm listening.",
+        "Hello there — Harshit here, from Dr Arya Chandel's team. How can I help?",
+        "Hey! What can I get you started with?",
+        "Hi, tell me what's on your mind.",
+        "Hello! Happy to help — what are you looking for?",
+        "Hey there. Course info or a booking enquiry?",
+        "Hi! I'm here, go ahead.",
+        "Hello, thanks for reaching out. What would you like to know?"
+      ],
+      "variants_hi": [
+        "Hey! Harshit bol raha hoon, Arya Chandel Academy se — kaise madad karu?",
+        "Hi ji, batao course ke baare mein jaanna hai ya show booking ke liye poochh rahe ho?",
+        "Namaste! Kya jaankari chahiye aapko?",
+        "Hello ji, bataiye kis baare mein baat karni hai.",
+        "Hey, bolo kya help chahiye.",
+        "Hi! Course details ya show booking — kaunsa chahiye?",
+        "Namaste ji, main sun raha hoon, bataiye.",
+        "Hello! Kaise help kar sakta hoon aapki?",
+        "Hi, batao kya poochna hai.",
+        "Hey ji, course ya booking — kis baare mein baat karni hai?",
+        "Namaste! Kaam bataiye, turant dekhta hoon.",
+        "Hello ji, kya chahiye aapko, batao."
+      ]
+    },
+    "greeting_morning": {
+      "match": {
+        "keywords": ["gm", "morning", "suprabhat", "subhprabhat"],
+        "patterns": ["good\\s*morning", "shubh\\s*prabhat"]
+      },
+      "priority": 2,
+      "variants_en": [
+        "Good morning! What can I help you with today?",
+        "Morning! Course enquiry or a show booking?",
+        "Good morning — Harshit here, Dr Arya's manager. Go ahead.",
+        "Morning! Tell me what you need.",
+        "Good morning, how can I help?",
+        "Morning to you too. What's on your mind?",
+        "Good morning! I'm here, what do you need?",
+        "Morning! What brings you here today?",
+        "Good morning — go ahead, I'm listening.",
+        "Morning! Ask away.",
+        "Good morning, what would you like to know?",
+        "Morning! What can I do for you?"
+      ],
+      "variants_hi": [
+        "Good morning! Aaj kis baare mein baat karni hai?",
+        "Morning ji! Course ya booking, kya chahiye?",
+        "Good morning — Harshit bol raha hoon, Arya sir ki team se. Batao.",
+        "Morning! Bolo kya help chahiye.",
+        "Good morning, kaise madad karu?",
+        "Morning aapko bhi. Kya poochna hai?",
+        "Good morning! Bataiye kya chahiye.",
+        "Morning! Aaj kya kaam hai?",
+        "Good morning — bolo, sun raha hoon.",
+        "Morning! Poochho.",
+        "Good morning, kya jaankari chahiye?",
+        "Morning! Kaise help karu aapki?"
+      ]
+    },
+    "greeting_evening": {
+      "match": {
+        "keywords": ["ge", "evening", "shubhsandhya"],
+        "patterns": ["good\\s*evening", "shubh\\s*sandhya"]
+      },
+      "priority": 2,
+      "variants_en": [
+        "Good evening! What can I help you with?",
+        "Evening! Course enquiry or a show booking?",
+        "Good evening — Harshit here, Dr Arya's manager. Go ahead.",
+        "Evening! Tell me what you need.",
+        "Good evening, how can I help?",
+        "Evening to you too. What's on your mind?",
+        "Good evening! I'm here, what do you need?",
+        "Evening! What brings you here?",
+        "Good evening — go ahead, I'm listening.",
+        "Evening! Ask away.",
+        "Good evening, what would you like to know?",
+        "Evening! What can I do for you?"
+      ],
+      "variants_hi": [
+        "Good evening! Kis baare mein baat karni hai?",
+        "Evening ji! Course ya booking, kya chahiye?",
+        "Good evening — Harshit bol raha hoon, Arya sir ki team se. Batao.",
+        "Evening! Bolo kya help chahiye.",
+        "Good evening, kaise madad karu?",
+        "Evening aapko bhi. Kya poochna hai?",
+        "Good evening! Bataiye kya chahiye.",
+        "Evening! Kya kaam hai?",
+        "Good evening — bolo, sun raha hoon.",
+        "Evening! Poochho.",
+        "Good evening, kya jaankari chahiye?",
+        "Evening! Kaise help karu aapki?"
+      ]
+    },
+    "greeting_only_emoji": {
+      "match": { "keywords": [], "patterns": [] },
+      "priority": 2,
+      "variants_en": [
+        "Hey! What can I help you with?",
+        "Hi there — go ahead, tell me what you need.",
+        "Hello! Course enquiry or a show booking?",
+        "Hey, I'm here — what's up?",
+        "Hi! What would you like to know?",
+        "Hello there, go ahead.",
+        "Hey! Ask away.",
+        "Hi, tell me what you're looking for.",
+        "Hello! How can I help?",
+        "Hey there, what do you need?",
+        "Hi! I'm listening.",
+        "Hello, what can I do for you?"
+      ],
+      "variants_hi": [
+        "Hey! Bolo kya chahiye.",
+        "Hi ji — batao kya help chahiye.",
+        "Hello! Course ya booking, kya poochna hai?",
+        "Hey, main hoon — bolo kya baat hai.",
+        "Hi! Kya jaanna chahte ho?",
+        "Hello ji, bolo.",
+        "Hey! Poochho.",
+        "Hi, batao kya chahiye tumhe.",
+        "Hello! Kaise madad karu?",
+        "Hey there, kya kaam hai?",
+        "Hi! Sun raha hoon.",
+        "Hello, batao kya karu aapke liye."
+      ]
+    },
+    "greeting_repeat": {
+      "match": {
+        "keywords": ["hi", "hello", "hey"],
+        "patterns": ["^h+i+$", "^h+e+y+$"]
+      },
+      "priority": 2,
+      "variants_en": [
+        "Hey again — what did you want to ask?",
+        "Hi, go ahead, I'm listening.",
+        "Yes, tell me — what's the question?",
+        "Hey, what can I help with?",
+        "Hi again — go on.",
+        "Yes ji, bolo.",
+        "Hey, I'm here — what do you need?",
+        "Go ahead, what would you like to know?",
+        "Hi, what's up?",
+        "Yes, what can I do for you?",
+        "Hey — ask away.",
+        "Hi again, tell me."
+      ],
+      "variants_hi": [
+        "Hey phir se — kya poochna tha?",
+        "Hi ji, bolo, sun raha hoon.",
+        "Haan bolo, kya baat hai?",
+        "Hey, kya help chahiye?",
+        "Hi phir se — bolo.",
+        "Haan ji, poochho.",
+        "Hey, main yahin hoon — batao kya chahiye.",
+        "Bolo, kya jaanna hai?",
+        "Hi, kya baat hai?",
+        "Haan, kya karu aapke liye?",
+        "Hey — poochho.",
+        "Hi phir se, batao."
+      ]
+    },
+    "identity_are_you_arya": {
+      "match": {
+        "keywords": [],
+        "patterns": ["are you arya", "tum arya ho", "aap arya ho", "aap arya sir ho", "aap khud arya", "is this arya sir", "arya sir kya aap", "kya aap arya", "kya tum arya", "khud arya", "arya khud", "aap hi arya"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "No, I'm not Arya sir — I'm Harshit, his manager. What did you need?",
+        "This isn't Arya sir, it's Harshit, his manager. Go ahead, tell me.",
+        "Not Arya sir here — I'm his manager Harshit. What can I help with?",
+        "I manage this number for Dr Arya Chandel. I'm Harshit — what do you need?",
+        "That's not me — I'm Harshit, Arya sir's manager. Ask away.",
+        "No, I handle this number on Arya sir's behalf. What's the query?",
+        "I'm his manager, not Arya sir himself. Tell me what you need.",
+        "Not him — this is Harshit, his manager. How can I help?",
+        "I look after enquiries for Arya sir. What did you want to ask?",
+        "No, I'm his manager Harshit — Arya sir isn't on this chat directly.",
+        "This is Harshit, Dr Arya's manager, not Arya sir himself. Go ahead.",
+        "I'm not Arya sir — I run this number for him. What can I do for you?"
+      ],
+      "variants_hi": [
+        "Nahi, main Arya sir nahi — Harshit hoon, unka manager. Batao kya chahiye.",
+        "Ye Arya sir nahi hai, main unka manager Harshit hoon. Bolo kya baat hai.",
+        "Arya sir nahi — main unka manager hoon. Kaise help karu?",
+        "Main Arya sir ka manager Harshit hoon, ye number main hi dekhta hoon. Batao.",
+        "Nahi ji, main manager hoon Arya sir ka. Poochho kya jaanna hai.",
+        "Ye main nahi — Harshit hoon, Arya sir ka manager. Kya chahiye batao.",
+        "Main unka manager hoon, khud Arya sir nahi. Bolo kya kaam hai.",
+        "Nahi, ye number Arya sir khud nahi dekhte — main dekhta hoon, Harshit. Batao.",
+        "Main Arya sir ki taraf se enquiries handle karta hoon. Kya poochna tha?",
+        "Nahi ji, main manager hoon — Arya sir seedhe is chat pe nahi hain.",
+        "Ye Harshit hai, Arya sir ka manager, khud Arya sir nahi. Bolo.",
+        "Main Arya sir nahi hoon — unka number main dekhta hoon. Kya chahiye?"
+      ]
+    },
+    "identity_who_are_you": {
+      "match": {
+        "keywords": [],
+        "patterns": ["who are you", "who is this", "tum kaun ho", "aap kaun hai", "aap kaun ho", "ye kaun hai", "ye kon hai", "tu kaun hai"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "I'm Harshit, Dr Arya Chandel's manager — this number handles class enquiries and show bookings.",
+        "Harshit here, I manage this number for Dr Arya Chandel. What did you need?",
+        "I'm his manager. I handle course and show booking enquiries on this number.",
+        "This is Harshit — I run Dr Arya Chandel's WhatsApp for enquiries. Go ahead.",
+        "I'm Arya sir's manager, Harshit. What can I help you with?",
+        "Harshit, manager for Dr Arya Chandel. What's your question?",
+        "I look after this number for Arya sir — course and booking enquiries.",
+        "I'm Harshit — I handle everything on this number for Dr Arya Chandel.",
+        "This number belongs to Dr Arya Chandel's academy — I'm his manager, Harshit.",
+        "I'm his manager. Tell me what you're looking for.",
+        "Harshit, I manage enquiries for Dr Arya Chandel. What do you need?",
+        "I handle this number on behalf of Dr Arya Chandel. Go ahead."
+      ],
+      "variants_hi": [
+        "Main Harshit hoon, Arya sir ka manager — ye number course aur show booking ke liye hai.",
+        "Harshit bol raha hoon, main Arya sir ka number dekhta hoon. Batao kya chahiye.",
+        "Main unka manager hoon, course aur booking enquiries yahin handle hoti hain.",
+        "Ye Harshit hai — Arya sir ke WhatsApp enquiries main dekhta hoon. Bolo.",
+        "Main Arya sir ka manager hoon, Harshit. Kaise help karu?",
+        "Harshit, Arya sir ka manager. Kya poochna hai?",
+        "Main is number ko dekhta hoon Arya sir ki taraf se — course aur booking ke liye.",
+        "Main Harshit hoon — is number pe sab kuch main hi handle karta hoon.",
+        "Ye number Arya Chandel Academy ka hai — main unka manager hoon, Harshit.",
+        "Main unka manager hoon. Batao kya jaanna chahte ho.",
+        "Harshit, Arya sir ke liye enquiries dekhta hoon. Kya chahiye?",
+        "Main is number ko Arya sir ki taraf se handle karta hoon. Bolo."
+      ]
+    },
+    "identity_want_to_talk_to_arya": {
+      "match": {
+        "keywords": [],
+        "patterns": ["talk to arya", "speak to arya", "arya se baat", "connect me to arya", "arya sir se baat karni", "arya sir se milna", "direct arya"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Arya sir doesn't take enquiries directly here — I handle all of that as his manager. What did you need?",
+        "I manage this number for him, so everything routes through me first. Tell me what you need.",
+        "He isn't personally on this chat — I'm his manager and I handle enquiries. Go ahead.",
+        "That's not how this number works — I take care of enquiries for Arya sir. What's the question?",
+        "I handle all enquiries for him. Tell me what you need and I'll sort it.",
+        "Arya sir isn't reachable directly on this number — I'm his manager. Ask me.",
+        "Everything on this number goes through me first. What did you want to ask?",
+        "I'm the one who handles this for Arya sir. Go ahead, tell me.",
+        "He doesn't personally respond here — I manage this on his behalf. What do you need?",
+        "I take care of this number for him. What can I help with?",
+        "This number is managed by me, not Arya sir directly. Tell me your query.",
+        "I handle everything here as his manager. What's on your mind?"
+      ],
+      "variants_hi": [
+        "Arya sir yahan seedhe enquiries nahi lete — main unka manager hoon, sab main dekhta hoon. Batao kya chahiye.",
+        "Main unka manager hoon, is number pe sab kuch pehle mujhse hi hota hai. Bolo kya baat hai.",
+        "Wo khud is chat pe nahi hain — main unka manager hoon, enquiries main handle karta hoon.",
+        "Ye aise nahi hota — main Arya sir ke liye enquiries dekhta hoon. Kya poochna hai?",
+        "Main unki taraf se sab enquiries handle karta hoon. Batao, main dekh lunga.",
+        "Arya sir is number pe directly available nahi hain — main unka manager hoon. Poochho.",
+        "Is number pe sab kuch pehle mujhse guzarta hai. Kya jaanna chahte ho?",
+        "Unke liye sab main hi handle karta hoon. Bolo kya chahiye.",
+        "Wo khud yahan reply nahi karte — main unki taraf se dekhta hoon. Batao.",
+        "Main unka manager hoon aur ye number main hi dekhta hoon. Kaise help karu?",
+        "Ye number main manage karta hoon, Arya sir khud nahi. Apna sawaal batao.",
+        "Main unke liye sab kuch yahan handle karta hoon. Kya baat hai?"
+      ]
+    },
+    "identity_call_request": {
+      "match": {
+        "keywords": ["callback"],
+        "patterns": ["call me", "please call", "give me a call", "mujhe call", "call kar", "call karo", "phone karo", "phone kijiye", "call back karo"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "I don't take calls on this number — write your question here and I'll answer right away.",
+        "This number is text-only for enquiries. What did you want to ask?",
+        "I handle everything over chat here, not calls. Go ahead and type it out.",
+        "No calls on this line — send me your question in writing.",
+        "I reply here in text, not over calls. What do you need?",
+        "This is a WhatsApp enquiry line, not for calls. Ask me here.",
+        "I don't do calls — happy to answer whatever you write here.",
+        "Calls aren't handled on this number. Type your question and I'll respond.",
+        "This number is for chat, not calls. Go ahead, ask here.",
+        "I only respond in text here. What's your question?",
+        "No calling on this line — write it down and I'll answer.",
+        "This is a text line, not for calls. What did you need to know?"
+      ],
+      "variants_hi": [
+        "Is number pe call nahi leta — jo poochna hai yahin likh dijiye, turant reply karta hoon.",
+        "Ye sirf text ke liye hai, call ke liye nahi. Kya poochna tha?",
+        "Main yahan chat pe hi sab handle karta hoon, call pe nahi. Likh dijiye.",
+        "Is line pe call nahi hota — apna sawaal yahin type kar dijiye.",
+        "Main text mein hi reply karta hoon, call pe nahi. Kya chahiye?",
+        "Ye WhatsApp enquiry line hai, call ke liye nahi. Yahin poochho.",
+        "Main call nahi karta — jo bhi likhoge uska jawab de dunga.",
+        "Is number pe calls handle nahi hote. Apna sawaal type kar dijiye.",
+        "Ye number chat ke liye hai, call ke liye nahi. Bolo yahin.",
+        "Main sirf yahin text mein jawab deta hoon. Kya jaanna hai?",
+        "Is line pe calling nahi hota — likh dijiye, jawab de dunga.",
+        "Ye text line hai, call ke liye nahi. Kya jaanna tha?"
+      ]
+    },
+    "identity_video_call_request": {
+      "match": {
+        "keywords": ["videocall"],
+        "patterns": ["video call", "video pe baat", "video call karo", "video call kijiye", "can we video call"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "No video calls on this number — write your question here and I'll answer.",
+        "I don't do video calls. Type out what you need and I'll respond.",
+        "This is a text line, no video calls. Ask me here.",
+        "No video calling here — happy to answer in writing.",
+        "I handle this over chat, not video calls. Go ahead and type.",
+        "Video calls aren't possible on this number. What's your question?",
+        "This number doesn't do video calls. Write it here instead.",
+        "I only respond in text, no video call. What did you need?",
+        "No video calls — send your question here and I'll reply.",
+        "This is chat-only, not video call. Go ahead, ask.",
+        "Video call isn't an option here. Type your question.",
+        "I don't take video calls on this line. What's on your mind?"
+      ],
+      "variants_hi": [
+        "Is number pe video call nahi hota — jo poochna hai yahin likh dijiye.",
+        "Main video call nahi karta. Apna sawaal type kar dijiye, jawab de dunga.",
+        "Ye text line hai, video call ke liye nahi. Yahin poochho.",
+        "Video call yahan nahi hota — likh dijiye, main jawab de dunga.",
+        "Main chat pe hi sab handle karta hoon, video call pe nahi. Bolo.",
+        "Is number pe video call possible nahi hai. Kya poochna tha?",
+        "Ye number video call ke liye nahi hai. Yahin likh dijiye.",
+        "Main sirf text mein reply karta hoon, video call nahi. Kya chahiye?",
+        "Video call nahi — apna sawaal yahin bhej dijiye.",
+        "Ye sirf chat ke liye hai, video call ke liye nahi. Bolo.",
+        "Video call ka option nahi hai yahan. Apna sawaal type karo.",
+        "Is line pe video call nahi leta. Kya baat hai?"
+      ]
+    },
+    "identity_wrong_number": {
+      "match": {
+        "keywords": [],
+        "patterns": ["wrong number", "galat number", "glt number", "who gave you this number", "kisne diya ye number", "i did not message you", "maine to message hi nahi kiya"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "No worries — this is Dr Arya Chandel's academy number, for course and show enquiries.",
+        "All good. This number handles Dr Arya Chandel's classes and show bookings, in case you ever need it.",
+        "That's fine — this is Arya Chandel Academy's enquiry line, not a wrong connection on my end.",
+        "No issue at all. This number is for Dr Arya Chandel's course and booking enquiries.",
+        "Understood — this is the academy's official number, feel free to note it for later.",
+        "No problem. This line is for Dr Arya Chandel's mentalism course and show bookings.",
+        "All good, no worries. This is Arya Chandel Academy in case you're ever interested.",
+        "That's okay — this number's for course enquiries with Dr Arya Chandel's team.",
+        "No worries at all. This is Dr Arya Chandel's academy line.",
+        "Fine by me — this is the enquiry number for Dr Arya Chandel's academy.",
+        "All good. Just so you know, this is Dr Arya Chandel's official enquiry number.",
+        "No problem — this is Arya Chandel Academy's number for classes and shows."
+      ],
+      "variants_hi": [
+        "Koi baat nahi — ye Arya Chandel Academy ka number hai, course aur show enquiries ke liye.",
+        "Sab thik hai. Ye number Arya sir ki classes aur show booking ke liye hai, kabhi chahiye toh yaad rakhna.",
+        "Koi dikkat nahi — ye Arya Chandel Academy ki enquiry line hai.",
+        "Koi problem nahi. Ye number Dr Arya Chandel ke course aur booking ke liye hai.",
+        "Thik hai — ye academy ka official number hai, kabhi zaroorat ho toh note kar lena.",
+        "Koi baat nahi. Ye line Arya sir ke mentalism course aur show booking ke liye hai.",
+        "Sab thik, koi tension nahi. Ye Arya Chandel Academy hai agar kabhi interest ho.",
+        "Koi dikkat nahi — ye number course enquiries ke liye hai, Arya sir ki team ka.",
+        "Koi baat nahi bilkul. Ye Dr Arya Chandel ki academy line hai.",
+        "Koi problem nahi — ye Arya sir ki academy ka enquiry number hai.",
+        "Sab thik hai. Bas batadu, ye Dr Arya Chandel ka official enquiry number hai.",
+        "Koi dikkat nahi — ye Arya Chandel Academy ka number hai, classes aur shows ke liye."
+      ]
+    },
+    "course_inquiry": {
+      "match": {
+        "keywords": ["course", "mentalism", "training", "mastercourse", "masterclass"],
+        "patterns": ["course ke baare", "course ki jankari", "tell me about the course", "course details", "course chahiye", "sikhna hai", "seekhna hai", "join karna hai"]
+      },
+      "priority": 3,
+      "variants_en": [
+        "It's a 3-month live online mentalism and hypnosis training with Dr Arya Chandel, taking a complete beginner to a confident performer.",
+        "3-month program, 10 core classes plus bonus sessions, taught live by Dr Arya Chandel — mind reading and hypnosis from scratch.",
+        "It covers mind reading, hypnosis and stage performance over 3 months, live online, with Dr Arya Chandel teaching directly.",
+        "A complete beginner-to-performer course — 3 months, 10 live classes, plus 3 years of post-course support.",
+        "Live online mentalism and hypnosis training, 3 months, taught by Dr Arya Chandel himself.",
+        "It's a full mentalism and hypnosis program — 10 classes over 3 months, built for total beginners.",
+        "You'll learn mind reading and hypnosis end to end over 3 months, live with Dr Arya Chandel.",
+        "The course trains you from zero to performing mentalism and hypnosis on stage, over 3 months.",
+        "3 months, 10 core live classes, taught by Dr Arya Chandel, plus 3 years of support after.",
+        "It's a live, structured mentalism and hypnosis course — beginner-friendly, 3 months long.",
+        "Full training in mind reading and hypnosis, live online with Dr Arya Chandel, 3 months.",
+        "It takes you from complete beginner to performing mentalism and hypnosis confidently — 3 months, live."
+      ],
+      "variants_hi": [
+        "Ye 3 mahine ka live online mentalism aur hypnosis course hai, Dr Arya Chandel khud sikhate hain.",
+        "3 mahine, 10 core classes plus bonus sessions — beginner se performer tak, Arya sir sikhate hain.",
+        "Mind reading aur hypnosis dono cover hote hain, 3 mahine mein, live online.",
+        "Beginner se shuru hoke stage performer tak — 3 mahine ka course hai with 3 saal ka support.",
+        "Live online course hai, 3 mahine ka, Arya sir khud sikhate hain.",
+        "Poora mentalism aur hypnosis training hai — 10 classes, 3 mahine mein.",
+        "Mind reading aur hypnosis dono seekhoge, live classes ke saath, 3 mahine mein.",
+        "Zero se shuru hoke stage pe perform karne tak le jaata hai ye course, 3 mahine mein.",
+        "3 mahine, 10 core live classes, Arya sir sikhate hain, aur 3 saal support bhi milta hai.",
+        "Beginner-friendly hai, live course, 3 mahine ka mentalism aur hypnosis training.",
+        "Poori training milegi mind reading aur hypnosis ki, live, 3 mahine mein.",
+        "Zero se shuru karke confidently perform karna sikhoge — 3 mahine, live classes."
+      ]
+    },
+    "course_fee": {
+      "match": {
+        "keywords": ["fee", "price", "cost", "charge", "kharcha", "kimat"],
+        "patterns": ["kitna hai course", "course kitna", "kitne ka hai", "how much is the course"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Fee is ₹25,000 for the full 3-month course. Outside India there's applicable tax on top.",
+        "₹25,000 for the complete course — 10 classes, 3 months, 3 years of support included.",
+        "It's ₹25,000 total, one-time. Covers everything for the full 3 months.",
+        "The course is ₹25,000 in India, plus tax if you're outside India.",
+        "₹25,000 flat for the whole 3-month program.",
+        "Fee stands at ₹25,000 for the complete training.",
+        "It's ₹25,000, covers the full 10-class course plus 3 years of support.",
+        "₹25,000 total — that includes everything, no hidden add-ons.",
+        "The full course is priced at ₹25,000.",
+        "₹25,000 for India-based students; add applicable tax if you're outside India.",
+        "Fee is ₹25,000 — one payment for the entire 3-month training.",
+        "₹25,000 total for the course, all 10 classes and the bonus sessions included."
+      ],
+      "variants_hi": [
+        "Fee ₹25,000 hai poore 3 mahine ke course ke liye. India ke bahar tax extra lagega.",
+        "₹25,000 total hai — 10 classes, 3 mahine, 3 saal ka support bhi included.",
+        "₹25,000 ek baar mein, poore course ke liye.",
+        "Course ₹25,000 ka hai India mein, bahar se tax alag se.",
+        "₹25,000 flat hai poore 3 mahine ke program ke liye.",
+        "Fee ₹25,000 hai poori training ke liye.",
+        "₹25,000 hai, isme poora 10-class course aur 3 saal support bhi aata hai.",
+        "₹25,000 total — isme sab kuch cover ho jata hai, koi hidden charge nahi.",
+        "Poora course ₹25,000 ka hai.",
+        "₹25,000 India ke students ke liye; bahar se ho toh tax add hoga.",
+        "Fee ₹25,000 hai — ek hi payment poore 3 mahine ke training ke liye.",
+        "₹25,000 total course ke liye, saari 10 classes aur bonus sessions ke saath."
+      ]
+    },
+    "course_duration": {
+      "match": {
+        "keywords": ["duration", "months", "mahine"],
+        "patterns": ["how long is the course", "kitna time lagega", "kitne time ka hai"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "It runs for 3 months — 10 core live classes plus bonus sessions.",
+        "3 months total, weekly classes throughout.",
+        "The full program spans 3 months.",
+        "3 months from start to finish, with 10 core classes.",
+        "It's a 3-month course, one class a week.",
+        "3 months in total — enough to go from beginner to performer.",
+        "The training runs 3 months end to end.",
+        "3 months, with practice sessions built in along the way.",
+        "It's a 3-month program, weekend classes.",
+        "3 months total — 10 classes plus bonus content.",
+        "The course duration is 3 months.",
+        "3 months long, structured week by week."
+      ],
+      "variants_hi": [
+        "Course 3 mahine ka hai — 10 core live classes plus bonus sessions.",
+        "Total 3 mahine ka hai, har hafte class hoti hai.",
+        "Poora program 3 mahine ka hai.",
+        "3 mahine mein complete hota hai, 10 core classes ke saath.",
+        "3 mahine ka course hai, weekly classes hoti hain.",
+        "3 mahine total — beginner se performer tak.",
+        "Training 3 mahine chalti hai shuru se aakhir tak.",
+        "3 mahine ka hai, beech mein practice sessions bhi hote hain.",
+        "3 mahine ka program hai, weekend classes ke saath.",
+        "3 mahine total — 10 classes plus bonus content.",
+        "Course ki duration 3 mahine hai.",
+        "3 mahine lambi hai, week by week structured."
+      ]
+    },
+    "course_schedule_days": {
+      "match": {
+        "keywords": ["saturday", "sunday", "weekend"],
+        "patterns": ["which day", "kis din", "kaunse din", "days classes"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Classes run on weekends — your batch gets either Saturday or Sunday, not both.",
+        "It's a weekend course. Your exact day, Saturday or Sunday, is confirmed once you join.",
+        "Weekend classes only — Saturday for some batches, Sunday for others.",
+        "One day a week, weekend — Saturday or Sunday depending on your batch.",
+        "Classes are weekly on weekends. Which day depends on which batch you join.",
+        "Weekends only — your batch is fixed to either Saturday or Sunday.",
+        "It's held on weekends, one fixed day per batch — Saturday or Sunday.",
+        "Weekend classes — the specific day is set when your batch is confirmed.",
+        "Saturday or Sunday, once a week — depends on the batch.",
+        "Classes are weekly, always on a weekend day.",
+        "Your batch's day, Saturday or Sunday, gets confirmed at joining.",
+        "Weekly weekend classes — Saturday for some batches, Sunday for others."
+      ],
+      "variants_hi": [
+        "Classes weekend pe hoti hain — aapke batch ka din Saturday ya Sunday, dono nahi.",
+        "Ye weekend course hai. Din join karte waqt confirm hota hai — Saturday ya Sunday.",
+        "Sirf weekend classes hoti hain — kisi batch ki Saturday, kisi ki Sunday.",
+        "Hafte mein ek din, weekend pe — Saturday ya Sunday, batch ke hisaab se.",
+        "Classes weekly hoti hain weekend pe. Din batch ke hisaab se decide hota hai.",
+        "Sirf weekend — aapka batch fix hoga Saturday ya Sunday pe.",
+        "Weekend pe hoti hai, ek fixed din har batch ka — Saturday ya Sunday.",
+        "Weekend classes hain — exact din batch confirm hone pe pata chalega.",
+        "Saturday ya Sunday, hafte mein ek baar — batch pe depend karta hai.",
+        "Classes weekly hoti hain, hamesha weekend ke din.",
+        "Aapke batch ka din, Saturday ya Sunday, join karte waqt confirm hoga.",
+        "Weekly weekend classes — kisi ki Saturday, kisi ki Sunday."
+      ]
+    },
+    "course_timing": {
+      "match": {
+        "keywords": ["timing"],
+        "patterns": ["what time", "kis time", "kaunsa time", "time kya hai class", "evening ya"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Evening classes — either 7 to 9 PM or 8 to 10 PM IST, depending on your batch.",
+        "Timing is in the evening, 2-hour slots — 7-9 PM or 8-10 PM IST.",
+        "It's evening, 7-9 PM or 8-10 PM IST — your batch decides which.",
+        "2-hour evening classes, either 7-9 PM or 8-10 PM IST.",
+        "Evening slot, 7-9 PM or 8-10 PM IST depending on the batch you join.",
+        "Classes run evenings — 7-9 PM or 8-10 PM IST, 2 hours each.",
+        "It's always an evening class, 2 hours — 7-9 PM or 8-10 PM IST.",
+        "Evening only, 7-9 PM or 8-10 PM IST, depends on your batch.",
+        "2-hour evening slots, 7-9 PM or 8-10 PM IST.",
+        "Timing is evening — 7-9 PM or 8-10 PM IST, based on batch.",
+        "Classes are held evenings, either of two 2-hour slots — 7-9 PM or 8-10 PM IST.",
+        "Evening classes, 2 hours long — either 7-9 PM or 8-10 PM IST."
+      ],
+      "variants_hi": [
+        "Evening classes hoti hain — 7 se 9 PM ya 8 se 10 PM IST, batch ke hisaab se.",
+        "Timing evening mein hai, 2-hour slot — 7-9 PM ya 8-10 PM IST.",
+        "Evening hai, 7-9 PM ya 8-10 PM IST — batch decide karega kaunsa.",
+        "2-hour evening classes, 7-9 PM ya 8-10 PM IST.",
+        "Evening slot hai, 7-9 PM ya 8-10 PM IST, batch ke hisaab se.",
+        "Classes evening mein hoti hain — 7-9 PM ya 8-10 PM IST, 2 ghante ki.",
+        "Hamesha evening class hoti hai, 2 ghante ki — 7-9 PM ya 8-10 PM IST.",
+        "Sirf evening, 7-9 PM ya 8-10 PM IST, aapke batch pe depend karta hai.",
+        "2-hour evening slots hain, 7-9 PM ya 8-10 PM IST.",
+        "Timing evening ki hai — 7-9 PM ya 8-10 PM IST, batch ke hisaab se.",
+        "Classes evening mein hoti hain, do 2-hour slots mein se ek — 7-9 PM ya 8-10 PM IST.",
+        "Evening classes hain, 2 ghante ki — 7-9 PM ya 8-10 PM IST."
+      ]
+    },
+    "course_online_offline": {
+      "match": {
+        "keywords": ["online", "offline"],
+        "patterns": ["in person class", "physical class", "online hai ya offline"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "It's fully live online — teaching, demos, practice and Q&A, all live.",
+        "Online, live — not pre-recorded, and not in-person.",
+        "Everything happens live online, including the practice sessions.",
+        "It's a live online course, no physical classroom.",
+        "Online only, but fully live — real-time teaching and interaction.",
+        "Live online classes — you interact directly, just not in person.",
+        "It's conducted online, live, with real practice and Q&A sessions.",
+        "Online and live — no in-person requirement at all.",
+        "Fully online, live sessions — teaching, practice, everything.",
+        "It's live online, not offline or pre-recorded.",
+        "Online, live classes with real interaction — no physical venue needed.",
+        "Everything is live and online, including your practice time."
+      ],
+      "variants_hi": [
+        "Poora course live online hai — teaching, demo, practice, sab live.",
+        "Online hai, live — pre-recorded nahi, aur in-person bhi nahi.",
+        "Sab kuch live online hota hai, practice sessions bhi.",
+        "Live online course hai, koi physical classroom nahi.",
+        "Sirf online hai, lekin fully live — real-time teaching aur interaction.",
+        "Live online classes hain — interaction direct hota hai, bas in-person nahi.",
+        "Online conduct hota hai, live, practice aur Q&A ke saath.",
+        "Online aur live hai — in-person ki zaroorat nahi.",
+        "Fully online, live sessions — teaching, practice, sab kuch.",
+        "Live online hai, offline ya pre-recorded nahi.",
+        "Online, live classes hain real interaction ke saath — koi venue nahi chahiye.",
+        "Sab kuch live aur online hota hai, practice time bhi."
+      ]
+    },
+    "course_syllabus": {
+      "match": {
+        "keywords": ["syllabus", "curriculum"],
+        "patterns": ["kya sikhaya", "what will i learn", "classes kya hoti", "topics kya"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "10 classes covering mind reading, lie detection, telepathy, and 3 full classes on hypnosis — street, stage, and backup techniques.",
+        "It covers a full mind-reading act, lie detection, telepathy, hypnosis (street and stage), plus two dedicated practice classes.",
+        "Mind reading, personal-info reading, telepathy, then hypnosis across street and stage settings, with practice sessions built in.",
+        "10 classes: mind reading, lie detection, telepathy, hypnosis (3 classes), practice, and bonus magic.",
+        "You'll cover mentalism fundamentals first, then a deep dive into hypnosis — street, stage, and handling mistakes live.",
+        "Curriculum runs from 1-hour mind reading acts to full stage hypnosis shows, with 2 practice classes along the way.",
+        "It's structured as 10 classes — mentalism first, hypnosis next, practice and bonus content at the end.",
+        "Covers reading thoughts, detecting lies, telepathy, then hypnosis in real street and stage settings.",
+        "10 classes total — mind reading, telepathy, 3 hypnosis classes, 2 practice sessions, and bonus magic.",
+        "Full syllabus: mentalism techniques first, hypnosis performance next, with expert-guided practice throughout.",
+        "You'll learn mind reading, lie detection, telepathy, and full hypnosis — street to stage — across 10 classes.",
+        "It builds from mentalism basics to full hypnosis shows, 10 classes total, with hands-on practice."
+      ],
+      "variants_hi": [
+        "10 classes hain — mind reading, lie detection, telepathy, aur 3 classes hypnosis pe — street, stage, backup techniques.",
+        "Poora mind-reading act, lie detection, telepathy, hypnosis (street aur stage), plus 2 practice classes cover hote hain.",
+        "Mind reading, personal info reading, telepathy, phir hypnosis street aur stage dono mein, practice ke saath.",
+        "10 classes hain: mind reading, lie detection, telepathy, hypnosis (3 classes), practice, aur bonus magic.",
+        "Pehle mentalism fundamentals, phir hypnosis deep dive — street, stage, aur mistakes handle karna bhi.",
+        "Curriculum 1-hour mind reading act se shuru hoke stage hypnosis show tak jaata hai, beech mein 2 practice classes.",
+        "10 classes mein structured hai — pehle mentalism, phir hypnosis, aakhir mein practice aur bonus.",
+        "Thoughts padhna, lie detect karna, telepathy, phir hypnosis real street aur stage settings mein.",
+        "10 classes total — mind reading, telepathy, 3 hypnosis classes, 2 practice sessions, bonus magic.",
+        "Poora syllabus: pehle mentalism techniques, phir hypnosis performance, expert-guided practice ke saath.",
+        "Mind reading, lie detection, telepathy, aur poori hypnosis — street se stage tak — 10 classes mein.",
+        "Mentalism basics se shuru hoke full hypnosis shows tak, 10 classes, hands-on practice ke saath."
+      ]
+    },
+    "course_batch_start": {
+      "match": {
+        "keywords": [],
+        "patterns": ["next batch", "batch kab start", "naya batch", "when does the batch start", "batch start date"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Next batch date isn't confirmed on my end yet — let me check and get back to you.",
+        "I'll confirm the exact start date and let you know shortly.",
+        "That date isn't fixed on my side right now — checking and I'll update you.",
+        "Let me confirm the next batch date properly before I tell you anything.",
+        "I don't have the exact start date locked in yet — confirming it now.",
+        "That's still being finalized — I'll get back to you with the date.",
+        "Checking on the next batch date, will confirm shortly.",
+        "I need to confirm this one before answering — give me a bit.",
+        "The exact date isn't set on my end yet — I'll follow up with it.",
+        "Let me verify the batch start date and come back to you.",
+        "That's not confirmed yet from my side — checking now.",
+        "I'll get the exact start date confirmed and share it with you."
+      ],
+      "variants_hi": [
+        "Next batch ki date abhi confirm nahi hai mere paas — check karke bataata hoon.",
+        "Exact start date confirm karke jald hi bata dunga.",
+        "Wo date abhi fix nahi hai mere yahan — check karke update karta hoon.",
+        "Next batch date pehle confirm kar lene do, phir bataata hoon.",
+        "Exact date abhi lock nahi hui hai — abhi confirm karta hoon.",
+        "Wo abhi finalize ho raha hai — date milte hi bata dunga.",
+        "Next batch date check kar raha hoon, jald bataata hoon.",
+        "Ye confirm karna padega pehle — thoda time do.",
+        "Exact date abhi set nahi hai mere paas — follow up karke bataunga.",
+        "Batch start date verify karke wapas bataata hoon.",
+        "Ye abhi confirm nahi hai mere taraf se — check kar raha hoon.",
+        "Exact start date confirm karwa ke aapko bata dunga."
+      ]
+    },
+    "course_seats_left": {
+      "match": {
+        "keywords": [],
+        "patterns": ["seats left", "kitni seats", "how many seats", "seats bachi", "limited seats"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Batch size isn't something I have an exact number on right now — I'll confirm and let you know.",
+        "Let me check the current batch numbers and get back to you.",
+        "I don't have the exact seat count handy — checking now.",
+        "That's something I'll confirm before I give you a number.",
+        "I'll verify how many spots are open and update you.",
+        "Not sure of the exact count right now — let me check.",
+        "I need to confirm the current batch size before answering that.",
+        "Let me look into the seat availability and get back to you.",
+        "I'll confirm the exact number and let you know shortly.",
+        "That number isn't confirmed on my end right now — checking.",
+        "Let me verify availability first, then I'll tell you.",
+        "I'll check the current batch strength and come back to you."
+      ],
+      "variants_hi": [
+        "Batch size ka exact number abhi mere paas nahi hai — confirm karke bataata hoon.",
+        "Current batch numbers check karke bata dunga.",
+        "Exact seat count abhi handy nahi hai — check kar raha hoon.",
+        "Ye confirm karke hi number bataunga.",
+        "Kitni seats khali hain, verify karke update karta hoon.",
+        "Abhi exact count pata nahi — check karta hoon.",
+        "Current batch size confirm karna padega pehle.",
+        "Seat availability dekh ke bata dunga.",
+        "Exact number confirm karke jald bataata hoon.",
+        "Wo number abhi confirm nahi hai mere taraf se — check kar raha hoon.",
+        "Pehle availability verify karta hoon, phir bataata hoon.",
+        "Current batch strength check karke wapas bataata hoon."
+      ]
+    },
+    "course_language_of_teaching": {
+      "match": {
+        "keywords": [],
+        "patterns": ["language of teaching", "kis language mein", "hindi ya english", "which language classes", "language mein padhate"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "That specific detail isn't confirmed on my end yet — let me check and get back to you.",
+        "I'll confirm the exact teaching language and let you know.",
+        "Not confirmed on my side right now — checking this for you.",
+        "Let me verify that before I answer.",
+        "I don't have that locked down yet — confirming now.",
+        "That's something I need to check first — I'll follow up.",
+        "I'll confirm this properly and come back to you.",
+        "Checking on that detail, will update you shortly.",
+        "That's not confirmed from my end yet — verifying now.",
+        "Let me check and get back to you on that.",
+        "I need to confirm this before I can answer properly.",
+        "I'll verify and let you know."
+      ],
+      "variants_hi": [
+        "Ye specific detail abhi confirm nahi hai mere paas — check karke bataata hoon.",
+        "Exact teaching language confirm karke bata dunga.",
+        "Abhi confirm nahi hai mere taraf se — check kar raha hoon.",
+        "Ye verify karne do pehle, phir bataata hoon.",
+        "Ye abhi lock nahi hai — confirm kar raha hoon.",
+        "Ye pehle check karna padega — follow up karunga.",
+        "Isko properly confirm karke wapas aata hoon.",
+        "Is detail pe check kar raha hoon, jald bataunga.",
+        "Ye abhi confirm nahi hai mere taraf se — verify kar raha hoon.",
+        "Check karke bata dunga isko.",
+        "Pehle isko confirm karna padega, tabhi bata paunga.",
+        "Verify karke bata dunga."
+      ]
+    },
+    "course_prior_experience": {
+      "match": {
+        "keywords": [],
+        "patterns": ["prior experience", "beginner", "zero se", "no experience", "pehle se kuch", "kuch nahi aata"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "No experience needed — built for complete beginners, starting from zero.",
+        "None required. Class 1 starts from scratch, and two full classes are pure practice.",
+        "You don't need any prior background — it's designed for absolute beginners.",
+        "Zero experience is fine. That's exactly who this course is built for.",
+        "No prior skill needed — everyone starts from the same point.",
+        "It's for complete beginners, no background required at all.",
+        "None needed — the course is structured to take you from zero.",
+        "You can start with zero knowledge, that's the norm here.",
+        "No experience necessary. Two dedicated practice classes make sure nobody's left behind.",
+        "It's beginner-first — no prior exposure to mentalism or hypnosis needed.",
+        "Zero prior experience required, genuinely built for first-timers.",
+        "None required at all — this course starts everyone from the basics."
+      ],
+      "variants_hi": [
+        "Koi experience nahi chahiye — complete beginners ke liye bana hai, zero se shuru hota hai.",
+        "Kuch nahi chahiye. Class 1 zero se shuru hoti hai, aur do classes pure practice ki hain.",
+        "Koi prior background nahi chahiye — bilkul beginners ke liye design hua hai.",
+        "Zero experience chalega. Yehi course ka target audience hai.",
+        "Koi prior skill nahi chahiye — sab yahin se shuru karte hain.",
+        "Complete beginners ke liye hai, koi background nahi chahiye.",
+        "Kuch bhi nahi chahiye — course zero se le jaata hai.",
+        "Zero knowledge ke saath shuru kar sakte ho, ye normal hai yahan.",
+        "Koi experience zaroori nahi. Do practice classes ensure karti hain koi peeche na reh jaaye.",
+        "Beginner-first hai — mentalism ya hypnosis ka koi prior exposure nahi chahiye.",
+        "Zero prior experience chahiye hi nahi, first-timers ke liye bana hai.",
+        "Kuch bhi zaroori nahi — sabko basics se hi shuru karwaate hain."
+      ]
+    },
+    "course_age_limit": {
+      "match": {
+        "keywords": [],
+        "patterns": ["age limit", "minimum age", "kitni age", "age kya honi", "age requirement"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "That specific rule isn't confirmed on my end yet — let me check and get back to you.",
+        "I'll confirm the age requirement and let you know.",
+        "Not confirmed from my side right now — checking on it.",
+        "Let me verify that detail before answering.",
+        "I don't have that locked down — confirming now.",
+        "I need to check this first — I'll follow up.",
+        "I'll confirm this properly and come back to you.",
+        "Checking on the age requirement, will update you.",
+        "That's not confirmed yet from my end — verifying.",
+        "Let me check and get back to you.",
+        "I need to confirm before I can answer that.",
+        "I'll verify and let you know shortly."
+      ],
+      "variants_hi": [
+        "Ye specific rule abhi confirm nahi hai — check karke bataata hoon.",
+        "Age requirement confirm karke bata dunga.",
+        "Abhi confirm nahi hai mere taraf se — check kar raha hoon.",
+        "Ye verify karne do pehle jawab dene se pehle.",
+        "Ye abhi lock nahi hai — confirm kar raha hoon.",
+        "Pehle check karna padega — follow up karunga.",
+        "Properly confirm karke wapas aata hoon.",
+        "Age requirement pe check kar raha hoon, jald bataunga.",
+        "Ye abhi confirm nahi hai mere taraf se — verify kar raha hoon.",
+        "Check karke bata dunga.",
+        "Pehle confirm karna padega, tabhi bata paunga.",
+        "Verify karke jald bataata hoon."
+      ]
+    },
+    "course_certificate": {
+      "match": {
+        "keywords": ["certificate", "certification"],
+        "patterns": ["certificate milega", "certificate diya jaata"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "That detail isn't confirmed on my end yet — let me check and get back to you.",
+        "I'll confirm on the certificate and let you know.",
+        "Not confirmed from my side right now — checking.",
+        "Let me verify that before answering.",
+        "I don't have that locked down yet — confirming now.",
+        "I need to check this first, I'll follow up.",
+        "I'll confirm properly and come back to you.",
+        "Checking on the certificate question, will update you shortly.",
+        "That's not confirmed yet from my end — verifying now.",
+        "Let me check and get back to you on that.",
+        "I need to confirm before I answer that one.",
+        "I'll verify and let you know."
+      ],
+      "variants_hi": [
+        "Ye detail abhi confirm nahi hai mere paas — check karke bataata hoon.",
+        "Certificate ke baare mein confirm karke bata dunga.",
+        "Abhi confirm nahi hai mere taraf se — check kar raha hoon.",
+        "Ye verify karne do pehle.",
+        "Ye abhi lock nahi hai — confirm kar raha hoon.",
+        "Pehle check karna padega — follow up karunga.",
+        "Properly confirm karke wapas aata hoon.",
+        "Certificate wale sawaal pe check kar raha hoon, jald bataunga.",
+        "Ye abhi confirm nahi hai mere taraf se — verify kar raha hoon.",
+        "Check karke bata dunga isko.",
+        "Pehle confirm karna padega, tabhi bata paunga.",
+        "Verify karke jald bataata hoon."
+      ]
+    },
+    "course_recording_available": {
+      "match": {
+        "keywords": ["recording"],
+        "patterns": ["miss a class", "class miss", "record milega", "recording milegi"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Yes — if you miss a class, you get the recording within 24 hours.",
+        "You won't lose out. Missed a class gets you its recording within a day.",
+        "Recordings are provided within 24 hours if you miss a session.",
+        "Yes, every missed class comes with a recording within 24 hours.",
+        "You get the recording within 24 hours of missing a class, so nothing's lost.",
+        "Missed class recordings arrive within 24 hours.",
+        "Yes — a 24-hour recording covers any class you miss.",
+        "You're covered — recordings for missed classes come within a day.",
+        "If you can't attend, you get the recording within 24 hours.",
+        "Recording within 24 hours for any missed class — you won't fall behind.",
+        "Yes, missed sessions are backed up with a same-day-ish recording, within 24 hours.",
+        "You'll get the recording within 24 hours if you miss a live class."
+      ],
+      "variants_hi": [
+        "Haan — class miss ho toh 24 ghante ke andar recording mil jaati hai.",
+        "Kuch loss nahi hoga. Miss hui class ki recording ek din mein mil jaati hai.",
+        "Recordings 24 ghante ke andar mil jaati hain agar class miss ho jaaye.",
+        "Haan, har miss hui class ki recording 24 ghante mein aati hai.",
+        "Class miss hone pe 24 ghante ke andar recording mil jaati hai, kuch chhutega nahi.",
+        "Missed class ki recording 24 ghante mein aa jaati hai.",
+        "Haan — 24-ghante ki recording cover karti hai koi bhi miss hui class.",
+        "Aap covered ho — missed classes ki recording ek din mein mil jaati hai.",
+        "Agar attend na kar paayein, 24 ghante mein recording mil jaati hai.",
+        "24 ghante mein recording milti hai miss hui class ki — peeche nahi rahoge.",
+        "Haan, missed sessions ki recording 24 ghante ke andar mil jaati hai.",
+        "Live class miss ho toh 24 ghante mein recording mil jaayegi."
+      ]
+    },
+    "course_post_support": {
+      "match": {
+        "keywords": [],
+        "patterns": ["post support", "support after", "after the course support", "doubt clearing", "saal ka support", "saal support", "kitne saal", "support milta"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "3 years of post-course support and doubt-clearing, included.",
+        "You get 3 years of direct support after the course ends.",
+        "Support continues for 3 years after you finish — doubts, guidance, all included.",
+        "3 years of follow-up support comes with the course.",
+        "It doesn't end at 3 months — 3 years of support afterward.",
+        "3 years of doubt-clearing support post-course, included in the fee.",
+        "You're supported for 3 full years after finishing.",
+        "3 years of access to the team for doubts and guidance after the course.",
+        "Support runs for 3 years post-completion.",
+        "3 years of post-course support, no extra charge.",
+        "You get 3 years of continued support once the course is done.",
+        "3 years of doubt-clearing and guidance after the course finishes."
+      ],
+      "variants_hi": [
+        "3 saal ka post-course support aur doubt-clearing included hai.",
+        "Course khatam hone ke baad bhi 3 saal direct support milta hai.",
+        "Support 3 saal tak chalta hai course khatam hone ke baad — doubts, guidance, sab included.",
+        "3 saal ka follow-up support course ke saath aata hai.",
+        "Ye 3 mahine pe khatam nahi hota — 3 saal baad tak support milta hai.",
+        "3 saal ka doubt-clearing support included hai fee mein.",
+        "Aapko 3 poore saal support milta hai course khatam hone ke baad.",
+        "Team se 3 saal ka access milta hai doubts aur guidance ke liye.",
+        "Support 3 saal chalta hai course complete hone ke baad.",
+        "3 saal ka post-course support hai, koi extra charge nahi.",
+        "Course khatam hote hi 3 saal ka continued support milta hai.",
+        "3 saal doubt-clearing aur guidance milti hai course khatam hone ke baad."
+      ]
+    },
+    "course_who_teaches": {
+      "match": {
+        "keywords": ["instructor", "teacher"],
+        "patterns": ["who teaches", "kaun sikhayega", "kaun padhata", "teacher kaun"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Dr Arya Chandel teaches it directly — a dentist who became one of India's most recognised mentalists.",
+        "It's taught by Dr Arya Chandel himself, plus his expert team for practice sessions.",
+        "Dr Arya Chandel — 2x national award winner, Guinness World Record holder, India's Got Talent fame.",
+        "Dr Arya Chandel, personally. He's often called India's David Copperfield.",
+        "Dr Arya Chandel teaches every class, with his team assisting on practice sessions.",
+        "Dr Arya Chandel himself — an ex-dentist turned award-winning mentalist.",
+        "It's Dr Arya Chandel directly, plus expert support for the hands-on practice.",
+        "Dr Arya Chandel teaches it, with a Guinness World Record and multiple national awards to his name.",
+        "Dr Arya Chandel, who's performed internationally across 9 countries.",
+        "Dr Arya Chandel teaches directly — you get real access to him, not just recorded content.",
+        "Dr Arya Chandel himself, one of India's most recognised mentalists.",
+        "It's Dr Arya Chandel, with direct student access built into the course."
+      ],
+      "variants_hi": [
+        "Dr Arya Chandel khud sikhate hain — ek dentist jo India ke top mentalists mein se ek ban gaye.",
+        "Dr Arya Chandel khud padhate hain, saath mein unki expert team practice sessions mein help karti hai.",
+        "Dr Arya Chandel — 2x national award winner, Guinness World Record holder, India's Got Talent fame.",
+        "Dr Arya Chandel khud, jinhe India ka David Copperfield bhi kaha jaata hai.",
+        "Dr Arya Chandel har class khud padhate hain, team practice sessions mein assist karti hai.",
+        "Dr Arya Chandel khud — pehle dentist the, ab award-winning mentalist hain.",
+        "Dr Arya Chandel directly, plus expert support hands-on practice ke liye.",
+        "Dr Arya Chandel sikhate hain, Guinness World Record aur multiple national awards ke saath.",
+        "Dr Arya Chandel, jinhone 9 countries mein perform kiya hai.",
+        "Dr Arya Chandel khud sikhate hain — real access milta hai, sirf recorded content nahi.",
+        "Dr Arya Chandel khud, India ke sabse recognised mentalists mein se ek.",
+        "Dr Arya Chandel hain, direct student access course mein built-in hai."
+      ]
+    },
+    "course_installment_emi": {
+      "match": {
+        "keywords": ["emi", "installment", "installments", "kist"],
+        "patterns": ["do part mein payment", "parts mein pay"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "That specific option isn't confirmed on my end yet — let me check and get back to you.",
+        "I'll confirm whether installments are possible and let you know.",
+        "Not confirmed from my side right now — checking on it.",
+        "Let me verify that before answering.",
+        "I don't have that locked down — confirming now.",
+        "I need to check this first, I'll follow up.",
+        "I'll confirm properly and come back to you.",
+        "Checking on the installment question, will update you.",
+        "That's not confirmed yet from my end — verifying.",
+        "Let me check and get back to you on that.",
+        "I need to confirm before answering that one.",
+        "I'll verify and let you know shortly."
+      ],
+      "variants_hi": [
+        "Ye option abhi confirm nahi hai mere paas — check karke bataata hoon.",
+        "Installment possible hai ya nahi, confirm karke bata dunga.",
+        "Abhi confirm nahi hai mere taraf se — check kar raha hoon.",
+        "Ye verify karne do pehle.",
+        "Ye abhi lock nahi hai — confirm kar raha hoon.",
+        "Pehle check karna padega — follow up karunga.",
+        "Properly confirm karke wapas aata hoon.",
+        "Installment wale sawaal pe check kar raha hoon, jald bataunga.",
+        "Ye abhi confirm nahi hai mere taraf se — verify kar raha hoon.",
+        "Check karke bata dunga isko.",
+        "Pehle confirm karna padega, tabhi bata paunga.",
+        "Verify karke jald bataata hoon."
+      ]
+    },
+    "course_refund_policy": {
+      "match": {
+        "keywords": ["refund"],
+        "patterns": ["money back", "paisa wapas", "refund milega"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "That detail isn't confirmed on my end yet — let me check and get back to you.",
+        "I'll confirm the refund policy and let you know.",
+        "Not confirmed from my side right now — checking.",
+        "Let me verify that before answering.",
+        "I don't have that locked down yet — confirming now.",
+        "I need to check this first, I'll follow up.",
+        "I'll confirm properly and come back to you.",
+        "Checking on the refund question, will update you shortly.",
+        "That's not confirmed yet from my end — verifying now.",
+        "Let me check and get back to you on that.",
+        "I need to confirm before I answer that one.",
+        "I'll verify and let you know."
+      ],
+      "variants_hi": [
+        "Ye detail abhi confirm nahi hai mere paas — check karke bataata hoon.",
+        "Refund policy confirm karke bata dunga.",
+        "Abhi confirm nahi hai mere taraf se — check kar raha hoon.",
+        "Ye verify karne do pehle.",
+        "Ye abhi lock nahi hai — confirm kar raha hoon.",
+        "Pehle check karna padega — follow up karunga.",
+        "Properly confirm karke wapas aata hoon.",
+        "Refund wale sawaal pe check kar raha hoon, jald bataunga.",
+        "Ye abhi confirm nahi hai mere taraf se — verify kar raha hoon.",
+        "Check karke bata dunga isko.",
+        "Pehle confirm karna padega, tabhi bata paunga.",
+        "Verify karke jald bataata hoon."
+      ]
+    },
+    "course_demo_class": {
+      "match": {
+        "keywords": [],
+        "patterns": ["demo class", "trial class", "free class", "demo lena", "trial lena"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "There's no separate demo class, but I can walk you through everything upfront so you know exactly what you're getting.",
+        "No trial class as such — happy to answer every question you have before you decide.",
+        "We don't run demo classes, but I'll give you the full picture so nothing's a surprise.",
+        "No free trial, but ask me anything about the course and I'll answer in detail.",
+        "There isn't a demo session, but I can cover the full curriculum with you now.",
+        "No trial class option — but I'll make sure you have every detail before deciding.",
+        "We skip demo classes, but I'm glad to answer whatever you're unsure about.",
+        "No free class, but you're welcome to ask as many questions as you need first.",
+        "There's no demo, but the full syllabus and structure are open to discuss right now.",
+        "No trial available, but let's go through your questions so you can decide confidently.",
+        "We don't offer a demo, but I can clear every doubt before you commit.",
+        "No free trial class — but ask away, I'll give you complete clarity."
+      ],
+      "variants_hi": [
+        "Alag se demo class nahi hai, lekin sab kuch upfront bata dunga taaki clear ho jaaye.",
+        "Trial class jaisa kuch nahi hai — jo bhi doubt ho poochh lijiye, decide karne se pehle.",
+        "Demo classes nahi chalate, lekin poori jaankari de dunga taaki koi surprise na ho.",
+        "Free trial nahi hai, lekin course ke baare mein kuch bhi poochho, detail mein bataunga.",
+        "Demo session nahi hai, lekin poora syllabus abhi discuss kar sakte hain.",
+        "Trial class ka option nahi hai — par decide karne se pehle sab detail de dunga.",
+        "Demo class skip karte hain, lekin jo bhi unsure ho poochh lijiye.",
+        "Free class nahi hai, lekin jitne chaho utne sawaal poochh sakte ho pehle.",
+        "Demo nahi hai, lekin poora syllabus aur structure abhi discuss ho sakta hai.",
+        "Trial available nahi hai, lekin sawaal poochho taaki confidently decide kar sako.",
+        "Demo offer nahi karte, lekin commit karne se pehle har doubt clear kar dunga.",
+        "Free trial class nahi hai — par poochho, poori clarity de dunga."
+      ]
+    },
+    "course_props_investment": {
+      "match": {
+        "keywords": ["props"],
+        "patterns": ["props chahiye", "equipment needed", "samaan chahiye", "extra investment", "props ka kharcha"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "Nothing extra to buy upfront — the ₹25,000 fee covers the training itself.",
+        "No additional prop investment needed to start the course.",
+        "You don't need to buy anything special before joining.",
+        "The course fee covers the training — no separate prop costs to start.",
+        "Nothing extra required upfront beyond the course fee.",
+        "No special equipment needed to begin — you'll learn what you need as you go.",
+        "There's no upfront prop cost — the fee covers the full training.",
+        "You won't need to buy anything before starting.",
+        "No extra investment needed to join — just the course fee.",
+        "Nothing special to arrange beforehand — the training itself is what's covered.",
+        "No additional costs to start — the fee is all you need.",
+        "You don't need any equipment ready before day one."
+      ],
+      "variants_hi": [
+        "Upfront kuch extra nahi lena — ₹25,000 fee training cover kar leti hai.",
+        "Course start karne ke liye extra prop investment nahi chahiye.",
+        "Kuch special khareedne ki zaroorat nahi hai join karne se pehle.",
+        "Course fee training cover kar leti hai — alag se prop cost nahi.",
+        "Fee ke alawa upfront kuch nahi chahiye.",
+        "Shuru karne ke liye koi special equipment nahi chahiye — seekhte seekhte pata chal jaayega.",
+        "Koi upfront prop cost nahi hai — fee poori training cover karti hai.",
+        "Shuru karne se pehle kuch khareedne ki zaroorat nahi.",
+        "Join karne ke liye extra investment nahi chahiye — bas course fee.",
+        "Pehle se kuch special arrange karne ki zaroorat nahi — training hi cover hoti hai.",
+        "Shuru karne ke liye extra cost nahi — bas fee chahiye.",
+        "Day one se pehle koi equipment ready rakhne ki zaroorat nahi."
+      ]
+    },
+    "course_how_to_enroll": {
+      "match": {
+        "keywords": ["enroll", "enrol", "registration"],
+        "patterns": ["how to join", "join kaise karu", "kaise enroll karu", "admission kaise"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "I'll share the curriculum and fee details, then once you're ready, the team shares payment details and you're in.",
+        "It's simple — I answer your questions here, then the team shares payment info once you're set to join.",
+        "Once you've got all the details you need, the team shares payment details directly and confirms your batch.",
+        "You ask, I answer — then when you're ready, payment details come from the team and you're enrolled.",
+        "I walk you through everything first, then the team takes over for payment and batch confirmation.",
+        "Once you decide to join, the team shares payment details and issues an invoice — then you're set.",
+        "I cover the course details here; the team handles payment and batch assignment once you confirm.",
+        "Get your questions answered here first, then the team sends payment info and locks your batch.",
+        "Once you're ready, the team shares the payment details personally and confirms your seat.",
+        "I explain the course fully first — payment and batch details come from the team once you're in.",
+        "You confirm you want in, the team shares payment details, and your batch is set after that.",
+        "Ask me anything first — once you're ready to join, the team takes it from there for payment."
+      ],
+      "variants_hi": [
+        "Main curriculum aur fee detail share karta hoon, phir ready hone pe team payment details share karti hai.",
+        "Simple hai — pehle sawaal poochho, phir jab ready ho toh team payment info bhejti hai.",
+        "Poori detail milne ke baad, team directly payment details share karti hai aur batch confirm karti hai.",
+        "Tum poochho, main bataata hoon — phir jab ready ho, team se payment details aati hain aur enroll ho jaate ho.",
+        "Main pehle sab kuch samjhaata hoon, phir team payment aur batch confirmation handle karti hai.",
+        "Join karne ka decide karte hi, team payment details share karti hai aur invoice bhi de deti hai.",
+        "Main yahan course detail deta hoon; confirm karte hi team payment aur batch assign karti hai.",
+        "Pehle sab sawaal clear karo, phir team payment info bhejegi aur batch lock kar degi.",
+        "Ready hote hi, team personally payment details share karti hai aur seat confirm karti hai.",
+        "Pehle main poora course samjhaata hoon — payment aur batch details team se milte hain.",
+        "Tum confirm karo ki join karna hai, team payment details degi, uske baad batch set hoga.",
+        "Pehle jo poochna hai poochho — join karne ke ready hote hi team sambhal legi payment."
+      ]
+    },
+    "course_payment_methods": {
+      "match": {
+        "keywords": [],
+        "patterns": ["payment method", "how to pay", "kaise pay karu", "upi details do", "bank details do", "account number do"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "The team shares payment details personally once you're ready to join — I'll flag this so they follow up.",
+        "Payment info comes directly from the team, not over this chat — I've noted you're ready.",
+        "The team handles payment details one-on-one — I'll make sure they reach out.",
+        "That gets shared personally by the team, not here — flagging this now.",
+        "Payment details are shared directly by the team once you confirm — I've flagged it.",
+        "The team will personally share the payment info — I've noted your interest.",
+        "That's shared one-on-one by the team, not through this chat — flagging it now.",
+        "Payment details come from the team directly — I've flagged this for follow-up.",
+        "The team shares this personally, not automatically — I've noted it.",
+        "I've flagged this for the team — they'll share payment details personally.",
+        "That's handled directly by the team — I've flagged your message.",
+        "Payment info is shared one-on-one by the team — flagging this now."
+      ],
+      "variants_hi": [
+        "Payment details team personally share karti hai ready hone pe — main flag kar deta hoon isko.",
+        "Payment info directly team se aati hai, is chat pe nahi — note kar liya hai.",
+        "Payment details team ek-ek karke share karti hai — main ensure karta hoon woh contact karein.",
+        "Wo personally team share karti hai, yahan nahi — abhi flag kar raha hoon.",
+        "Payment details confirm hote hi team directly share karti hai — flag kar diya hai.",
+        "Team personally payment info share karegi — aapka interest note kar liya hai.",
+        "Wo team ek-ek karke share karti hai, is chat se nahi — abhi flag kar raha hoon.",
+        "Payment details team se directly aati hain — follow-up ke liye flag kar diya.",
+        "Team ye personally share karti hai, automatically nahi — note kar liya.",
+        "Maine ye team ke liye flag kar diya hai — wo personally payment details share karenge.",
+        "Wo directly team handle karti hai — aapka message flag kar diya hai.",
+        "Payment info team ek-ek karke share karti hai — abhi flag kar raha hoon."
+      ]
+    },
+    "course_payment_done": {
+      "match": {
+        "keywords": [],
+        "patterns": ["payment done", "maine pay kar diya", "payment ho gaya", "paisa bhej diya", "already paid", "maine paid kar diya", "payment kar diya", "maine payment kar diya", "paise pay kar diye", "screenshot bhej"]
+      },
+      "priority": 8,
+      "escalate": true,
+      "variants_en": [
+        "Got it — I've flagged this for the team to confirm and get your invoice sorted.",
+        "Noted — flagging this now so the team can verify and follow up.",
+        "Thanks for letting me know — I've flagged it for the team to confirm right away.",
+        "Understood — I've passed this to the team to verify the payment.",
+        "Got it, flagging this now — the team will confirm and follow up.",
+        "Noted, thank you — the team will confirm this and get back to you.",
+        "I've flagged this for the team — they'll verify and send your invoice.",
+        "Thanks — passing this to the team now for confirmation.",
+        "Got it — the team will verify and follow up with your invoice shortly.",
+        "Understood, I've flagged it — team will confirm and reach out.",
+        "Noted — I'm alerting the team to confirm this right now.",
+        "Thanks for the update — flagging it so the team can verify and respond."
+      ],
+      "variants_hi": [
+        "Samajh gaya — maine team ko flag kar diya hai confirm karne ke liye, invoice bhi mil jaayega.",
+        "Note kar liya — abhi flag kar raha hoon taaki team verify kar ke follow up kare.",
+        "Batane ke liye shukriya — team ko abhi flag kar diya confirm karne ke liye.",
+        "Samajh gaya — maine team ko bhej diya hai payment verify karne ke liye.",
+        "Ok, abhi flag kar raha hoon — team confirm karke follow up karegi.",
+        "Note kiya, shukriya — team ye confirm karke aapko bataayegi.",
+        "Team ko flag kar diya hai — woh verify karke invoice bhejenge.",
+        "Shukriya — abhi team ko bhej raha hoon confirmation ke liye.",
+        "Samajh gaya — team verify karke jald hi invoice ke saath follow up karegi.",
+        "Ok, flag kar diya — team confirm karke contact karegi.",
+        "Note kar liya — abhi team ko alert kar raha hoon confirm karne ke liye.",
+        "Update ke liye shukriya — flag kar diya taaki team verify karke respond kare."
+      ]
+    },
+    "course_outside_india": {
+      "match": {
+        "keywords": [],
+        "patterns": ["outside india", "international student", "abroad se", "other country", "bahar se hoon"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Yes, fully open to international students — same ₹25,000 fee plus applicable tax.",
+        "Absolutely, you can join from outside India — just applicable tax on top of the fee.",
+        "Yes, it's live online so location doesn't matter — fee is ₹25,000 plus tax if outside India.",
+        "International students are welcome — ₹25,000 plus applicable tax for outside India.",
+        "Yes, you can join from anywhere — the fee stays ₹25,000, plus tax outside India.",
+        "It's open worldwide — same course, ₹25,000 plus applicable tax if you're abroad.",
+        "Yes, since it's online, you can join from any country — tax applies on top outside India.",
+        "Fully open internationally — ₹25,000 plus applicable tax for students outside India.",
+        "Yes, being live online means anyone anywhere can join — tax applies outside India.",
+        "Absolutely — same course, same fee, plus applicable tax if you're joining from abroad.",
+        "Yes, international students join regularly — ₹25,000 plus tax for outside India.",
+        "Location isn't a barrier — it's online, ₹25,000 plus applicable tax outside India."
+      ],
+      "variants_hi": [
+        "Haan, international students bhi join kar sakte hain — same ₹25,000 fee plus applicable tax.",
+        "Bilkul, bahar se bhi join kar sakte ho — bas fee ke upar tax lagega.",
+        "Haan, live online hai toh location matter nahi karta — fee ₹25,000 plus tax bahar se.",
+        "International students welcome hain — ₹25,000 plus applicable tax bahar se.",
+        "Haan, kahin se bhi join kar sakte ho — fee ₹25,000 hi rehti hai, bas tax extra.",
+        "Ye worldwide open hai — same course, ₹25,000 plus tax agar bahar se ho.",
+        "Haan, online hone ki wajah se kisi bhi country se join kar sakte ho — tax lagega bahar se.",
+        "Fully international students ke liye open hai — ₹25,000 plus applicable tax.",
+        "Haan, live online hone ki wajah se kahin se bhi join ho sakta hai — bahar se tax lagega.",
+        "Bilkul — same course, same fee, bas bahar se ho toh tax add hoga.",
+        "Haan, international students regularly join karte hain — ₹25,000 plus tax bahar se.",
+        "Location koi rukawat nahi hai — online hai, ₹25,000 plus applicable tax bahar se."
+      ]
+    },
+    "skill_hypnosis": {
+      "match": {
+        "keywords": ["hypnosis", "hypnotize", "hypnotise"],
+        "patterns": ["hypnosis sikhaya", "hypnosis sikhate", "teach hypnosis"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Yes — 3 full classes cover hypnosis: performance, street, and stage.",
+        "Hypnosis is a core part of the course, across 3 dedicated classes.",
+        "Yes, real, practical hypnosis training — not just theory, live practice too.",
+        "It's one of the two main pillars of the course, alongside mentalism.",
+        "Yes — you'll learn hypnosis inductions, street applications, and full stage shows.",
+        "Hypnosis is covered in depth, 3 classes dedicated to it.",
+        "Yes, hypnosis training is central here — induction, street, and stage all covered.",
+        "You'll learn to hypnotize reliably, both one-on-one and on stage.",
+        "Yes — hypnosis is taught properly, with backup techniques for when things go wrong.",
+        "It's a major part of the curriculum — 3 classes on hypnosis alone.",
+        "Yes, full hypnosis training, from basic inductions to full stage shows.",
+        "Hypnosis is definitely covered — practical, hands-on, across 3 classes."
+      ],
+      "variants_hi": [
+        "Haan — 3 poori classes hypnosis pe hain: performance, street, aur stage.",
+        "Hypnosis is course ka core part hai, 3 dedicated classes ke saath.",
+        "Haan, real practical hypnosis training hai — sirf theory nahi, live practice bhi.",
+        "Ye course ke do main pillars mein se ek hai, mentalism ke saath.",
+        "Haan — hypnosis inductions, street applications, aur full stage shows sab seekhoge.",
+        "Hypnosis depth mein cover hoti hai, 3 classes isi pe dedicated hain.",
+        "Haan, hypnosis training yahan central hai — induction, street, stage sab covered.",
+        "Reliably hypnotize karna seekhoge, one-on-one aur stage dono pe.",
+        "Haan — hypnosis properly sikhaya jaata hai, backup techniques bhi milte hain.",
+        "Ye curriculum ka bada part hai — akele hypnosis pe 3 classes hain.",
+        "Haan, poori hypnosis training milegi, basic inductions se full stage shows tak.",
+        "Hypnosis definitely cover hoti hai — practical, hands-on, 3 classes mein."
+      ]
+    },
+    "skill_instant_hypnosis": {
+      "match": {
+        "keywords": [],
+        "patterns": ["instant hypnosis", "rapid hypnosis", "fast hypnosis", "turant hypnotize"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "Yes — quick street inductions are part of the street hypnosis class.",
+        "Fast inductions are covered as part of the street hypnosis module.",
+        "Yes, rapid inductions come up in the street hypnosis class specifically.",
+        "That's part of street hypnosis — quick, safe inductions on strangers.",
+        "Yes — the street hypnosis class covers exactly this, fast and safe inductions.",
+        "Quick inductions are taught as part of the street hypnosis section.",
+        "Yes, that's covered under street hypnosis — building rapport and inducing fast.",
+        "It's part of the curriculum — street hypnosis covers rapid, safe inductions.",
+        "Yes, fast inductions are taught, specifically for street settings.",
+        "That falls under the street hypnosis class — quick and controlled.",
+        "Yes — you'll learn to induce quickly and safely, in the street hypnosis module.",
+        "Rapid inductions are covered, part of the street hypnosis curriculum."
+      ],
+      "variants_hi": [
+        "Haan — turant street inductions street hypnosis class ka part hain.",
+        "Fast inductions street hypnosis module mein cover hote hain.",
+        "Haan, rapid inductions specifically street hypnosis class mein aate hain.",
+        "Ye street hypnosis ka part hai — jaldi, safe inductions strangers pe.",
+        "Haan — street hypnosis class exactly ye cover karti hai, fast aur safe inductions.",
+        "Quick inductions street hypnosis section mein sikhaye jaate hain.",
+        "Haan, ye street hypnosis ke under cover hota hai — rapport banake jaldi induce karna.",
+        "Ye curriculum ka part hai — street hypnosis rapid, safe inductions cover karti hai.",
+        "Haan, fast inductions sikhaye jaate hain, specially street settings ke liye.",
+        "Ye street hypnosis class ke under aata hai — jaldi aur controlled.",
+        "Haan — jaldi aur safely induce karna seekhoge, street hypnosis module mein.",
+        "Rapid inductions cover hoti hain, street hypnosis curriculum ka part hain."
+      ]
+    },
+    "skill_stage_hypnosis": {
+      "match": {
+        "keywords": [],
+        "patterns": ["stage hypnosis", "stage pe hypnotize", "hypnotize on stage"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "Yes — one full class is dedicated to stage hypnosis, including managing volunteers.",
+        "Stage hypnosis is a dedicated class — selecting volunteers, running the show, directing a group.",
+        "Yes, you'll run a full crowd-pleasing stage hypnosis show by the end.",
+        "It's a full class on its own — managing multiple volunteers on stage.",
+        "Yes — stage hypnosis is covered start to finish, including handling a group.",
+        "You'll learn to run a complete stage hypnosis show, not just one-on-one.",
+        "Yes, stage hypnosis gets its own dedicated class in the curriculum.",
+        "It's covered fully — volunteer selection, group management, big stage moments.",
+        "Yes — you'll be equipped to run an actual stage hypnosis show.",
+        "Stage hypnosis is one of the 10 core classes, covered in depth.",
+        "Yes, including selecting and directing volunteers for a full show.",
+        "You'll learn to deliver a full, memorable stage hypnosis performance."
+      ],
+      "variants_hi": [
+        "Haan — ek poori class stage hypnosis pe hai, volunteers manage karna bhi sikhaya jaata hai.",
+        "Stage hypnosis ek dedicated class hai — volunteers select karna, show run karna, group direct karna.",
+        "Haan, aakhir tak ek poori crowd-pleasing stage hypnosis show run karna seekhoge.",
+        "Ye apne aap mein ek poori class hai — stage pe multiple volunteers manage karna.",
+        "Haan — stage hypnosis start se end tak cover hoti hai, group handle karna bhi.",
+        "Poori stage hypnosis show run karna seekhoge, sirf one-on-one nahi.",
+        "Haan, stage hypnosis curriculum mein apni alag class hai.",
+        "Ye poori tarah cover hoti hai — volunteer selection, group management, big stage moments.",
+        "Haan — aap actual stage hypnosis show run karne layak ban jaaoge.",
+        "Stage hypnosis 10 core classes mein se ek hai, depth mein cover hoti hai.",
+        "Haan, volunteers select aur direct karna bhi seekhoge poori show ke liye.",
+        "Poori, memorable stage hypnosis performance dena seekhoge."
+      ]
+    },
+    "skill_telekinesis": {
+      "match": {
+        "keywords": ["telekinesis"],
+        "patterns": []
+      },
+      "priority": 7,
+      "variants_en": [
+        "That's not part of this course — everything here is technique and psychology, not moving objects with the mind.",
+        "No, telekinesis isn't taught — the course sticks to real mentalism and hypnosis skills.",
+        "That's not covered — this is technique-based mentalism, not telekinesis.",
+        "No, we don't teach that — nothing supernatural, just skill-based mentalism and hypnosis.",
+        "That's outside what this course teaches — it's built on real technique, not moving objects mentally.",
+        "No, telekinesis isn't part of the curriculum here.",
+        "That's not something this course covers — it's grounded in real technique and psychology.",
+        "No — this academy teaches skill-based mentalism and hypnosis, not telekinesis.",
+        "That falls outside the course — nothing here claims to move objects with the mind.",
+        "No, that's not taught — the course is honest about being technique, not supernatural ability.",
+        "That's not part of what we teach — real psychology and skill, not telekinesis.",
+        "No, telekinesis isn't on the curriculum — this is genuine technique-based training."
+      ],
+      "variants_hi": [
+        "Ye course ka part nahi hai — sab kuch technique aur psychology pe based hai, objects move karna nahi.",
+        "Nahi, telekinesis nahi sikhaya jaata — course real mentalism aur hypnosis skills tak limited hai.",
+        "Ye cover nahi hota — ye technique-based mentalism hai, telekinesis nahi.",
+        "Nahi, ye nahi sikhate — kuch bhi supernatural nahi, sirf skill-based mentalism aur hypnosis.",
+        "Ye course ke bahar hai — ye real technique pe based hai, mental object-moving nahi.",
+        "Nahi, telekinesis curriculum ka part nahi hai.",
+        "Ye course mein cover nahi hota — ye real technique aur psychology pe grounded hai.",
+        "Nahi — ye academy skill-based mentalism aur hypnosis sikhaati hai, telekinesis nahi.",
+        "Ye course ke bahar aata hai — yahan kuch bhi object move karne ka claim nahi hota.",
+        "Nahi, ye nahi sikhaya jaata — course honest hai ki ye technique hai, supernatural nahi.",
+        "Ye hum nahi sikhate — real psychology aur skill hai, telekinesis nahi.",
+        "Nahi, telekinesis curriculum mein nahi hai — ye genuine technique-based training hai."
+      ]
+    },
+    "skill_mind_reading": {
+      "match": {
+        "keywords": ["mindreading"],
+        "patterns": ["mind reading", "padh sakte", "thoughts padhna", "man ki baat"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Yes — mind reading is at the core of the course, from Class 1 onward.",
+        "It's central to the whole course — reading thoughts, guessing choices, cold reading.",
+        "Yes, you'll learn to run a full mind-reading act from the very first class.",
+        "Mind reading is the foundation here — thoughts, personal details, predictions, all covered.",
+        "Yes — that's literally what Class 1 builds toward, a full hour of mind reading.",
+        "It's a core skill, covered from the start of the course.",
+        "Yes, you'll learn to read thoughts and personal details convincingly.",
+        "Mind reading is one of the two main pillars, alongside hypnosis.",
+        "Yes — predicting choices, reading strangers, cold reading, all part of it.",
+        "It's covered thoroughly, starting in Class 1 and built on throughout.",
+        "Yes, real mentalism technique for reading thoughts and reactions.",
+        "Mind reading is central — you'll be running full acts by the end."
+      ],
+      "variants_hi": [
+        "Haan — mind reading course ka core hai, Class 1 se hi shuru hoti hai.",
+        "Ye poore course ka central part hai — thoughts padhna, choices guess karna, cold reading.",
+        "Haan, pehli hi class se poora mind-reading act run karna seekhoge.",
+        "Mind reading foundation hai yahan — thoughts, personal details, predictions, sab cover hota hai.",
+        "Haan — Class 1 exactly isi pe based hai, poore ek ghante ki mind reading.",
+        "Ye core skill hai, course ke shuru se hi cover hoti hai.",
+        "Haan, thoughts aur personal details convincingly padhna seekhoge.",
+        "Mind reading do main pillars mein se ek hai, hypnosis ke saath.",
+        "Haan — choices predict karna, strangers padhna, cold reading, sab part hai.",
+        "Ye thoroughly cover hoti hai, Class 1 se shuru hoke aage badhti hai.",
+        "Haan, real mentalism technique hai thoughts aur reactions padhne ki.",
+        "Mind reading central hai — aakhir tak poore acts run karne layak ban jaaoge."
+      ]
+    },
+    "skill_spoon_bending": {
+      "match": {
+        "keywords": [],
+        "patterns": ["spoon bending", "spoon modna", "chammach modna"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "That's not part of this course — the focus is mentalism and hypnosis technique.",
+        "No, spoon bending isn't covered — this course sticks to mind reading and hypnosis.",
+        "That's not taught here — different skill set from what this course covers.",
+        "No, that's outside the curriculum — mentalism and hypnosis only.",
+        "That's not something we teach — the course is focused on mind reading and hypnosis.",
+        "No, spoon bending isn't part of it — this is mentalism and hypnosis training.",
+        "That's not covered — the course sticks strictly to mentalism and hypnosis.",
+        "No, that's a different discipline — this course is mind reading and hypnosis.",
+        "That's outside what's taught here — mentalism and hypnosis are the focus.",
+        "No, we don't cover that — the curriculum is built around mentalism and hypnosis.",
+        "That's not part of the course — it's centered on mentalism and hypnosis skills.",
+        "No, spoon bending isn't on the curriculum here."
+      ],
+      "variants_hi": [
+        "Ye is course ka part nahi hai — focus mentalism aur hypnosis technique pe hai.",
+        "Nahi, spoon bending cover nahi hoti — ye course mind reading aur hypnosis tak limited hai.",
+        "Ye yahan nahi sikhaya jaata — course ka focus alag hai.",
+        "Nahi, ye curriculum ke bahar hai — sirf mentalism aur hypnosis.",
+        "Ye hum nahi sikhate — course mind reading aur hypnosis pe focused hai.",
+        "Nahi, spoon bending part nahi hai — ye mentalism aur hypnosis training hai.",
+        "Ye cover nahi hoti — course strictly mentalism aur hypnosis tak hai.",
+        "Nahi, ye alag discipline hai — ye course mind reading aur hypnosis ka hai.",
+        "Ye course ke bahar aata hai — mentalism aur hypnosis hi focus hai.",
+        "Nahi, hum ye cover nahi karte — curriculum mentalism aur hypnosis ke around bana hai.",
+        "Ye course ka part nahi hai — ye mentalism aur hypnosis skills pe centered hai.",
+        "Nahi, spoon bending curriculum mein nahi hai."
+      ]
+    },
+    "skill_lie_detection": {
+      "match": {
+        "keywords": [],
+        "patterns": ["lie detection", "lie detect", "jhoot pakadna", "jhoot pakadne"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Yes — one full class is dedicated to lie detection.",
+        "Lie detection has its own class — verbal and body-language tells, micro-reactions.",
+        "Yes, you'll learn to spot lies and run a convincing truth-or-lie demonstration.",
+        "That's Class 2 — reading micro-reactions and body language under pressure.",
+        "Yes — you'll be able to turn lie detection into an actual entertaining routine.",
+        "It's covered in depth, one full class dedicated to it.",
+        "Yes, spotting verbal and physical tells is part of the curriculum.",
+        "That's a dedicated class — practical lie detection, not just theory.",
+        "Yes — reading micro-expressions and reactions under pressure is covered.",
+        "Lie detection gets its own class, with a full performable routine.",
+        "Yes, you'll learn real techniques for spotting deception.",
+        "It's one of the 10 core classes, focused entirely on lie detection."
+      ],
+      "variants_hi": [
+        "Haan — ek poori class lie detection pe dedicated hai.",
+        "Lie detection ki apni class hai — verbal aur body-language tells, micro-reactions.",
+        "Haan, jhoot pakadna aur convincing truth-or-lie demonstration run karna seekhoge.",
+        "Ye Class 2 hai — pressure mein micro-reactions aur body language padhna.",
+        "Haan — lie detection ko ek actual entertaining routine mein badal paaoge.",
+        "Ye depth mein cover hoti hai, ek poori class isi pe dedicated hai.",
+        "Haan, verbal aur physical tells spot karna curriculum ka part hai.",
+        "Ye ek dedicated class hai — practical lie detection, sirf theory nahi.",
+        "Haan — pressure mein micro-expressions aur reactions padhna cover hota hai.",
+        "Lie detection ki apni class hai, poore performable routine ke saath.",
+        "Haan, deception spot karne ki real techniques seekhoge.",
+        "Ye 10 core classes mein se ek hai, poori tarah lie detection pe focused."
+      ]
+    },
+    "skill_card_magic": {
+      "match": {
+        "keywords": [],
+        "patterns": ["card magic", "card tricks", "cards ki magic", "taash ke trick"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "There's bonus magic in the final class, wishlist-based — card tricks can be part of that.",
+        "Card magic isn't a core focus, but bonus magic classes cover extra effects based on interest.",
+        "Not a dedicated class, but Class 10's bonus magic covers effects students specifically want.",
+        "The core focus is mentalism and hypnosis, but bonus wishlist magic in Class 10 can include cards.",
+        "Card tricks aren't the main focus, but bonus magic sessions are built around what you want.",
+        "Not core curriculum, but bonus magic in the last class is tailored to student requests.",
+        "The main course is mentalism and hypnosis; card magic could feature in the bonus wishlist class.",
+        "That's not a dedicated module, but Class 10 covers bonus effects based on what students ask for.",
+        "Core focus stays on mentalism and hypnosis, with bonus magic covering extras like this.",
+        "Not the main curriculum, but the wishlist bonus class can include specific effects you want.",
+        "The course centers on mentalism and hypnosis — card magic could come up in the bonus class.",
+        "Not core, but Class 10's bonus magic is built around what students specifically ask for."
+      ],
+      "variants_hi": [
+        "Aakhri class mein bonus magic hai, wishlist-based — card tricks usme aa sakte hain.",
+        "Card magic core focus nahi hai, lekin bonus magic classes interest ke hisaab se extra effects cover karti hain.",
+        "Dedicated class nahi hai, lekin Class 10 ki bonus magic students ke wishlist effects cover karti hai.",
+        "Core focus mentalism aur hypnosis hai, lekin Class 10 ki bonus wishlist magic mein cards aa sakte hain.",
+        "Card tricks main focus nahi hain, lekin bonus magic sessions tumhari pasand pe based hote hain.",
+        "Core curriculum nahi, lekin aakhri class ki bonus magic student requests pe tailored hoti hai.",
+        "Main course mentalism aur hypnosis hai; card magic bonus wishlist class mein feature ho sakti hai.",
+        "Ye dedicated module nahi hai, lekin Class 10 students ke maange effects cover karti hai.",
+        "Core focus mentalism aur hypnosis pe rehta hai, bonus magic extras cover karti hai.",
+        "Main curriculum nahi, lekin wishlist bonus class mein specific effects include ho sakte hain jo tum chaho.",
+        "Course mentalism aur hypnosis pe centered hai — card magic bonus class mein aa sakti hai.",
+        "Core nahi hai, lekin Class 10 ki bonus magic student requests pe based hoti hai."
+      ]
+    },
+    "skill_hallucinations": {
+      "match": {
+        "keywords": ["hallucination", "hallucinations"],
+        "patterns": ["hallucinate karna", "banawati drishya"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "That's not a specifically named module, but powerful sensory effects come up within the hypnosis and telepathy classes — I'll confirm specifics if you need more.",
+        "It's not a dedicated class, but similar sensory effects are part of the telepathy and hypnosis training.",
+        "Not called out specifically, but the telepathy class covers creating strong unseen-force sensations.",
+        "That specific effect isn't a named module — let me confirm exactly where it fits before I say more.",
+        "Not a standalone class, but related sensory techniques show up in telepathy and hypnosis.",
+        "That's not itemized separately — I'll check exactly what's covered and confirm.",
+        "Not a specific class name, but similar effects are touched on in telepathy and hypnosis modules.",
+        "That's not confirmed as a standalone topic — let me verify and get back to you.",
+        "Not called out by name, but sensory illusion techniques come up in the telepathy class.",
+        "That's not a dedicated module — I'll confirm exactly what's covered before answering fully.",
+        "Not specifically itemized, but similar techniques are part of the hypnosis and telepathy training.",
+        "Let me confirm that one specifically before I answer — it's not a named module as such."
+      ],
+      "variants_hi": [
+        "Ye specifically named module nahi hai, lekin hypnosis aur telepathy classes mein strong sensory effects cover hote hain.",
+        "Dedicated class nahi hai, lekin similar sensory effects telepathy aur hypnosis training ka part hain.",
+        "Specifically nahi bataya gaya, lekin telepathy class mein unseen-force sensations create karna cover hota hai.",
+        "Ye specific effect named module nahi hai — exactly kahan fit hota hai, confirm karke bataata hoon.",
+        "Standalone class nahi hai, lekin related sensory techniques telepathy aur hypnosis mein aati hain.",
+        "Ye alag se itemize nahi hai — exactly kya cover hota hai, check karke bataata hoon.",
+        "Specific class name nahi hai, lekin similar effects telepathy aur hypnosis modules mein touch hote hain.",
+        "Ye standalone topic confirm nahi hai — verify karke bataata hoon.",
+        "Naam se nahi bataya gaya, lekin sensory illusion techniques telepathy class mein aati hain.",
+        "Ye dedicated module nahi hai — exactly kya cover hota hai confirm karke poora bataunga.",
+        "Specifically itemize nahi hai, lekin similar techniques hypnosis aur telepathy training ka part hain.",
+        "Ye specifically confirm karne do pehle — named module nahi hai jaisa."
+      ]
+    },
+    "skill_proxy_hypnosis": {
+      "match": {
+        "keywords": [],
+        "patterns": ["proxy hypnosis", "hypnotize without", "hypnotize remotely", "duur se hypnotize", "bina saamne"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "That's not something real hypnosis can do — it needs the subject actually present, no remote version exists.",
+        "No, that's not a genuine technique — hypnosis works on a present subject, not remotely.",
+        "That's not real — hypnosis requires the person actually there, nothing works remotely.",
+        "No, that's not how hypnosis works — it's not taught because it isn't a real technique.",
+        "That's not possible with real hypnosis — the subject has to actually be present.",
+        "No, we don't teach that — genuine hypnosis needs the person in front of you.",
+        "That's not a real technique — hypnosis doesn't work on someone who isn't present.",
+        "No, that's not something hypnosis can actually do remotely.",
+        "That's not covered because it isn't real — hypnosis needs a present subject.",
+        "No, real hypnosis doesn't work that way — nothing remote is taught here.",
+        "That's not possible — genuine hypnosis needs the subject physically present.",
+        "No, that's not a real technique, so it isn't part of the course."
+      ],
+      "variants_hi": [
+        "Ye real hypnosis se possible nahi hai — subject ka saamne hona zaroori hai, remote version exist nahi karta.",
+        "Nahi, ye genuine technique nahi hai — hypnosis present subject pe kaam karta hai, remotely nahi.",
+        "Ye real nahi hai — hypnosis mein person ka actually present hona zaroori hai.",
+        "Nahi, hypnosis aise kaam nahi karta — isliye nahi sikhaate, ye real technique nahi hai.",
+        "Ye real hypnosis se possible nahi — subject actually present hona chahiye.",
+        "Nahi, hum ye nahi sikhate — genuine hypnosis mein saamne person chahiye hota hai.",
+        "Ye real technique nahi hai — hypnosis kisi absent person pe kaam nahi karta.",
+        "Nahi, ye remotely hypnosis se possible nahi hai.",
+        "Ye cover nahi hota kyunki ye real nahi hai — hypnosis ko present subject chahiye.",
+        "Nahi, real hypnosis aise kaam nahi karta — remote wala kuch nahi sikhaya jaata.",
+        "Ye possible nahi hai — genuine hypnosis mein subject physically present hona zaroori hai.",
+        "Nahi, ye real technique nahi hai, isliye course ka part nahi hai."
+      ]
+    },
+    "skill_not_taught": {
+      "match": {
+        "keywords": ["tarot", "astrology", "palmistry", "numerology", "jyotish", "hastrekha", "kundli"],
+        "patterns": []
+      },
+      "priority": 7,
+      "variants_en": [
+        "That's outside what this academy teaches — we focus purely on mentalism and hypnosis technique.",
+        "Not something we cover — this is a mentalism and hypnosis course, different discipline entirely.",
+        "That's not part of this course — our focus is skill-based mentalism and hypnosis only.",
+        "We don't teach that here — mentalism and hypnosis is the entire focus.",
+        "That's a different field — this academy sticks to mentalism and hypnosis training.",
+        "Not covered here — the course is specifically mentalism and hypnosis, nothing else.",
+        "That's outside our scope — we teach mentalism and hypnosis exclusively.",
+        "We don't offer that — this is purely a mentalism and hypnosis academy.",
+        "That's a separate discipline — this course is mentalism and hypnosis only.",
+        "Not something taught here — mentalism and hypnosis is the sole focus.",
+        "That falls outside this academy — we specialize only in mentalism and hypnosis.",
+        "We don't cover that — the course is dedicated entirely to mentalism and hypnosis."
+      ],
+      "variants_hi": [
+        "Ye is academy ke bahar hai — hum sirf mentalism aur hypnosis technique pe focus karte hain.",
+        "Ye hum cover nahi karte — ye mentalism aur hypnosis course hai, bilkul alag discipline.",
+        "Ye is course ka part nahi hai — hamara focus sirf skill-based mentalism aur hypnosis hai.",
+        "Hum ye yahan nahi sikhate — mentalism aur hypnosis hi poora focus hai.",
+        "Ye alag field hai — ye academy sirf mentalism aur hypnosis training deti hai.",
+        "Ye yahan cover nahi hota — course specifically mentalism aur hypnosis ka hai, kuch aur nahi.",
+        "Ye hamare scope ke bahar hai — hum sirf mentalism aur hypnosis sikhate hain.",
+        "Hum ye offer nahi karte — ye purely mentalism aur hypnosis academy hai.",
+        "Ye alag discipline hai — ye course sirf mentalism aur hypnosis ka hai.",
+        "Ye yahan nahi sikhaya jaata — mentalism aur hypnosis hi sole focus hai.",
+        "Ye is academy ke bahar aata hai — hum sirf mentalism aur hypnosis mein specialize karte hain.",
+        "Hum ye cover nahi karte — course poori tarah mentalism aur hypnosis ke liye dedicated hai."
+      ]
+    },
+    "show_booking_general": {
+      "match": {
+        "keywords": [],
+        "patterns": ["book arya", "booking arya", "arya ko book", "show book karna", "book for a show", "hire arya"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Show bookings go through the team directly — I've flagged this and someone will reach out with details.",
+        "For bookings, the team handles it personally — I've noted your enquiry, they'll follow up.",
+        "I've flagged this as a booking enquiry — the team will get in touch to work out details.",
+        "Bookings are handled directly by the team — I've passed this along, expect a follow-up.",
+        "I've noted this as a show enquiry — the team will reach out to discuss it.",
+        "That goes to the team directly — flagging this now, they'll follow up shortly.",
+        "I've flagged your booking enquiry — someone from the team will connect with you.",
+        "Show bookings are handled personally by the team — I've noted this for follow-up.",
+        "I've passed this on as a booking lead — the team will reach out with details.",
+        "That's handled by the team directly — I've flagged it, they'll follow up.",
+        "I've noted your interest in a show booking — the team will get back to you.",
+        "Bookings go through the team — flagging this now so they can follow up."
+      ],
+      "variants_hi": [
+        "Show bookings team directly handle karti hai — flag kar diya hai, koi contact karega detail ke liye.",
+        "Booking ke liye team personally dekhti hai — aapki enquiry note kar li hai, follow up hoga.",
+        "Maine ise booking enquiry flag kar diya hai — team contact karegi details discuss karne ke liye.",
+        "Bookings team directly handle karti hai — pass kar diya hai, follow-up expect karo.",
+        "Maine ise show enquiry note kar liya hai — team reach out karegi discuss karne ke liye.",
+        "Ye directly team ke paas jaata hai — abhi flag kar raha hoon, jald follow up hoga.",
+        "Booking enquiry flag kar di hai — team se koi connect karega.",
+        "Show bookings team personally handle karti hai — follow-up ke liye note kar liya.",
+        "Ise booking lead ke roop mein pass kar diya hai — team details ke saath contact karegi.",
+        "Ye team directly handle karti hai — flag kar diya, wo follow up karenge.",
+        "Show booking mein interest note kar liya hai — team wapas contact karegi.",
+        "Bookings team ke through jaati hain — abhi flag kar raha hoon follow-up ke liye."
+      ]
+    },
+    "show_charges": {
+      "match": {
+        "keywords": [],
+        "patterns": ["show charges", "show ka kharcha", "kitna lete ho show", "show fee", "booking charges", "kitna charge show", "show ka charge", "show.*charge", "charge.*\\bshow\\b"]
+      },
+      "priority": 8,
+      "escalate": true,
+      "variants_en": [
+        "Show pricing depends on the event type and location — I've flagged this so the team can quote you.",
+        "That varies by event — flagging it now, the team will share a proper quote.",
+        "Pricing depends on the details of the event — I've noted this for the team to quote.",
+        "It changes based on venue and event type — team will follow up with exact pricing.",
+        "That's quoted per event — I've flagged this, expect a call from the team.",
+        "Charges depend on the specifics — noted for the team to give you an accurate number.",
+        "It's not a flat number — depends on the event — I've flagged this for a quote.",
+        "Pricing varies by event type and location — team will confirm the exact figure.",
+        "That's handled case by case — I've flagged this for the team to quote you properly.",
+        "It depends on the show details — noted, the team will get back with pricing.",
+        "Charges aren't fixed — they depend on the event — flagging this for a quote.",
+        "That varies — I've passed this to the team so they can give you a real number."
+      ],
+      "variants_hi": [
+        "Show pricing event type aur location pe depend karti hai — flag kar diya hai, team quote karegi.",
+        "Ye event ke hisaab se vary karta hai — abhi flag kar raha hoon, team proper quote degi.",
+        "Pricing event ki details pe depend karti hai — team ke liye note kar diya quote ke liye.",
+        "Venue aur event type ke hisaab se change hoti hai — team exact pricing ke saath follow up karegi.",
+        "Ye per event quote hoti hai — flag kar diya, team se call expect karo.",
+        "Charges specifics pe depend karte hain — team ke liye note kar diya accurate number ke liye.",
+        "Ye flat number nahi hai — event pe depend karta hai — flag kar diya quote ke liye.",
+        "Pricing event type aur location ke hisaab se vary karti hai — team exact figure confirm karegi.",
+        "Ye case by case handle hota hai — team ke liye flag kar diya proper quote ke liye.",
+        "Ye show details pe depend karta hai — note kar liya, team pricing ke saath contact karegi.",
+        "Charges fixed nahi hain — event pe depend karte hain — quote ke liye flag kar diya.",
+        "Ye vary karta hai — team ko pass kar diya hai taaki real number de sakein."
+      ]
+    },
+    "show_availability_date": {
+      "match": {
+        "keywords": [],
+        "patterns": ["available on", "us date ko free", "kya arya free hai", "date pe available", "check availability"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "I'll need to check the calendar for that date — I've flagged this for the team to confirm.",
+        "Let me have the team check availability for that date and get back to you.",
+        "That needs a calendar check — I've flagged it, the team will confirm shortly.",
+        "I've noted the date — the team will check and confirm availability.",
+        "Availability needs checking on that specific date — flagging this now.",
+        "I'll have the team verify the calendar for that date and follow up.",
+        "That's flagged for the team to check the schedule and confirm.",
+        "Let me get the team to confirm availability for that date.",
+        "I've noted this — the team will check the calendar and get back to you.",
+        "That date needs confirming against the calendar — I've flagged it.",
+        "I'll pass this to the team to check availability and follow up.",
+        "Flagging this now — the team will confirm if that date works."
+      ],
+      "variants_hi": [
+        "Uss date ke liye calendar check karna padega — team ke liye flag kar diya hai.",
+        "Team se availability check karwa ke bataata hoon.",
+        "Ye calendar check maangta hai — flag kar diya, team jald confirm karegi.",
+        "Date note kar li hai — team availability check karke confirm karegi.",
+        "Uss specific date pe availability check karni padegi — abhi flag kar raha hoon.",
+        "Team se calendar verify karwa ke follow up karta hoon.",
+        "Ye team ke liye flag kar diya hai schedule check karne ke liye.",
+        "Team se uss date ki availability confirm karwaata hoon.",
+        "Note kar liya hai — team calendar check karke bataayegi.",
+        "Uss date ko calendar se confirm karna hoga — flag kar diya hai.",
+        "Ye team ko pass kar raha hoon availability check karne ke liye.",
+        "Abhi flag kar raha hoon — team confirm karegi date theek hai ya nahi."
+      ]
+    },
+    "show_wedding": {
+      "match": {
+        "keywords": ["wedding", "shaadi"],
+        "patterns": ["wedding show", "shaadi mein show", "sangeet mein perform"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Yes, wedding shows are something we do — I've flagged this so the team can discuss details with you.",
+        "Yes, absolutely — flagging this now, the team will reach out for the wedding details.",
+        "Yes, we do wedding performances — I've noted this for the team to follow up.",
+        "Yes — that's flagged now, the team will connect on the wedding show specifics.",
+        "Yes, weddings are covered — I've passed this along for the team to discuss.",
+        "Yes, we do that — flagging this so the team can work out the wedding details with you.",
+        "Yes, wedding shows happen regularly — noted, the team will get in touch.",
+        "Yes — I've flagged your wedding enquiry, the team will follow up shortly.",
+        "Yes, that's something we do — the team will reach out for the specifics.",
+        "Yes, wedding performances are booked often — flagging this for the team now.",
+        "Yes, absolutely possible — I've noted this, team will connect with you.",
+        "Yes, we perform at weddings — flagging this so the team can take it forward."
+      ],
+      "variants_hi": [
+        "Haan, wedding shows karte hain — flag kar diya hai, team details discuss karegi.",
+        "Haan, bilkul — abhi flag kar raha hoon, team wedding details ke liye contact karegi.",
+        "Haan, wedding performances karte hain — team ke liye note kar diya follow-up ke liye.",
+        "Haan — flag kar diya hai, team wedding show specifics pe connect karegi.",
+        "Haan, weddings cover hoti hain — team ke liye pass kar diya discuss karne ke liye.",
+        "Haan, ye karte hain — flag kar diya taaki team wedding details discuss kar sake.",
+        "Haan, wedding shows regularly hote hain — note kar liya, team contact karegi.",
+        "Haan — aapki wedding enquiry flag kar di hai, team jald follow up karegi.",
+        "Haan, ye hum karte hain — team specifics ke liye contact karegi.",
+        "Haan, wedding performances often book hoti hain — abhi team ke liye flag kar diya.",
+        "Haan, bilkul possible hai — note kar liya hai, team connect karegi.",
+        "Haan, hum weddings mein perform karte hain — team ke liye flag kar diya."
+      ]
+    },
+    "show_corporate": {
+      "match": {
+        "keywords": ["corporate"],
+        "patterns": ["corporate event", "corporate show", "office event"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Yes, corporate shows are something we do — I've flagged this for the team to follow up.",
+        "Yes, absolutely — flagging this now, the team will reach out with details.",
+        "Yes, we handle corporate bookings — noted, the team will connect with you.",
+        "Yes — I've flagged your corporate enquiry, team will follow up shortly.",
+        "Yes, that's covered — passing this along for the team to discuss.",
+        "Yes, we do corporate events regularly — flagging this now.",
+        "Yes, that's something we do — team will reach out for the specifics.",
+        "Yes, corporate shows happen often — noted, team will get in touch.",
+        "Yes, absolutely possible — I've flagged this for follow-up.",
+        "Yes, we perform at corporate events — flagging this for the team.",
+        "Yes, that's booked regularly — I've noted this, team will connect.",
+        "Yes, corporate bookings are handled by the team — flagging it now."
+      ],
+      "variants_hi": [
+        "Haan, corporate shows karte hain — team ke liye flag kar diya hai.",
+        "Haan, bilkul — abhi flag kar raha hoon, team details ke saath contact karegi.",
+        "Haan, corporate bookings handle karte hain — note kar liya, team connect karegi.",
+        "Haan — corporate enquiry flag kar di hai, team jald follow up karegi.",
+        "Haan, ye cover hota hai — team ke liye pass kar diya discuss karne ke liye.",
+        "Haan, corporate events regularly karte hain — abhi flag kar raha hoon.",
+        "Haan, ye hum karte hain — team specifics ke liye contact karegi.",
+        "Haan, corporate shows often hote hain — note kar liya, team contact karegi.",
+        "Haan, bilkul possible hai — follow-up ke liye flag kar diya.",
+        "Haan, corporate events mein perform karte hain — team ke liye flag kar diya.",
+        "Haan, ye often book hota hai — note kar liya, team connect karegi.",
+        "Haan, corporate bookings team handle karti hai — abhi flag kar raha hoon."
+      ]
+    },
+    "show_college_event": {
+      "match": {
+        "keywords": ["college", "fest"],
+        "patterns": ["college fest", "college event", "university event"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Yes, we do college events — I've flagged this for the team to follow up.",
+        "Yes, absolutely — flagging this now, the team will reach out with details.",
+        "Yes, college fests are something we do — noted, team will connect with you.",
+        "Yes — I've flagged your college event enquiry, team will follow up shortly.",
+        "Yes, that's covered — passing this along for the team to discuss.",
+        "Yes, we perform at college fests regularly — flagging this now.",
+        "Yes, that's something we do — team will reach out for the specifics.",
+        "Yes, college shows happen often — noted, team will get in touch.",
+        "Yes, absolutely possible — I've flagged this for follow-up.",
+        "Yes, we do college fest performances — flagging this for the team.",
+        "Yes, that's booked regularly — I've noted this, team will connect.",
+        "Yes, college event bookings are handled by the team — flagging it now."
+      ],
+      "variants_hi": [
+        "Haan, college events karte hain — team ke liye flag kar diya hai.",
+        "Haan, bilkul — abhi flag kar raha hoon, team details ke saath contact karegi.",
+        "Haan, college fests karte hain — note kar liya, team connect karegi.",
+        "Haan — college event enquiry flag kar di hai, team jald follow up karegi.",
+        "Haan, ye cover hota hai — team ke liye pass kar diya discuss karne ke liye.",
+        "Haan, college fests mein regularly perform karte hain — abhi flag kar raha hoon.",
+        "Haan, ye hum karte hain — team specifics ke liye contact karegi.",
+        "Haan, college shows often hote hain — note kar liya, team contact karegi.",
+        "Haan, bilkul possible hai — follow-up ke liye flag kar diya.",
+        "Haan, college fest performances karte hain — team ke liye flag kar diya.",
+        "Haan, ye often book hota hai — note kar liya, team connect karegi.",
+        "Haan, college event bookings team handle karti hai — abhi flag kar raha hoon."
+      ]
+    },
+    "show_birthday_private": {
+      "match": {
+        "keywords": ["birthday"],
+        "patterns": ["private party", "birthday party show", "house party"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Yes, private and birthday shows are something we do — I've flagged this for the team.",
+        "Yes, absolutely — flagging this now, the team will reach out with details.",
+        "Yes, we do birthday and private events — noted, team will connect with you.",
+        "Yes — I've flagged your enquiry, team will follow up shortly.",
+        "Yes, that's covered — passing this along for the team to discuss.",
+        "Yes, we do private parties regularly — flagging this now.",
+        "Yes, that's something we do — team will reach out for the specifics.",
+        "Yes, private shows happen often — noted, team will get in touch.",
+        "Yes, absolutely possible — I've flagged this for follow-up.",
+        "Yes, we perform at birthday and private events — flagging this for the team.",
+        "Yes, that's booked regularly — I've noted this, team will connect.",
+        "Yes, private event bookings are handled by the team — flagging it now."
+      ],
+      "variants_hi": [
+        "Haan, private aur birthday shows karte hain — team ke liye flag kar diya hai.",
+        "Haan, bilkul — abhi flag kar raha hoon, team details ke saath contact karegi.",
+        "Haan, birthday aur private events karte hain — note kar liya, team connect karegi.",
+        "Haan — enquiry flag kar di hai, team jald follow up karegi.",
+        "Haan, ye cover hota hai — team ke liye pass kar diya discuss karne ke liye.",
+        "Haan, private parties regularly karte hain — abhi flag kar raha hoon.",
+        "Haan, ye hum karte hain — team specifics ke liye contact karegi.",
+        "Haan, private shows often hote hain — note kar liya, team contact karegi.",
+        "Haan, bilkul possible hai — follow-up ke liye flag kar diya.",
+        "Haan, birthday aur private events mein perform karte hain — team ke liye flag kar diya.",
+        "Haan, ye often book hota hai — note kar liya, team connect karegi.",
+        "Haan, private event bookings team handle karti hai — abhi flag kar raha hoon."
+      ]
+    },
+    "show_duration": {
+      "match": {
+        "keywords": [],
+        "patterns": ["show kitni der", "how long is the show", "show duration", "performance kitni der"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "That depends on the event format — I've flagged this so the team can confirm with you.",
+        "Duration varies by event — noted for the team to confirm.",
+        "That's decided based on your event — flagging this for a proper answer.",
+        "It depends on what you need — team will confirm the exact duration.",
+        "That varies by show type — I've flagged this for the team.",
+        "Duration is set per event — noted, the team will confirm.",
+        "That's not fixed — depends on the event — flagging this now.",
+        "It changes by event format — team will confirm the specifics.",
+        "That's handled case by case — flagging this for the team to confirm.",
+        "Duration depends on the show — noted for follow-up.",
+        "That varies — I've passed this to the team to confirm properly.",
+        "It's decided per event — flagging this so the team can confirm."
+      ],
+      "variants_hi": [
+        "Ye event format pe depend karta hai — team ke liye flag kar diya hai.",
+        "Duration event ke hisaab se vary karti hai — team ke liye note kar diya.",
+        "Ye aapke event ke hisaab se decide hota hai — proper answer ke liye flag kar diya.",
+        "Ye zaroorat pe depend karta hai — team exact duration confirm karegi.",
+        "Ye show type ke hisaab se vary karta hai — team ke liye flag kar diya.",
+        "Duration per event set hoti hai — note kar liya, team confirm karegi.",
+        "Ye fixed nahi hai — event pe depend karta hai — abhi flag kar raha hoon.",
+        "Ye event format ke hisaab se change hoti hai — team specifics confirm karegi.",
+        "Ye case by case handle hota hai — team ke liye flag kar diya confirm karne ke liye.",
+        "Duration show pe depend karti hai — follow-up ke liye note kar liya.",
+        "Ye vary karta hai — team ko pass kar diya properly confirm karne ke liye.",
+        "Ye per event decide hota hai — team confirm kar sake iske liye flag kar diya."
+      ]
+    },
+    "show_stage_requirements": {
+      "match": {
+        "keywords": [],
+        "patterns": ["stage requirement", "sound system chahiye", "setup requirement", "technical requirement show"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "That depends on the venue — I've flagged this so the team can share the exact requirements.",
+        "Requirements vary by venue — noted for the team to send you the details.",
+        "That's confirmed per venue — flagging this so the team can share specifics.",
+        "It depends on your setup — team will confirm the technical requirements.",
+        "That varies by venue — I've flagged this for the team.",
+        "Requirements are set per show — noted, the team will share them.",
+        "That's not fixed — depends on the venue — flagging this now.",
+        "It changes by location — team will confirm what's needed.",
+        "That's handled case by case — flagging this for the team to share requirements.",
+        "Requirements depend on the venue — noted for follow-up.",
+        "That varies — I've passed this to the team to confirm the setup needed.",
+        "It's decided per venue — flagging this so the team can share the details."
+      ],
+      "variants_hi": [
+        "Ye venue pe depend karta hai — team ke liye flag kar diya hai exact requirements share karne ke liye.",
+        "Requirements venue ke hisaab se vary karti hain — team ke liye note kar diya.",
+        "Ye per venue confirm hota hai — team specifics share karegi, flag kar diya.",
+        "Ye aapke setup pe depend karta hai — team technical requirements confirm karegi.",
+        "Ye venue ke hisaab se vary karta hai — team ke liye flag kar diya.",
+        "Requirements per show set hoti hain — note kar liya, team share karegi.",
+        "Ye fixed nahi hai — venue pe depend karta hai — abhi flag kar raha hoon.",
+        "Ye location ke hisaab se change hota hai — team confirm karegi kya chahiye.",
+        "Ye case by case handle hota hai — team requirements share kare iske liye flag kar diya.",
+        "Requirements venue pe depend karte hain — follow-up ke liye note kar liya.",
+        "Ye vary karta hai — team ko pass kar diya setup confirm karne ke liye.",
+        "Ye per venue decide hota hai — team details share kare iske liye flag kar diya."
+      ]
+    },
+    "show_outstation_travel": {
+      "match": {
+        "keywords": [],
+        "patterns": ["outstation", "travel karte", "dusre city", "dusre shehar", "international show", "abroad show", "bahar desh", "doosre desh", "dusre desh", "kisi aur desh"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Yes — he's toured internationally across 9 countries, so outstation and international shows both work.",
+        "Yes, travel isn't an issue — international tours across 9 countries already.",
+        "Yes, he travels for shows regularly, including internationally — I've flagged this for logistics.",
+        "Yes, outstation and international both happen — team will coordinate the details.",
+        "Yes — with 9 international tours already, travel is very much possible.",
+        "Yes, that's not a limitation — shows happen outstation and abroad regularly.",
+        "Yes, travel is routine — flagging this so the team can sort logistics.",
+        "Yes, international and outstation shows both happen — noted for the team.",
+        "Yes, definitely — he's performed across Singapore, Dubai, Bangkok, Nepal, Sri Lanka and more.",
+        "Yes, travel for shows is normal — team will work out the logistics.",
+        "Yes, outstation is fine, and international bookings happen too — flagging this now.",
+        "Yes, that's very much possible — I've flagged this for the team to coordinate."
+      ],
+      "variants_hi": [
+        "Haan — 9 countries mein tour kar chuke hain, toh outstation aur international shows dono possible hain.",
+        "Haan, travel koi issue nahi hai — pehle se 9 international tours ho chuke hain.",
+        "Haan, regularly shows ke liye travel karte hain, international bhi — logistics ke liye flag kar diya.",
+        "Haan, outstation aur international dono hote hain — team logistics coordinate karegi.",
+        "Haan — 9 international tours ho chuke hain, toh travel bilkul possible hai.",
+        "Haan, ye limitation nahi hai — outstation aur abroad regularly shows hote hain.",
+        "Haan, travel routine hai — team ke liye flag kar diya logistics sort karne ke liye.",
+        "Haan, international aur outstation dono shows hote hain — team ke liye note kar liya.",
+        "Haan, bilkul — Singapore, Dubai, Bangkok, Nepal, Sri Lanka jaise jagah perform kar chuke hain.",
+        "Haan, shows ke liye travel normal hai — team logistics sort karegi.",
+        "Haan, outstation theek hai, international bookings bhi hoti hain — abhi flag kar raha hoon.",
+        "Haan, ye bilkul possible hai — team coordinate kare iske liye flag kar diya."
+      ]
+    },
+    "show_video_samples": {
+      "match": {
+        "keywords": [],
+        "patterns": ["video samples", "performance video", "show ka video", "shows ka video", "pichhle shows", "purane show", "past performance"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Check his channels — 2.6M+ on Facebook, 400K+ on Instagram, 300K+ on YouTube, plenty of performance clips there.",
+        "His Facebook, Instagram and YouTube have loads of performance videos — millions of followers across them.",
+        "Plenty of clips on his socials — Facebook, Instagram, YouTube, all easy to find.",
+        "You'll find performance videos on his Facebook, Instagram and YouTube channels.",
+        "His social channels have tons of past performance clips — Facebook, Instagram, YouTube.",
+        "Check www.magicofarya.com or his socials — Facebook, Instagram, YouTube all have footage.",
+        "His YouTube and Instagram have real performance clips, worth a look.",
+        "Plenty to see on Facebook, Instagram and YouTube — 2.6M+, 400K+, 300K+ followers respectively.",
+        "His socials are full of performance footage — Facebook, Instagram, YouTube.",
+        "Check his YouTube channel and Instagram — real show clips, not staged demos.",
+        "His Facebook and Instagram have real footage from past shows, worth checking out.",
+        "Plenty of past performances on his official channels — Facebook, Instagram, YouTube."
+      ],
+      "variants_hi": [
+        "Unke channels check karo — Facebook pe 2.6M+, Instagram pe 400K+, YouTube pe 300K+, wahan performance clips milengi.",
+        "Unke Facebook, Instagram aur YouTube pe bahut saare performance videos hain.",
+        "Socials pe bahut clips hain — Facebook, Instagram, YouTube, sab pe easily mil jaayenge.",
+        "Unke Facebook, Instagram aur YouTube channels pe performance videos mil jaayenge.",
+        "Unke social channels pe bahut saare past performance clips hain — Facebook, Instagram, YouTube.",
+        "www.magicofarya.com ya unke socials check karo — Facebook, Instagram, YouTube sab pe footage hai.",
+        "Unke YouTube aur Instagram pe real performance clips hain, dekhne layak.",
+        "Facebook, Instagram, YouTube pe bahut kuch dekhne ko milega — 2.6M+, 400K+, 300K+ followers.",
+        "Unke socials real performance footage se bhare hain — Facebook, Instagram, YouTube.",
+        "Unka YouTube channel aur Instagram check karo — real show clips, staged demos nahi.",
+        "Unke Facebook aur Instagram pe past shows ka real footage hai, dekhne layak.",
+        "Unke official channels pe bahut saari past performances hain — Facebook, Instagram, YouTube."
+      ]
+    },
+    "ot_show_me_magic": {
+      "match": {
+        "keywords": [],
+        "patterns": ["show me magic", "kuch trick dikhao", "koi jaadu dikhao", "kuch magic dikhao", "ek trick karke dikhao"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "I don't perform over chat — I'm Harshit, Arya sir's manager, handling course and show enquiries here.",
+        "Not something I can do over WhatsApp — I just manage enquiries for classes and bookings.",
+        "I'm his manager, not a performer — I only handle enquiries on this number.",
+        "Can't show tricks here — I handle course and show enquiries only.",
+        "I don't perform — I'm Harshit, managing this number for course and booking questions.",
+        "That's not what I do here — enquiries about classes or shows only.",
+        "I'm not the performer, just the manager — course and booking enquiries land here.",
+        "No tricks from me — I just handle enquiries for classes and shows.",
+        "I manage this number, I don't perform — happy to help with a course or booking question though.",
+        "Not on chat — I'm his manager, handling enquiries only.",
+        "That's outside what I do here — I only take course and show enquiries.",
+        "I'm Harshit, the manager — tricks aren't something I do, enquiries are."
+      ],
+      "variants_hi": [
+        "Main chat pe perform nahi karta — Harshit hoon, Arya sir ka manager, sirf enquiries dekhta hoon.",
+        "Ye WhatsApp pe possible nahi — main sirf course aur booking enquiries handle karta hoon.",
+        "Main manager hoon, performer nahi — is number pe sirf enquiries hoti hain.",
+        "Yahan trick nahi dikha sakta — main sirf course aur show enquiries dekhta hoon.",
+        "Main perform nahi karta — Harshit hoon, is number pe course aur booking questions dekhta hoon.",
+        "Ye main yahan nahi karta — sirf classes ya shows ke enquiries.",
+        "Main performer nahi, sirf manager hoon — course aur booking enquiries yahin aati hain.",
+        "Mujhse trick nahi milegi — main sirf classes aur shows ki enquiries handle karta hoon.",
+        "Main ye number manage karta hoon, perform nahi karta — course ya booking sawaal ho toh bolo.",
+        "Chat pe nahi — main unka manager hoon, sirf enquiries dekhta hoon.",
+        "Ye mere kaam ke bahar hai — main sirf course aur show enquiries leta hoon.",
+        "Main Harshit hoon, manager — trick nahi, enquiries meri jagah hai."
+      ]
+    },
+    "ot_read_my_mind": {
+      "match": {
+        "keywords": [],
+        "patterns": ["read my mind", "mera mann padho", "mera dimag padho", "guess what i am thinking", "kya soch raha hoon batao"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "I'm not Arya sir — I'm his manager Harshit, and I only handle course and show enquiries here.",
+        "That's not something I do — I manage this number for enquiries, not performances.",
+        "I don't do that over chat — I'm his manager, handling classes and bookings only.",
+        "Not my thing — I'm Harshit, managing enquiries for Dr Arya Chandel's team.",
+        "Can't do that here — course and show enquiries are what I handle.",
+        "I'm the manager, not the performer — that's not something I can do.",
+        "Not possible over WhatsApp — I only take enquiries on this number.",
+        "I handle enquiries, not performances — happy to help with a course question though.",
+        "That's outside what I do — I'm his manager, here for classes and bookings.",
+        "Not something I can do — enquiries about courses or shows only, on this number.",
+        "I'm not the one performing here — I manage enquiries for Arya sir's team.",
+        "Can't do that — I'm Harshit, handling course and booking enquiries only."
+      ],
+      "variants_hi": [
+        "Main Arya sir nahi hoon — unka manager Harshit hoon, sirf course aur show enquiries dekhta hoon.",
+        "Ye main nahi karta — main is number pe enquiries dekhta hoon, performance nahi.",
+        "Chat pe ye nahi hota — main manager hoon, sirf classes aur bookings handle karta hoon.",
+        "Ye mera kaam nahi — Harshit hoon, Arya sir ki team ke enquiries dekhta hoon.",
+        "Yahan ye possible nahi — main sirf course aur show enquiries handle karta hoon.",
+        "Main manager hoon, performer nahi — ye main nahi kar sakta.",
+        "WhatsApp pe possible nahi — main sirf enquiries leta hoon is number pe.",
+        "Main enquiries dekhta hoon, performance nahi — course ka sawaal ho toh bolo.",
+        "Ye mere kaam ke bahar hai — main manager hoon, classes aur bookings ke liye.",
+        "Ye main nahi kar sakta — sirf course ya show enquiries is number pe.",
+        "Main yahan perform nahi karta — Arya sir ki team ke enquiries dekhta hoon.",
+        "Ye nahi ho sakta — Harshit hoon, sirf course aur booking enquiries dekhta hoon."
+      ]
+    },
+    "ot_guess_my_name": {
+      "match": {
+        "keywords": [],
+        "patterns": ["guess my name", "mera naam batao", "mera naam guess karo"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "I'm his manager, not a performer — I only handle course and show enquiries here.",
+        "Not something I do over chat — I'm Harshit, managing enquiries for classes and bookings.",
+        "That's not my role — I take care of enquiries, not guessing games.",
+        "I manage this number for enquiries — course or booking questions, happy to help.",
+        "Not my thing — I'm his manager, here for classes and shows only.",
+        "That's outside what I do — enquiries about courses or bookings only.",
+        "I'm not the performer — I'm Harshit, handling enquiries on this number.",
+        "Can't do that — I just manage course and booking enquiries here.",
+        "Not something I can do — I'm here for enquiries, not performances.",
+        "That's not my job — I handle classes and show enquiries only.",
+        "I'm the manager, not the mentalist — enquiries are what I handle.",
+        "Not possible over chat — course and show enquiries only, on this number."
+      ],
+      "variants_hi": [
+        "Main unka manager hoon, performer nahi — sirf course aur show enquiries yahan dekhta hoon.",
+        "Chat pe ye nahi hota — Harshit hoon, classes aur bookings ki enquiries manage karta hoon.",
+        "Ye mera role nahi hai — main enquiries dekhta hoon, guessing games nahi.",
+        "Main is number ki enquiries manage karta hoon — course ya booking sawaal ho toh bolo.",
+        "Ye mera kaam nahi — main manager hoon, sirf classes aur shows ke liye.",
+        "Ye mere kaam ke bahar hai — sirf course ya booking enquiries.",
+        "Main performer nahi hoon — Harshit hoon, is number pe enquiries dekhta hoon.",
+        "Ye nahi ho sakta — main sirf course aur booking enquiries handle karta hoon.",
+        "Ye main nahi kar sakta — main enquiries ke liye hoon, performance ke liye nahi.",
+        "Ye mera kaam nahi — sirf classes aur show enquiries yahan hoti hain.",
+        "Main manager hoon, mentalist nahi — enquiries hi meri jagah hai.",
+        "Chat pe possible nahi — sirf course aur show enquiries is number pe."
+      ]
+    },
+    "ot_tell_my_future": {
+      "match": {
+        "keywords": [],
+        "patterns": ["tell my future", "mera future batao", "meri kismat batao", "mera bhavishya batao"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "This academy teaches technique and skill, not fortune telling — I'm Harshit, his manager, here for course and show enquiries.",
+        "That's not what we do here — this is mentalism training, not fortune telling.",
+        "Not something on offer — the course is technique-based, not predicting the future.",
+        "That's outside this academy's scope — course and show enquiries are what I handle.",
+        "We don't do that — this is skill-based mentalism, not real fortune telling.",
+        "Not my area — I'm his manager, handling course and booking enquiries only.",
+        "This academy is about technique, not real predictions — happy to help with a course question though.",
+        "Not something we offer — it's skill and psychology here, not fortune telling.",
+        "That's not this academy's thing — course and show enquiries only, on this number.",
+        "We're upfront that this is technique, not real prediction — I only handle enquiries here.",
+        "Not offered here — the course teaches skill, not fortune telling.",
+        "That's not something I can help with — I manage course and show enquiries only."
+      ],
+      "variants_hi": [
+        "Ye academy technique aur skill sikhaati hai, future batana nahi — Harshit hoon, course aur show enquiries ke liye.",
+        "Ye hum nahi karte — ye mentalism training hai, fortune telling nahi.",
+        "Ye offer nahi hai — course technique-based hai, future predict karna nahi.",
+        "Ye academy ke scope se bahar hai — course aur show enquiries hi main dekhta hoon.",
+        "Hum ye nahi karte — ye skill-based mentalism hai, real fortune telling nahi.",
+        "Ye mera area nahi — main manager hoon, sirf course aur booking enquiries dekhta hoon.",
+        "Ye academy technique ki hai, real prediction ki nahi — course ka sawaal ho toh bolo.",
+        "Ye offer nahi karte — yahan skill aur psychology hai, fortune telling nahi.",
+        "Ye is academy ka kaam nahi — sirf course aur show enquiries is number pe.",
+        "Hum clear hain ki ye technique hai, real prediction nahi — main sirf enquiries dekhta hoon.",
+        "Ye yahan offer nahi hota — course skill sikhaata hai, future batana nahi.",
+        "Isme main help nahi kar sakta — main sirf course aur show enquiries dekhta hoon."
+      ]
+    },
+    "ot_lottery_number": {
+      "match": {
+        "keywords": ["lottery"],
+        "patterns": ["lottery number", "satta number", "jeetne wala number"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "That's not something we do — this academy teaches real technique, not predictions like that.",
+        "Not offered here — this is skill-based mentalism, not lottery predictions.",
+        "We don't do that — I'm his manager, handling course and show enquiries only.",
+        "That's outside what this academy does — technique and skill, not predictions.",
+        "Not something we offer — happy to help with a course or booking question instead.",
+        "We're upfront that this is technique, not real prediction of any kind.",
+        "That's not this academy's thing — course and show enquiries only, on this number.",
+        "Not offered — this is skill-based training, not fortune telling of any kind.",
+        "We don't do that here — I only handle enquiries for classes and shows.",
+        "Not something I can help with — that's outside what this academy teaches.",
+        "That's not real, and we don't pretend otherwise — course enquiries only here.",
+        "Not offered — this academy is technique and skill, not predictions."
+      ],
+      "variants_hi": [
+        "Ye hum nahi karte — ye academy real technique sikhaati hai, aisi predictions nahi.",
+        "Ye offer nahi hota — ye skill-based mentalism hai, lottery predictions nahi.",
+        "Hum ye nahi karte — main sirf course aur show enquiries dekhta hoon.",
+        "Ye is academy ke bahar hai — technique aur skill, predictions nahi.",
+        "Ye offer nahi hai — iski jagah course ya booking sawaal poochho.",
+        "Hum clear hain ki ye technique hai, kisi tarah ki real prediction nahi.",
+        "Ye is academy ka kaam nahi — sirf course aur show enquiries is number pe.",
+        "Offer nahi hota — ye skill-based training hai, fortune telling nahi.",
+        "Hum ye yahan nahi karte — main sirf classes aur shows ki enquiries dekhta hoon.",
+        "Isme main help nahi kar sakta — ye is academy ke scope ke bahar hai.",
+        "Ye real nahi hai, aur hum pretend bhi nahi karte — sirf course enquiries yahan.",
+        "Offer nahi hai — ye academy technique aur skill ki hai, predictions ki nahi."
+      ]
+    },
+    "ot_vashikaran_blackmagic": {
+      "match": {
+        "keywords": ["vashikaran", "kaalajadu"],
+        "patterns": ["black magic", "spirit bulwao", "tantra mantra karo"]
+      },
+      "priority": 9,
+      "variants_en": [
+        "This academy teaches technique and psychology only — no black magic, no supernatural services.",
+        "We don't do that — everything here is real skill and psychology, nothing supernatural.",
+        "Not something we offer — this is technique-based training, not black magic.",
+        "That's not this academy — mentalism and hypnosis here are pure skill, nothing supernatural.",
+        "We're clear about this — no black magic, no vashikaran, just technique and psychology.",
+        "Not offered here — this academy is built on honesty about it being skill, not supernatural power.",
+        "That's outside what we do — no supernatural services, only mentalism and hypnosis training.",
+        "We don't offer that — this is technique and psychology, nothing else.",
+        "Not something this academy does — everything taught here is real skill, not magic.",
+        "That's not us — no black magic or vashikaran, this is skill-based training only.",
+        "We stay clear of that — this academy teaches technique, never supernatural services.",
+        "Not offered — this academy's honesty rule is clear, no supernatural claims of any kind."
+      ],
+      "variants_hi": [
+        "Ye academy sirf technique aur psychology sikhaati hai — koi black magic, koi supernatural service nahi.",
+        "Hum ye nahi karte — yahan sab real skill aur psychology hai, supernatural kuch nahi.",
+        "Ye offer nahi hai — ye technique-based training hai, black magic nahi.",
+        "Ye is academy ka kaam nahi — mentalism aur hypnosis pure skill hai, supernatural nahi.",
+        "Hum clear hain isme — koi black magic, koi vashikaran nahi, sirf technique aur psychology.",
+        "Ye yahan offer nahi hota — ye academy honest hai ki ye skill hai, supernatural power nahi.",
+        "Ye hamare kaam ke bahar hai — koi supernatural service nahi, sirf mentalism aur hypnosis training.",
+        "Hum ye offer nahi karte — ye technique aur psychology hai, aur kuch nahi.",
+        "Ye is academy mein nahi hota — jo bhi sikhaya jaata hai wo real skill hai, magic nahi.",
+        "Ye hum nahi hain — koi black magic ya vashikaran nahi, sirf skill-based training.",
+        "Hum isse door rehte hain — ye academy technique sikhaati hai, kabhi supernatural service nahi.",
+        "Offer nahi hota — is academy ka rule clear hai, koi supernatural claim nahi."
+      ]
+    },
+    "ot_bring_back_my_ex": {
+      "match": {
+        "keywords": [],
+        "patterns": ["bring back my ex", "mera ex wapas", "ex ko wapas lao", "ex se milwa do"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "That's not something we handle here — this academy teaches mentalism and hypnosis technique only.",
+        "Not offered — I'm his manager, here for course and show enquiries only.",
+        "We don't do that — this is skill-based training, not personal matters like that.",
+        "That's outside this academy's scope — course and booking enquiries only, on this number.",
+        "Not something I can help with — happy to help with a course question instead.",
+        "That's not what this academy does — mentalism and hypnosis technique only.",
+        "We stay focused on course and show enquiries — that's outside what I handle.",
+        "Not offered here — this is a technique-based training academy.",
+        "That's not something we can help with — enquiries about classes or shows only.",
+        "Not my area — I manage enquiries for Dr Arya Chandel's team, nothing personal like that.",
+        "That's outside what I do — course and show enquiries only, on this number.",
+        "Not something this academy handles — skill and technique training only."
+      ],
+      "variants_hi": [
+        "Ye hum yahan handle nahi karte — ye academy sirf mentalism aur hypnosis technique sikhaati hai.",
+        "Ye offer nahi hai — main manager hoon, sirf course aur show enquiries ke liye.",
+        "Hum ye nahi karte — ye skill-based training hai, aise personal matters nahi.",
+        "Ye is academy ke scope ke bahar hai — sirf course aur booking enquiries is number pe.",
+        "Isme main help nahi kar sakta — iski jagah course ka sawaal poochho.",
+        "Ye is academy ka kaam nahi — sirf mentalism aur hypnosis technique.",
+        "Hum sirf course aur show enquiries pe focused hain — ye mere kaam ke bahar hai.",
+        "Ye yahan offer nahi hota — ye technique-based training academy hai.",
+        "Isme hum help nahi kar sakte — sirf classes ya shows ki enquiries yahan.",
+        "Ye mera area nahi — main Arya sir ki team ke enquiries dekhta hoon, aisa personal kuch nahi.",
+        "Ye mere kaam ke bahar hai — sirf course aur show enquiries is number pe.",
+        "Ye is academy handle nahi karti — sirf skill aur technique training."
+      ]
+    },
+    "ot_love_problem": {
+      "match": {
+        "keywords": [],
+        "patterns": ["love problem", "pyar ki problem", "love marriage solution", "relationship problem solve"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "That's outside what this academy does — course and show enquiries only, on this number.",
+        "Not something I can help with here — I'm Harshit, his manager, handling enquiries only.",
+        "We don't handle that — this academy teaches mentalism and hypnosis technique only.",
+        "Not my area — happy to help with a course question or show booking instead.",
+        "That's not something this academy offers — skill-based training only.",
+        "Not offered here — I only manage enquiries for classes and shows.",
+        "That's outside my scope — course and booking enquiries only, on this number.",
+        "We stay focused on the course and show bookings — that's not something I handle.",
+        "Not something I can help with — this academy is technique-based, nothing else.",
+        "That's outside what we do — mentalism and hypnosis training only.",
+        "Not my role — I manage this number for course and show enquiries.",
+        "That's not something this academy handles — happy to help with the course instead."
+      ],
+      "variants_hi": [
+        "Ye is academy ke kaam ke bahar hai — sirf course aur show enquiries is number pe.",
+        "Isme main help nahi kar sakta — Harshit hoon, unka manager, sirf enquiries dekhta hoon.",
+        "Hum ye handle nahi karte — ye academy sirf mentalism aur hypnosis technique sikhaati hai.",
+        "Ye mera area nahi — iski jagah course ka sawaal ya show booking poochho.",
+        "Ye is academy offer nahi karti — sirf skill-based training.",
+        "Ye yahan offer nahi hota — main sirf classes aur shows ki enquiries dekhta hoon.",
+        "Ye mere scope ke bahar hai — sirf course aur booking enquiries is number pe.",
+        "Hum course aur show bookings pe focused hain — ye main nahi handle karta.",
+        "Isme main help nahi kar sakta — ye academy technique-based hai, aur kuch nahi.",
+        "Ye hamare kaam ke bahar hai — sirf mentalism aur hypnosis training.",
+        "Ye mera role nahi — main is number ko course aur show enquiries ke liye manage karta hoon.",
+        "Ye is academy handle nahi karti — iski jagah course ka sawaal poochho."
+      ]
+    },
+    "ot_make_someone_call_me": {
+      "match": {
+        "keywords": [],
+        "patterns": ["make someone call me", "kisi ko call karwao", "kisi se call karwana hai", "usse call karwa do"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "That's not something I can arrange here — I only handle course and show enquiries on this number.",
+        "Not something I do — I'm his manager, handling enquiries only, not personal requests like that.",
+        "That's outside what I handle — course and booking enquiries only, on this number.",
+        "Not my role — I manage enquiries for Dr Arya Chandel's team, nothing else.",
+        "Can't help with that here — happy to help with a course or booking question instead.",
+        "That's not something I do — I only handle enquiries about classes and shows.",
+        "Not something I can arrange — I manage this number for course and show enquiries.",
+        "That's outside my scope — course and booking enquiries only, on this number.",
+        "Not my job — I'm Harshit, his manager, handling enquiries only.",
+        "That's not something I handle here — I only take care of enquiries.",
+        "Not possible from my end — I manage course and show enquiries only.",
+        "That's outside what I do — enquiries about courses or shows only, on this number."
+      ],
+      "variants_hi": [
+        "Ye main yahan arrange nahi kar sakta — main sirf course aur show enquiries dekhta hoon is number pe.",
+        "Ye main nahi karta — main unka manager hoon, sirf enquiries dekhta hoon, aisi personal requests nahi.",
+        "Ye mere kaam ke bahar hai — sirf course aur booking enquiries is number pe.",
+        "Ye mera role nahi — main Arya sir ki team ke enquiries dekhta hoon, aur kuch nahi.",
+        "Isme help nahi kar sakta — iski jagah course ya booking sawaal poochho.",
+        "Ye main nahi karta — main sirf classes aur shows ki enquiries handle karta hoon.",
+        "Ye arrange nahi kar sakta — main is number ko course aur show enquiries ke liye manage karta hoon.",
+        "Ye mere scope ke bahar hai — sirf course aur booking enquiries is number pe.",
+        "Ye mera kaam nahi — main Harshit hoon, unka manager, sirf enquiries dekhta hoon.",
+        "Ye main yahan handle nahi karta — main sirf enquiries dekhta hoon.",
+        "Mere taraf se possible nahi — main sirf course aur show enquiries dekhta hoon.",
+        "Ye mere kaam ke bahar hai — sirf course ya show enquiries is number pe."
+      ]
+    },
+    "ot_hypnotise_someone_for_me": {
+      "match": {
+        "keywords": [],
+        "patterns": ["hypnotize someone for me", "kisi ko hypnotize kar do", "mere dost ko hypnotize karo", "usko hypnotize kar do"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "That's not something I can arrange over chat — I only handle course and show enquiries here.",
+        "Not something I do — I'm his manager, handling enquiries only, not requests like that.",
+        "That's outside what I handle — course and booking enquiries only, on this number.",
+        "Not my role — real hypnosis needs the person actually present, and I only manage enquiries here.",
+        "Can't arrange that here — happy to help with a course or booking question instead.",
+        "That's not something I do — I only handle enquiries about classes and shows.",
+        "Not possible over chat — I manage this number for course and show enquiries.",
+        "That's outside my scope — course and booking enquiries only, on this number.",
+        "Not my job — I'm Harshit, his manager, handling enquiries only.",
+        "That's not something I handle here — I only take care of enquiries.",
+        "Not something I can do — I manage course and show enquiries only.",
+        "That's outside what I do — enquiries about courses or shows only, on this number."
+      ],
+      "variants_hi": [
+        "Ye main chat pe arrange nahi kar sakta — main sirf course aur show enquiries dekhta hoon.",
+        "Ye main nahi karta — main unka manager hoon, sirf enquiries dekhta hoon, aisi requests nahi.",
+        "Ye mere kaam ke bahar hai — sirf course aur booking enquiries is number pe.",
+        "Ye mera role nahi — real hypnosis mein person ka present hona zaroori hai, main sirf enquiries dekhta hoon.",
+        "Yahan arrange nahi kar sakta — iski jagah course ya booking sawaal poochho.",
+        "Ye main nahi karta — main sirf classes aur shows ki enquiries handle karta hoon.",
+        "Chat pe possible nahi — main is number ko course aur show enquiries ke liye manage karta hoon.",
+        "Ye mere scope ke bahar hai — sirf course aur booking enquiries is number pe.",
+        "Ye mera kaam nahi — main Harshit hoon, unka manager, sirf enquiries dekhta hoon.",
+        "Ye main yahan handle nahi karta — main sirf enquiries dekhta hoon.",
+        "Ye main nahi kar sakta — main sirf course aur show enquiries dekhta hoon.",
+        "Ye mere kaam ke bahar hai — sirf course ya show enquiries is number pe."
+      ]
+    },
+    "ot_teach_me_free": {
+      "match": {
+        "keywords": [],
+        "patterns": ["teach me free", "free mein sikha do", "bina paise ke sikha do", "free mein course de do"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "The course isn't free — it's ₹25,000 for the full 3-month program.",
+        "There's no free version — the fee is ₹25,000 for the complete training.",
+        "It's a paid course, ₹25,000 — no free option available.",
+        "Not free, no — ₹25,000 covers the full 3 months of training.",
+        "There isn't a free option — the course is ₹25,000 total.",
+        "No free version exists — ₹25,000 is the fee for the complete course.",
+        "It's ₹25,000, not free — that covers the full 10-class program.",
+        "No, it's not free — ₹25,000 for the full training, no exceptions.",
+        "The course fee is ₹25,000 — there's no free way to access it.",
+        "Not something offered for free — ₹25,000 for the complete 3-month course.",
+        "It's a paid program, ₹25,000 — no free access available.",
+        "No free option — ₹25,000 covers everything for the full course."
+      ],
+      "variants_hi": [
+        "Course free nahi hai — poore 3 mahine ke program ke liye ₹25,000 hai.",
+        "Free version nahi hai — fee ₹25,000 hai poori training ke liye.",
+        "Ye paid course hai, ₹25,000 ka — free option nahi hai.",
+        "Free nahi hai, nahi — ₹25,000 poore 3 mahine ki training cover karti hai.",
+        "Free option nahi hai — course total ₹25,000 ka hai.",
+        "Free version exist nahi karta — poore course ki fee ₹25,000 hai.",
+        "₹25,000 hai, free nahi — ye poora 10-class program cover karti hai.",
+        "Nahi, free nahi hai — poori training ke liye ₹25,000, koi exception nahi.",
+        "Course fee ₹25,000 hai — free mein access karne ka koi tareeka nahi.",
+        "Free mein offer nahi hota — poore 3-mahine ke course ke liye ₹25,000.",
+        "Ye paid program hai, ₹25,000 ka — free access nahi hai.",
+        "Free option nahi hai — ₹25,000 mein poora course cover hota hai."
+      ]
+    },
+    "ot_personal_chat": {
+      "match": {
+        "keywords": [],
+        "patterns": ["kaise ho aap", "kya kar rahe ho", "how are you doing", "what are you doing", "free ho kya baat karein"]
+      },
+      "priority": 5,
+      "variants_en": [
+        "I'm good, thanks — I'm Harshit, Dr Arya Chandel's manager, here for course and show enquiries.",
+        "Doing fine — this number handles course and booking enquiries, in case you need anything.",
+        "All good here — what can I help you with, course or show booking?",
+        "I'm well — I manage enquiries for Dr Arya Chandel's academy. What do you need?",
+        "Good, thanks for asking — got a course or booking question for me?",
+        "Doing well — I'm here for enquiries about classes and shows.",
+        "I'm fine, thanks — this is a business number for course and show enquiries.",
+        "All good — what can I do for you today, course or booking-wise?",
+        "I'm good — Harshit here, managing enquiries. What did you need?",
+        "Doing fine, thanks — I handle course and show enquiries on this number.",
+        "I'm well, thanks — anything I can help with, course or booking?",
+        "All good — this number's for class and show enquiries, let me know what you need."
+      ],
+      "variants_hi": [
+        "Main theek hoon, shukriya — Harshit hoon, Arya sir ka manager, course aur show enquiries ke liye.",
+        "Sab badhiya — ye number course aur booking enquiries ke liye hai, kuch chahiye toh batao.",
+        "Sab theek — kaise help karu, course ya show booking?",
+        "Main theek hoon — Arya sir ki academy ke enquiries dekhta hoon. Kya chahiye?",
+        "Achha hoon, shukriya poochhne ke liye — koi course ya booking sawaal hai?",
+        "Badhiya — main yahan classes aur shows ki enquiries ke liye hoon.",
+        "Main theek hoon, shukriya — ye business number hai course aur show enquiries ke liye.",
+        "Sab theek — aaj kya karu aapke liye, course ya booking?",
+        "Main theek hoon — Harshit hoon, enquiries manage karta hoon. Kya chahiye tha?",
+        "Achha hoon, shukriya — is number pe course aur show enquiries handle karta hoon.",
+        "Theek hoon, shukriya — koi help chahiye, course ya booking?",
+        "Sab badhiya — ye number class aur show enquiries ke liye hai, batao kya chahiye."
+      ]
+    },
+    "ot_flirting": {
+      "match": {
+        "keywords": [],
+        "patterns": ["you are cute", "you are beautiful", "single ho kya", "tum single ho", "date pe chalein", "i love you", "you are.*cute", "you.*beautiful", "so cute", "so hot"]
+      },
+      "priority": 8,
+      "variants_en": [
+        "This is a business number — I'm Harshit, Dr Arya Chandel's manager, handling course and show enquiries only.",
+        "This number's strictly for enquiries — course and show bookings, nothing else.",
+        "I'm his manager, handling enquiries here — that's the only thing this number's for.",
+        "This is a professional line — course and show enquiries only.",
+        "This number handles course and booking enquiries only — nothing personal.",
+        "I'm here in a professional capacity — enquiries about classes and shows, that's it.",
+        "This is Dr Arya Chandel's enquiry line — strictly business, course and booking questions.",
+        "This number's for enquiries only — course details or show bookings.",
+        "I manage this number professionally — course and show enquiries only.",
+        "This is a business line — I only take enquiries about classes and shows here.",
+        "That's not what this number is for — course and booking enquiries only.",
+        "This is strictly an enquiry line — classes and shows, nothing else."
+      ],
+      "variants_hi": [
+        "Ye business number hai — Harshit hoon, Arya sir ka manager, sirf course aur show enquiries ke liye.",
+        "Ye number strictly enquiries ke liye hai — course aur show bookings, aur kuch nahi.",
+        "Main manager hoon, sirf enquiries dekhta hoon — yehi is number ka kaam hai.",
+        "Ye professional line hai — sirf course aur show enquiries.",
+        "Ye number sirf course aur booking enquiries ke liye hai — personal kuch nahi.",
+        "Main professional capacity mein hoon — classes aur shows ki enquiries, bas.",
+        "Ye Arya sir ki enquiry line hai — strictly business, course aur booking sawaal.",
+        "Ye number sirf enquiries ke liye hai — course details ya show bookings.",
+        "Main is number ko professionally manage karta hoon — sirf course aur show enquiries.",
+        "Ye business line hai — main sirf classes aur shows ki enquiries leta hoon yahan.",
+        "Ye is number ka kaam nahi hai — sirf course aur booking enquiries.",
+        "Ye strictly enquiry line hai — classes aur shows, aur kuch nahi."
+      ]
+    },
+    "ot_abusive": {
+      "match": {
+        "keywords": [],
+        "patterns": ["bhenchod", "madarchod", "chutiya", "gandu", "fuck you", "you idiot", "stupid bot"]
+      },
+      "priority": 9,
+      "variants_en": [
+        "I'll leave it here — reach out if you have a genuine course or show enquiry.",
+        "Noted. If you have an actual question about the course or a booking, I'm here.",
+        "I'll step back from this — happy to help if there's a real enquiry.",
+        "Alright. Message again if you need course or show details.",
+        "I'll leave this conversation here for now.",
+        "Understood. This number's open for genuine course or booking enquiries anytime.",
+        "I'll pause here — reach out for an actual course or show query.",
+        "Noted, moving on. Happy to help with a real enquiry anytime.",
+        "I'll leave it at that — course or booking questions are welcome anytime.",
+        "Alright, I'll step away from this one.",
+        "Understood — this line stays open for genuine enquiries.",
+        "I'll leave this here — reach out for a real course or show question."
+      ],
+      "variants_hi": [
+        "Main yahin rukta hoon — genuine course ya show enquiry ho toh contact karna.",
+        "Note kar liya. Agar course ya booking ka actual sawaal ho, main yahin hoon.",
+        "Main is baat ko yahin chhodta hoon — real enquiry ho toh help karunga.",
+        "Theek hai. Course ya show details chahiye ho toh dobara message karna.",
+        "Main is conversation ko yahin rok deta hoon abhi.",
+        "Samajh gaya. Ye number genuine course ya booking enquiries ke liye khula hai.",
+        "Main yahan ruk jaata hoon — actual course ya show query ho toh batana.",
+        "Note kiya, aage badhta hoon. Real enquiry ho toh kabhi bhi help karunga.",
+        "Main isko yahin chhodta hoon — course ya booking sawaal ho toh kabhi bhi poochho.",
+        "Theek hai, main isse step back karta hoon.",
+        "Samajh gaya — ye line genuine enquiries ke liye khuli hai.",
+        "Main isko yahin chhodta hoon — real course ya show sawaal ho toh contact karna."
+      ]
+    },
+    "ot_forwarded_spam_link": {
+      "match": {
+        "keywords": ["www", "http", "https", "bitly"],
+        "patterns": ["bit ly", "click this link", "forward this message", "click here"]
+      },
+      "priority": 6,
+      "variants_en": [
+        "Not something I'll be opening — if you have a course or show enquiry, happy to help with that.",
+        "I don't open forwarded links — but if you need course details, ask away.",
+        "Skipping that link — got a genuine course or booking question instead?",
+        "Not opening this — this number's for course and show enquiries.",
+        "I'll pass on the link — course or booking question, though, I can help with.",
+        "Not clicking that — happy to help with an actual course or show query.",
+        "Skipping the link — anything about the course or a booking I can help with?",
+        "I don't engage with forwarded links — but course enquiries are welcome.",
+        "Not opening forwards — genuine course or show questions, I'm here for those.",
+        "I'll leave that link alone — got a real question about the course or a booking?",
+        "Not something I'll click — course and show enquiries are what I handle.",
+        "Skipping this one — reach out if you have an actual course or booking query."
+      ],
+      "variants_hi": [
+        "Ye link main nahi kholunga — course ya show enquiry ho toh bataiye, help karta hoon.",
+        "Main forwarded links nahi kholta — course details chahiye ho toh poochho.",
+        "Ye link skip kar raha hoon — koi genuine course ya booking sawaal hai?",
+        "Ye main nahi kholta — ye number course aur show enquiries ke liye hai.",
+        "Link ko chhod deta hoon — course ya booking sawaal ho toh help kar sakta hoon.",
+        "Isko click nahi kar raha — actual course ya show query ho toh batao.",
+        "Link skip kar raha hoon — course ya booking ke baare mein kuch poochna hai?",
+        "Main forwarded links pe engage nahi karta — course enquiries welcome hain.",
+        "Forwards nahi kholta main — genuine course ya show sawaal ho toh main yahin hoon.",
+        "Ye link chhod deta hoon — course ya booking ka real sawaal hai kya?",
+        "Ye main click nahi karunga — sirf course aur show enquiries dekhta hoon.",
+        "Ye skip kar raha hoon — course ya booking ka actual sawaal ho toh contact karo."
+      ]
+    },
+    "ot_job_application": {
+      "match": {
+        "keywords": [],
+        "patterns": ["job chahiye", "hiring ho rahe ho", "job vacancy", "naukri chahiye", "job opening"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "This number handles course and show enquiries, not hiring — you'd need to check elsewhere for job openings.",
+        "Not the right place for that — this is a course and booking enquiry line.",
+        "This number's for classes and shows, not job applications — sorry, can't help there.",
+        "That's not something I handle here — this line is for course and show enquiries only.",
+        "This isn't a hiring line — I only manage course and booking enquiries.",
+        "Not something on this number — this is strictly course and show enquiries.",
+        "Wrong number for job applications — this handles course and booking enquiries.",
+        "This line's for enquiries about classes and shows, not hiring — apologies.",
+        "Not something I can help with here — this number's for course and booking questions.",
+        "This isn't the hiring channel — enquiries about the course or shows only, here.",
+        "Not the right place — this number handles course and show enquiries exclusively.",
+        "This line doesn't cover hiring — course and booking enquiries only."
+      ],
+      "variants_hi": [
+        "Ye number course aur show enquiries ke liye hai, hiring ke liye nahi — job ke liye kahin aur check karo.",
+        "Ye sahi jagah nahi hai — ye course aur booking enquiry line hai.",
+        "Ye number classes aur shows ke liye hai, job applications ke liye nahi — sorry, help nahi kar sakta.",
+        "Ye main yahan handle nahi karta — ye line sirf course aur show enquiries ke liye hai.",
+        "Ye hiring line nahi hai — main sirf course aur booking enquiries dekhta hoon.",
+        "Is number pe ye nahi hota — ye strictly course aur show enquiries ke liye hai.",
+        "Job applications ke liye galat number hai — ye course aur booking enquiries handle karta hai.",
+        "Ye line classes aur shows ke enquiries ke liye hai, hiring ke liye nahi — maaf karna.",
+        "Isme main help nahi kar sakta — ye number course aur booking sawaalon ke liye hai.",
+        "Ye hiring channel nahi hai — sirf course ya show ki enquiries yahan.",
+        "Ye sahi jagah nahi — ye number sirf course aur show enquiries ke liye hai.",
+        "Ye line hiring cover nahi karti — sirf course aur booking enquiries."
+      ]
+    },
+    "ot_collaboration_promo": {
+      "match": {
+        "keywords": ["collaboration", "sponsorship"],
+        "patterns": ["collab karna hai", "promotion karna hai", "brand partnership"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "I've flagged this for the team — collaboration and sponsorship requests go through them directly.",
+        "Noted — these go to the team, not handled on this chat directly.",
+        "I'll pass this along — collab and promo enquiries are handled by the team.",
+        "Flagging this for the team — they handle collaboration requests.",
+        "I've noted this — the team reviews collaboration and sponsorship enquiries.",
+        "That goes to the team directly — I've flagged it for them to review.",
+        "Noted, passing this on — the team handles these requests.",
+        "I've flagged your enquiry — collaboration requests are reviewed by the team.",
+        "That's handled by the team, not me directly — I've passed it along.",
+        "Flagging this now — sponsorship and collab requests go to the team.",
+        "I've noted this for the team — they'll review and get back if relevant.",
+        "That's for the team to review — I've flagged your message."
+      ],
+      "variants_hi": [
+        "Maine ye team ke liye flag kar diya hai — collaboration aur sponsorship requests directly unke paas jaati hain.",
+        "Note kar liya — ye team ke paas jaate hain, chat pe directly handle nahi hote.",
+        "Isko pass kar deta hoon — collab aur promo enquiries team handle karti hai.",
+        "Team ke liye flag kar diya — wo collaboration requests dekhte hain.",
+        "Note kar liya hai — team collaboration aur sponsorship enquiries review karti hai.",
+        "Ye directly team ke paas jaata hai — flag kar diya review ke liye.",
+        "Note kar liya, pass kar raha hoon — team ye requests handle karti hai.",
+        "Aapki enquiry flag kar di hai — collaboration requests team review karti hai.",
+        "Ye team handle karti hai, main directly nahi — pass kar diya hai.",
+        "Abhi flag kar raha hoon — sponsorship aur collab requests team ke paas jaate hain.",
+        "Team ke liye note kar liya hai — relevant hua toh wapas contact karenge.",
+        "Ye team review karti hai — aapka message flag kar diya hai."
+      ]
+    },
+    "ot_media_interview": {
+      "match": {
+        "keywords": ["journalist", "reporter"],
+        "patterns": ["media interview", "press enquiry", "interview lena hai", "news coverage"]
+      },
+      "priority": 7,
+      "variants_en": [
+        "I've flagged this for the team — media and press enquiries go through them directly.",
+        "Noted — media requests are handled by the team, not on this chat.",
+        "I'll pass this along — press and interview enquiries go to the team.",
+        "Flagging this for the team — they handle media requests directly.",
+        "I've noted this — the team reviews press and interview enquiries.",
+        "That goes to the team — I've flagged it for them to follow up.",
+        "Noted, passing this on — media enquiries are handled by the team.",
+        "I've flagged your request — press enquiries are reviewed by the team.",
+        "That's handled by the team, not me directly — I've passed it along.",
+        "Flagging this now — media and interview requests go to the team.",
+        "I've noted this for the team — they'll follow up if relevant.",
+        "That's for the team to review — I've flagged your message."
+      ],
+      "variants_hi": [
+        "Maine ye team ke liye flag kar diya hai — media aur press enquiries directly unke paas jaati hain.",
+        "Note kar liya — media requests team handle karti hai, is chat pe nahi.",
+        "Isko pass kar deta hoon — press aur interview enquiries team ke paas jaati hain.",
+        "Team ke liye flag kar diya — wo media requests directly handle karte hain.",
+        "Note kar liya hai — team press aur interview enquiries review karti hai.",
+        "Ye team ke paas jaata hai — flag kar diya follow up ke liye.",
+        "Note kar liya, pass kar raha hoon — media enquiries team handle karti hai.",
+        "Aapki request flag kar di hai — press enquiries team review karti hai.",
+        "Ye team handle karti hai, main directly nahi — pass kar diya hai.",
+        "Abhi flag kar raha hoon — media aur interview requests team ke paas jaate hain.",
+        "Team ke liye note kar liya hai — relevant hua toh follow up karenge.",
+        "Ye team review karti hai — aapka message flag kar diya hai."
+      ]
+    },
+    "ot_random_gibberish": {
+      "match": { "keywords": [], "patterns": ["^[a-z]{1,3}$", "^[qwertyuiopasdfghjklzxcvbnm]{5,}$", "^\\d+$"] },
+      "priority": 1,
+      "variants_en": [
+        "Not sure what you mean — if you have a course or show enquiry, let me know.",
+        "Didn't quite catch that — got a question about the course or a booking?",
+        "Not clear on that one — happy to help if it's about the course or a show.",
+        "Couldn't quite make that out — course or booking question, maybe?",
+        "Not sure what that was — let me know if you have a course or show enquiry.",
+        "Didn't follow that — if it's about the course or a booking, go ahead and ask.",
+        "That didn't come through clearly — course or show question?",
+        "Not sure I understood — happy to help with a course or booking enquiry.",
+        "Couldn't quite parse that — got something about the course or a show?",
+        "Not clear — let me know if there's a course or booking question in there.",
+        "Didn't quite get that one — course or show enquiry, perhaps?",
+        "That wasn't clear — ask away if it's about the course or a booking."
+      ],
+      "variants_hi": [
+        "Samajh nahi aaya — course ya show enquiry ho toh batao.",
+        "Wo clear nahi tha — course ya booking ka koi sawaal hai kya?",
+        "Ye samajh nahi paaya — course ya show ke baare mein ho toh help karta hoon.",
+        "Wo pura samajh nahi aaya — course ya booking sawaal hai kya?",
+        "Samajh nahi aaya wo — course ya show enquiry ho toh batana.",
+        "Wo follow nahi kar paaya — course ya booking ke baare mein ho toh poochho.",
+        "Wo clearly nahi aaya — course ya show sawaal hai kya?",
+        "Samajh nahi paaya — course ya booking enquiry ho toh bata sakta hoon.",
+        "Wo parse nahi kar paaya — course ya show ke baare mein kuch hai kya?",
+        "Clear nahi hai — course ya booking sawaal ho toh batao.",
+        "Wo samajh nahi aaya — course ya show enquiry shayad?",
+        "Wo clear nahi tha — course ya booking ke baare mein ho toh poochho."
+      ]
+    },
+    "ot_voice_note_received": {
+      "match": { "keywords": [], "patterns": [] },
+      "priority": 5,
+      "variants_en": [
+        "Can't play voice notes on my end right now — could you type it out?",
+        "Voice notes don't come through clearly here — mind sending it as text?",
+        "Could you type that instead? Voice notes aren't easy for me to check right now.",
+        "I can't listen to voice notes at the moment — text works better.",
+        "Mind writing that out instead? I can't play audio right now.",
+        "Could you send that as text? Easier for me to respond properly.",
+        "Voice notes aren't working on my end right now — type it out, please.",
+        "Can't check audio messages right now — a text version would help.",
+        "Could you type it instead? I'll respond right away once I can read it.",
+        "I'm not able to play voice notes currently — text is easier for me.",
+        "Mind sending that as text? Voice notes aren't accessible right now.",
+        "Could you write that out? I can't listen to audio messages at the moment."
+      ],
+      "variants_hi": [
+        "Abhi voice note sun nahi paa raha — type karke bhej sakte ho?",
+        "Voice notes yahan clearly nahi aate — text mein bhej doge?",
+        "Type karke bhej do please, abhi voice note check karna mushkil hai.",
+        "Abhi audio sun nahi sakta — text better rahega.",
+        "Text mein likh doge? Abhi audio nahi chala sakta.",
+        "Text ke roop mein bhej sakte ho? Reply dena aasaan ho jaayega.",
+        "Voice notes abhi mere taraf se kaam nahi kar rahe — type kar do please.",
+        "Abhi audio messages check nahi kar sakta — text version help karega.",
+        "Type karke bhej do? Padhte hi turant reply karta hoon.",
+        "Abhi voice notes play nahi kar paa raha — text mujhe easier padta hai.",
+        "Text mein bhej doge? Voice notes abhi accessible nahi hain.",
+        "Likh ke bhej sakte ho? Abhi audio messages sun nahi sakta."
+      ]
+    },
+    "ot_sticker_only": {
+      "match": { "keywords": [], "patterns": [] },
+      "priority": 5,
+      "variants_en": [
+        "Got the sticker! What can I help you with?",
+        "Nice one. Anything I can help with — course or show enquiry?",
+        "Got it — what did you need?",
+        "Received the sticker — go ahead and tell me what's on your mind.",
+        "Got that. What can I do for you?",
+        "Nice — what would you like to know?",
+        "Got it! Course or booking question, maybe?",
+        "Received — what can I help with?",
+        "Got the sticker, thanks. What do you need?",
+        "Noted the sticker — go ahead, what's up?",
+        "Got it — anything specific I can help with?",
+        "Received your sticker — what can I do for you today?"
+      ],
+      "variants_hi": [
+        "Sticker mil gaya! Kya help chahiye?",
+        "Achha laga. Kuch help chahiye — course ya show enquiry?",
+        "Mil gaya — kya chahiye tha?",
+        "Sticker aa gaya — bolo kya baat hai.",
+        "Mil gaya wo. Kya karu aapke liye?",
+        "Achha — kya jaanna chahte ho?",
+        "Mil gaya! Course ya booking sawaal hai kya?",
+        "Aa gaya — kya help chahiye?",
+        "Sticker mil gaya, shukriya. Kya chahiye?",
+        "Sticker note kar liya — bolo kya baat hai.",
+        "Mil gaya — kuch specific help chahiye?",
+        "Aapka sticker mil gaya — aaj kya karu aapke liye?"
+      ]
+    },
+    "ot_missed_call": {
+      "match": { "keywords": [], "patterns": [] },
+      "priority": 5,
+      "variants_en": [
+        "Saw your call — I don't take calls on this number, but type your question here and I'll answer.",
+        "Noticed the missed call — this line is text-only, go ahead and type your question.",
+        "Saw you called — I reply over text here, what did you need?",
+        "Got your call — this number doesn't do calls, but I'm happy to help over text.",
+        "Saw the call come through — write your question here instead.",
+        "Noticed you tried calling — I only respond in text on this number, go ahead.",
+        "Saw your missed call — type it out here and I'll reply right away.",
+        "Got that you called — this is a text line, what can I help with?",
+        "Saw the call — I don't answer calls here, but ask away in text.",
+        "Noticed your call — text works better here, what did you need?",
+        "Saw you tried reaching me — this number is text-only, go ahead and ask.",
+        "Got your call — I'll respond here in text, what's the question?"
+      ],
+      "variants_hi": [
+        "Aapka call dikha — is number pe call nahi leta, par yahin type kar dijiye, jawab de dunga.",
+        "Missed call dekha — ye line text-only hai, apna sawaal type kar dijiye.",
+        "Call dekha aapka — main yahan text mein reply karta hoon, kya chahiye tha?",
+        "Call aaya tha dekha — is number pe calls nahi hote, par text mein help kar sakta hoon.",
+        "Call dekha — apna sawaal yahin likh dijiye.",
+        "Call try kiya dekha — is number pe sirf text mein reply karta hoon, bolo.",
+        "Missed call dekha — yahin type kar dijiye, turant jawab dunga.",
+        "Call aaya tha, dekh liya — ye text line hai, kya help chahiye?",
+        "Call dekha — yahan calls ka jawab nahi deta, par text mein poochho.",
+        "Aapka call notice kiya — text better rahega yahan, kya chahiye tha?",
+        "Dekha aapne try kiya call karne ka — ye number text-only hai, poochho.",
+        "Call dekha — yahin text mein reply karta hoon, kya sawaal hai?"
+      ]
+    },
+    "student_recording_request": {
+      "match": {
+        "keywords": [],
+        "patterns": ["meri recording", "mujhe recording chahiye", "meri last class ki recording", "recording bhejo", "recording chahiye mujhe", "recording nahi mili"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Got it — I've flagged this for the team to send your recording over.",
+        "Noted — flagging this so the team can share your class recording.",
+        "I've passed this to the team — they'll get your recording sorted.",
+        "Understood — the team will follow up with your recording shortly.",
+        "Got it, flagging this now — team will share the recording.",
+        "Noted, thank you — team will confirm and send the recording.",
+        "I've flagged this for the team — they'll get your recording to you.",
+        "Passing this to the team now for your recording.",
+        "Got it — team will verify and follow up with your recording.",
+        "Understood, I've flagged it — team will send the recording.",
+        "Noted — I'm alerting the team to sort out your recording.",
+        "Thanks for flagging — team will follow up on the recording."
+      ],
+      "variants_hi": [
+        "Samajh gaya — team ko flag kar diya hai, wo recording bhej denge.",
+        "Note kar liya — flag kar raha hoon taaki team recording share kare.",
+        "Team ko pass kar diya hai — wo aapki recording sort kar denge.",
+        "Samajh gaya — team jald recording ke saath follow up karegi.",
+        "Ok, abhi flag kar raha hoon — team recording share karegi.",
+        "Note kiya, shukriya — team confirm karke recording bhejegi.",
+        "Team ko flag kar diya hai — wo recording aapko de denge.",
+        "Abhi team ko bhej raha hoon aapki recording ke liye.",
+        "Samajh gaya — team verify karke recording ke saath follow up karegi.",
+        "Ok, flag kar diya — team recording bhejegi.",
+        "Note kar liya — team ko alert kar raha hoon recording sort karne ke liye.",
+        "Flag karne ke liye shukriya — team recording pe follow up karegi."
+      ]
+    },
+    "student_class_timing": {
+      "match": {
+        "keywords": [],
+        "patterns": ["meri agli class", "meri class kab hai", "mera batch ka time", "meri class ka time", "meri next class"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "I've flagged this for the team to confirm your exact class time.",
+        "Noted — team will confirm your next class timing and get back to you.",
+        "I'll have the team check your batch schedule and confirm.",
+        "Flagging this — team will verify your class timing shortly.",
+        "Got it — team will confirm your next class time.",
+        "Noted, thank you — team will check and confirm your schedule.",
+        "I've passed this to the team — they'll confirm your class time.",
+        "Team will verify your batch timing and follow up.",
+        "Got it, flagging this now — team will confirm your next class.",
+        "Understood — team will check your schedule and get back to you.",
+        "Noted — I'm alerting the team to confirm your class timing.",
+        "Thanks — team will follow up with your exact class time."
+      ],
+      "variants_hi": [
+        "Team ko flag kar diya hai aapki exact class time confirm karne ke liye.",
+        "Note kar liya — team aapki next class timing confirm karke bataayegi.",
+        "Team se aapka batch schedule check karwa ke confirm karta hoon.",
+        "Flag kar diya — team jald aapki class timing verify karegi.",
+        "Samajh gaya — team aapki next class time confirm karegi.",
+        "Note kiya, shukriya — team check karke schedule confirm karegi.",
+        "Team ko pass kar diya hai — wo aapka class time confirm karenge.",
+        "Team aapki batch timing verify karke follow up karegi.",
+        "Samajh gaya, abhi flag kar raha hoon — team aapki next class confirm karegi.",
+        "Samajh gaya — team schedule check karke bataayegi.",
+        "Note kar liya — team ko alert kar raha hoon class timing confirm karne ke liye.",
+        "Shukriya — team aapke exact class time ke saath follow up karegi."
+      ]
+    },
+    "student_missed_class": {
+      "match": {
+        "keywords": [],
+        "patterns": ["maine class miss kar di", "class miss ho gayi meri", "i missed my class", "i missed the class", "mera class chhoot gaya"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "No worries — you'll get the recording, and I've flagged this so the team follows up too.",
+        "That's fine, the recording covers you — I've also flagged this for the team.",
+        "No issue — recording's on its way, and I've noted this for the team.",
+        "Not a problem — you're covered by the recording, flagging this for the team too.",
+        "All good — recording will reach you, and I've flagged it for the team.",
+        "No worries at all — recording's covered, team's been notified too.",
+        "That's fine — nothing's lost, recording's coming, and I've flagged this.",
+        "No problem — you'll get the recording, team's aware now too.",
+        "All good — I've flagged this so the team can check in as well.",
+        "Not an issue — recording will be shared, and I've noted this for follow-up.",
+        "No worries — you're covered, and I've flagged this for the team's attention.",
+        "That's fine — recording's on the way, flagging this for the team too."
+      ],
+      "variants_hi": [
+        "Koi baat nahi — recording mil jaayegi, aur team ko bhi flag kar diya hai follow up ke liye.",
+        "Sab thik hai, recording cover kar degi — team ke liye bhi flag kar diya.",
+        "Koi issue nahi — recording aa rahi hai, team ke liye note kar liya hai.",
+        "Koi problem nahi — recording se cover ho jaaoge, team ke liye bhi flag kar diya.",
+        "Sab thik — recording mil jaayegi, team ko bhi bata diya hai.",
+        "Koi baat nahi bilkul — recording covered hai, team ko bhi notify kar diya.",
+        "Sab thik hai — kuch chhutega nahi, recording aa rahi hai, flag kar diya hai.",
+        "Koi problem nahi — recording mil jaayegi, team ko bhi pata hai ab.",
+        "Sab thik — team ke liye flag kar diya taaki wo bhi check kar sakein.",
+        "Koi issue nahi — recording share hogi, follow-up ke liye note kar liya.",
+        "Koi baat nahi — cover ho gaye ho, team ke liye flag kar diya.",
+        "Sab thik hai — recording aa rahi hai, team ke liye bhi flag kar diya."
+      ]
+    },
+    "student_doubt": {
+      "match": {
+        "keywords": [],
+        "patterns": ["mujhe doubt hai", "ek doubt hai class", "doubt clear karna hai", "confusion hai class mein", "meri class ka doubt"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Got it — I've flagged this so the team or Arya sir can clear your doubt directly.",
+        "Noted — flagging this for the team to help you with it directly.",
+        "I've passed this along — the team will follow up to clear your doubt.",
+        "Understood — the team will reach out to help with this.",
+        "Got it, flagging this now — you'll get a proper answer from the team.",
+        "Noted, thank you — team will follow up to clear this up.",
+        "I've flagged this for the team — they'll help you directly.",
+        "Passing this to the team now for a proper answer.",
+        "Got it — team will follow up to sort out your doubt.",
+        "Understood, I've flagged it — team will get back to you.",
+        "Noted — I'm alerting the team to help you with this.",
+        "Thanks for flagging — team will follow up to clear it up."
+      ],
+      "variants_hi": [
+        "Samajh gaya — team ya Arya sir ko flag kar diya hai directly doubt clear karne ke liye.",
+        "Note kar liya — team ke liye flag kar raha hoon directly help karne ke liye.",
+        "Team ko pass kar diya hai — wo aapka doubt clear karne follow up karenge.",
+        "Samajh gaya — team is baare mein help karne contact karegi.",
+        "Ok, abhi flag kar raha hoon — team se proper jawab milega.",
+        "Note kiya, shukriya — team follow up karke ye clear karegi.",
+        "Team ko flag kar diya hai — wo directly help karenge.",
+        "Abhi team ko bhej raha hoon proper answer ke liye.",
+        "Samajh gaya — team follow up karke aapka doubt sort karegi.",
+        "Ok, flag kar diya — team wapas contact karegi.",
+        "Note kar liya — team ko alert kar raha hoon isme help karne ke liye.",
+        "Flag karne ke liye shukriya — team follow up karke ye clear karegi."
+      ]
+    },
+    "student_certificate_request": {
+      "match": {
+        "keywords": [],
+        "patterns": ["mera certificate", "meri certificate", "certificate kab milega mujhe", "certificate abhi tak nahi mila", "mera certificate nahi aaya"]
+      },
+      "priority": 7,
+      "escalate": true,
+      "variants_en": [
+        "Got it — I've flagged this for the team to check on your certificate.",
+        "Noted — flagging this so the team can follow up on your certificate.",
+        "I've passed this to the team — they'll check and get back to you.",
+        "Understood — team will look into your certificate status.",
+        "Got it, flagging this now — team will confirm on the certificate.",
+        "Noted, thank you — team will check and follow up.",
+        "I've flagged this for the team — they'll sort out your certificate.",
+        "Passing this to the team now to check on your certificate.",
+        "Got it — team will verify and follow up on this.",
+        "Understood, I've flagged it — team will get back to you on it.",
+        "Noted — I'm alerting the team to check your certificate status.",
+        "Thanks for flagging — team will follow up on the certificate."
+      ],
+      "variants_hi": [
+        "Samajh gaya — team ko flag kar diya hai certificate check karne ke liye.",
+        "Note kar liya — flag kar raha hoon taaki team certificate pe follow up kare.",
+        "Team ko pass kar diya hai — wo check karke bataayenge.",
+        "Samajh gaya — team aapke certificate ka status dekhegi.",
+        "Ok, abhi flag kar raha hoon — team certificate confirm karegi.",
+        "Note kiya, shukriya — team check karke follow up karegi.",
+        "Team ko flag kar diya hai — wo aapka certificate sort karenge.",
+        "Abhi team ko bhej raha hoon certificate check karne ke liye.",
+        "Samajh gaya — team verify karke isme follow up karegi.",
+        "Ok, flag kar diya — team aapko wapas bataayegi.",
+        "Note kar liya — team ko alert kar raha hoon certificate status check karne ke liye.",
+        "Flag karne ke liye shukriya — team certificate pe follow up karegi."
+      ]
+    }
+  }
+}

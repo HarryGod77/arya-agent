@@ -1,5 +1,8 @@
 // The brain: reminders + recordings + social posting + lead follow-ups.
 import cron from 'node-cron';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { read, update, alreadySent, markSent } from './store.js';
 import * as G from './google.js';
 import * as social from './social.js';
@@ -8,6 +11,9 @@ import { sendMessage, sendToOperatorAlert } from './whatsapp.js';
 import * as LS from './leadStore.js';
 import * as leadResponder from './leadResponder.js';
 import * as backlogScan from './backlogScan.js';
+import * as SS from './social/socialStore.js';
+import * as FB from './social/facebookApi.js';
+import { generateSocialCaption } from './social/captionGen.js';
 
 const googleReady = () => !!process.env.GOOGLE_REFRESH_TOKEN;
 const minsUntil = (iso) => (new Date(iso) - Date.now()) / 60000;
@@ -239,6 +245,149 @@ async function runSocialPost() {
   }
 }
 
+// ===== 3b) FACEBOOK REELS AUTO-POSTING (Meta Reels Publishing API, 3-phase upload) =====
+// A separate, newer pipeline from runSocialPost() above (which is Instagram/YouTube-
+// oriented and has the "Known gap" documented in CLAUDE.md — G.listPostQueue/downloadStream/
+// uploadYouTube don't exist). This one is Facebook-only, queue/schedule-driven via
+// src/social/socialStore.js, and uploads raw video bytes to Meta instead of relying on a
+// public Drive URL. Entirely gated behind SOCIAL_ENABLED so local dev never posts to the
+// live page even if real FB/Google credentials happen to be present in .env.
+const socialEnabled = () => process.env.SOCIAL_ENABLED === 'true';
+const SOCIAL_RATE_LIMIT_PER_24H = 10; // hard ceiling regardless of schedule.postsPerDay config
+
+// IST has no DST, fixed UTC+5:30 — same offset-arithmetic convention as leadResponder.js's
+// silentHours / paymentStore.js's istYear, not Intl or the host TZ.
+function istSlotToISOToday(hour, minute) {
+  const now = new Date();
+  const istNow = new Date(now.getTime() + 5.5 * 3600e3);
+  const istMidnightUTC = Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate(), hour, minute);
+  return new Date(istMidnightUTC - 5.5 * 3600e3).toISOString();
+}
+
+function publishedInLast24h() {
+  const since = Date.now() - 24 * 3600e3;
+  return SS.getQueue().filter(q => q.status === 'published' && q.publishedAt && q.publishedAt >= since).length;
+}
+
+// Shared by the 5-min cron tick and server.js's "publish now" route so both paths run the
+// exact same download -> upload -> publish -> cleanup sequence. Always one video at a
+// time (never called concurrently by the tick loop below) — the server is RAM-constrained
+// and downloads the whole file to a temp path first.
+export async function publishQueueItem(item) {
+  if (!process.env.FB_PAGE_ID || !process.env.FB_PAGE_ACCESS_TOKEN) {
+    SS.updateQueueItem(item.id, { status: 'failed', error: 'FB_PAGE_ID / FB_PAGE_ACCESS_TOKEN not configured' });
+    return SS.getQueueItem(item.id);
+  }
+  if (publishedInLast24h() >= SOCIAL_RATE_LIMIT_PER_24H) {
+    console.log(`Social: rate limit hit (${SOCIAL_RATE_LIMIT_PER_24H}/24h) — leaving "${item.fileName}" queued.`);
+    return SS.getQueueItem(item.id);
+  }
+
+  SS.updateQueueItem(item.id, { status: 'uploading', error: null });
+  const tmpPath = path.join(os.tmpdir(), `social-${item.id}${path.extname(item.fileName || '') || '.mp4'}`);
+  try {
+    await G.downloadDriveFile(item.driveFileId, tmpPath);
+    const { video_id, upload_url } = await FB.startUploadSession(process.env.FB_PAGE_ID, process.env.FB_PAGE_ACCESS_TOKEN);
+    await FB.uploadVideoFile(upload_url, tmpPath, process.env.FB_PAGE_ACCESS_TOKEN);
+    const description = [item.caption, (item.hashtags || []).join(' ')].filter(Boolean).join('\n\n');
+    // Always PUBLISHED, never SCHEDULED — see facebookApi.js's comment on publishReel.
+    // Meta only ever sees an instant publish; the schedule that got us here is entirely
+    // ours (item.scheduledFor), tracked below as how close we landed to it.
+    await FB.publishReel(process.env.FB_PAGE_ID, video_id, description, process.env.FB_PAGE_ACCESS_TOKEN);
+    SS.markUploaded(item.driveFileId);
+    const publishedAt = Date.now();
+    const publishDelaySeconds = item.scheduledFor ? Math.round((publishedAt - new Date(item.scheduledFor).getTime()) / 1000) : null;
+    SS.updateQueueItem(item.id, { status: 'published', fbVideoId: video_id, publishedAt, publishDelaySeconds, error: null });
+    console.log(`✅ Social: published "${item.fileName}" as reel ${video_id} (${publishDelaySeconds != null ? publishDelaySeconds + 's after scheduled time' : 'no schedule set'})`);
+  } catch (e) {
+    SS.updateQueueItem(item.id, { status: 'failed', error: e.message });
+    console.error(`Social: publish failed for "${item.fileName}":`, e.message);
+  } finally {
+    // Always clean up the temp download, success or failure — disk is as constrained as RAM here.
+    fs.unlink(tmpPath, () => {});
+  }
+  return SS.getQueueItem(item.id);
+}
+
+// Every minute: anything queued whose scheduled time has passed gets published right
+// now (download -> upload -> publish, all happening at this moment — see
+// publishQueueItem's video_state=PUBLISHED comment). A 1-minute tick keeps the actual
+// publish close to the intended scheduledFor instead of the up-to-5-minute slip a
+// coarser tick would allow. Processed sequentially (never Promise.all) — one video at a
+// time, per the RAM/disk constraint noted above, even if several ticks' worth of items
+// are overdue at once.
+async function checkSocialQueue() {
+  if (!socialEnabled()) return;
+  const due = SS.getQueue().filter(q => q.status === 'queued' && q.scheduledFor && new Date(q.scheduledFor).getTime() <= Date.now());
+  for (const item of due) {
+    await publishQueueItem(item);
+  }
+}
+
+// Daily at 08:00: top up the queue for today from schedule.slots, oldest unposted Drive
+// videos first. If Drive has nothing left to queue, alerts the owner instead of silently
+// doing nothing — an empty queue with no alert would just look like the feature stopped
+// working.
+async function refillSocialQueue() {
+  if (!socialEnabled()) return;
+  if (!process.env.GOOGLE_REFRESH_TOKEN) return console.log('Social refill skipped: Google not configured.');
+  const folderId = process.env.DRIVE_SOCIAL_FOLDER_ID;
+  if (!folderId) return console.log('Social refill skipped: DRIVE_SOCIAL_FOLDER_ID not set.');
+
+  const schedule = SS.getSchedule();
+  if (!schedule.enabled) return console.log('Social refill skipped: schedule disabled.');
+
+  let files;
+  try { files = await G.listSocialVideos(folderId); }
+  catch (e) { return console.error('Social refill: Drive listing failed:', e.message); }
+
+  const queue = SS.getQueue();
+  const alreadyQueued = new Set(queue.filter(q => q.status !== 'failed').map(q => q.driveFileId));
+  const unposted = files.filter(f => !SS.isAlreadyUploaded(f.id) && !alreadyQueued.has(f.id));
+
+  if (!unposted.length) {
+    console.log('Social refill: no unposted videos left in the Drive folder.');
+    try {
+      await sendToOperatorAlert(
+        '📭 Social posting: the Drive social-post folder has no unposted videos left. Add more reels to keep the queue filled.',
+        process.env.SOCIAL_OWNER_NUMBER
+      );
+    } catch (e) { console.error('Social stock-empty alert failed:', e.message); }
+    return;
+  }
+
+  const slots = (schedule.slots && schedule.slots.length) ? schedule.slots : ['09:00'];
+  const perDay = Math.max(1, Math.min(schedule.postsPerDay || slots.length, slots.length));
+  const picks = unposted.slice(0, perDay);
+
+  for (let i = 0; i < picks.length; i++) {
+    const file = picks[i];
+    const [h, m] = slots[i].split(':').map(Number);
+    const scheduledFor = istSlotToISOToday(h, m);
+    let cap;
+    try { cap = await generateSocialCaption(file.name); }
+    catch (e) { cap = { title: file.name, caption: '', hashtags: [] }; console.error('Social refill: caption generation failed for', file.name, ':', e.message); }
+    SS.addToQueue({ driveFileId: file.id, fileName: file.name, caption: cap.caption, title: cap.title, hashtags: cap.hashtags, scheduledFor });
+    console.log(`Social refill: queued "${file.name}" for ${scheduledFor}`);
+  }
+}
+
+// Every 6 hours: refresh views/reach/likes/comments for reels published in the last 7
+// days. Best-effort per item — one failed fetch (e.g. a metric Meta renamed) shouldn't
+// block refreshing the rest.
+async function refreshSocialInsights() {
+  if (!socialEnabled()) return;
+  if (!process.env.FB_PAGE_ACCESS_TOKEN) return;
+  const since = Date.now() - 7 * 86400e3;
+  const published = SS.getQueue().filter(q => q.status === 'published' && q.fbVideoId && q.publishedAt >= since);
+  for (const item of published) {
+    try {
+      const insights = await FB.getReelInsights(item.fbVideoId, process.env.FB_PAGE_ACCESS_TOKEN);
+      SS.saveInsights(item.fbVideoId, insights);
+    } catch (e) { console.error(`Social insights fetch failed for ${item.fbVideoId}:`, e.message); }
+  }
+}
+
 // ===== 4) LEAD FOLLOW-UPS (24h / 3d / 7d, max 3 ever) =====
 // Windows are cumulative from the last REAL reply (lastOutboundAt), not chained from
 // the previous follow-up — appendMessage(isFollowUp: true) never touches that field,
@@ -251,6 +400,11 @@ async function checkLeadFollowUps() {
     if (lead.manualOverride) continue;
     if (lead.followUps.count >= 3) continue;
     if (!lead.lastOutboundAt) continue; // no real reply sent yet — nothing to follow up on
+    // Outbound safety (Part 4): only follow up on a contact who has actually replied at
+    // least once beyond the message that triggered the bot's first reply — a backlog
+    // opener or first-touch lead who never engaged again shouldn't get chased.
+    const inboundCount = (lead.messages || []).filter(m => m.dir === 'in').length;
+    if (inboundCount < 2) continue;
     const windowIdx = lead.followUps.count; // 0 -> 24h due, 1 -> 3d due, 2 -> 7d due
     if (Date.now() - lead.lastOutboundAt < FOLLOWUP_WINDOWS_MS[windowIdx]) continue;
     try { await leadResponder.sendFollowUp(lead.jid, windowIdx + 1); }
@@ -288,13 +442,11 @@ async function runBacklogScan() {
   catch (e) { console.error('Backlog scan failed:', e.message); }
 }
 
-// Checks every 15 min whether it's the queue's turn to send its next item — the actual
-// pacing (5/day, 3h+ apart, silent-hours-aware) all lives inside trySendNextBacklogItem
-// itself, this is just "is there anything to do right now".
-async function trySendNextBacklogItem() {
-  try { await backlogScan.trySendNextBacklogItem(); }
-  catch (e) { console.error('Backlog send tick failed:', e.message); }
-}
+// NOTE: there is deliberately no automatic backlog-send tick anymore (Part 4 outbound
+// safety) — the account got restricted once for auto-sending into old, unanswered chats.
+// Discovery still runs daily below; every actual send now requires an operator clicking
+// "Send" in the Leads tab, which calls src/backlogScan.js#sendBacklogItem directly via
+// server.js's POST /api/backlog/:jid/send.
 
 export function startScheduler() {
   cron.schedule('* * * * *', () => { checkClassReminders(); });   // every minute (10-min accuracy)
@@ -302,12 +454,15 @@ export function startScheduler() {
   cron.schedule('0 10 * * *', () => { runSocialPost(); });
   cron.schedule('0 * * * *', () => { checkLeadFollowUps(); });    // hourly
   cron.schedule('0 9 * * 1', () => { sendUnansweredQuestionsDigest(); }); // Monday 09:00
-  cron.schedule('0 7 * * *', () => { runBacklogScan(); });        // daily 07:00, before silent hours end
-  cron.schedule('*/15 * * * *', () => { trySendNextBacklogItem(); }); // every 15 min, pacing enforced internally
-  console.log('⏰ Scheduler: reminders every 1m, recordings 15m, social daily 10:00, lead follow-ups hourly, unanswered-questions digest Mondays 09:00, backlog scan daily 07:00, backlog send-tick every 15m.');
+  cron.schedule('0 7 * * *', () => { runBacklogScan(); });        // daily 07:00, before silent hours end — discovery only, never sends
+  cron.schedule('* * * * *', () => { checkSocialQueue(); });      // every minute — publish due Facebook reels (no-op unless SOCIAL_ENABLED)
+  cron.schedule('0 8 * * *', () => { refillSocialQueue(); });     // daily 08:00 — refill today's reel queue
+  cron.schedule('0 */6 * * *', () => { refreshSocialInsights(); }); // every 6h — refresh published-reel insights
+  console.log('⏰ Scheduler: reminders every 1m, recordings 15m, social daily 10:00, lead follow-ups hourly, unanswered-questions digest Mondays 09:00, backlog scan daily 07:00 (discovery only, manual send), FB reel queue every 1m, FB reel refill daily 08:00, FB reel insights every 6h.');
 }
 
 export const jobs = {
   checkClassReminders, checkRecordings, runSocialPost, checkLeadFollowUps,
-  sendUnansweredQuestionsDigest, runBacklogScan, trySendNextBacklogItem
+  sendUnansweredQuestionsDigest, runBacklogScan,
+  checkSocialQueue, refillSocialQueue, refreshSocialInsights
 };

@@ -41,6 +41,7 @@
   <nav class="tabs">
     <button class="tab active" data-tab="batches">Batches</button>
     <button class="tab" data-tab="leads">Leads</button>
+    <button class="tab" data-tab="social">Social</button>
     <button class="tab" data-tab="config">Settings</button>
     <button class="tab" data-tab="actions">Run &amp; Tools</button>
   </nav>
@@ -138,6 +139,44 @@
         <button id="lrSaveCfg" class="btn btn-primary" style="margin-top:14px">Save settings</button>
         <div id="lrStats" class="muted" style="font-size:.85rem;margin-top:14px"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL -->
+  <section id="tab-social" class="tab-panel hidden">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Facebook Reels auto-posting</div></div>
+      <div id="socStatusStrip" class="status-pills" style="margin-bottom:14px;flex-wrap:wrap"></div>
+      <button id="socPublishNext" class="btn btn-primary">Publish Next Now</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Queue</div></div>
+      <p class="muted">Videos waiting to post, in schedule order. Publish Now jumps the line; Remove takes it out of the queue without marking it posted.</p>
+      <div id="socQueueList" class="list" style="margin-top:10px"><p class="muted">Loading…</p></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Schedule</div></div>
+      <label class="switch-row">
+        <span class="switch-label">Auto-posting enabled<span class="switch-hint">off = queue keeps filling but nothing publishes automatically</span></span>
+        <input type="checkbox" id="socEnabled" class="switch">
+      </label>
+      <div class="field">
+        <label class="field-label" for="socPostsPerDay">Posts per day</label>
+        <input type="number" id="socPostsPerDay" class="input" min="1" max="10" style="max-width:120px">
+        <div class="field-hint">Capped at 10/day regardless — Meta rate-limit safety net, enforced server-side.</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Time slots (IST, 24h)</label>
+        <div id="socSlotsList"></div>
+      </div>
+      <button id="socSaveSchedule" class="btn btn-primary" style="margin-top:14px">Save schedule</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Published history</div></div>
+      <div id="socHistoryList" class="list"><p class="muted">Nothing published yet.</p></div>
     </div>
   </section>
 

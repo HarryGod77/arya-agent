@@ -1,5 +1,5 @@
 import { api, login, getPass } from './api.js';
-import { toast, confirmModal, promptModal, row, badge, countBadge, showErrorBanner, clearErrorBanner } from './ui.js';
+import { toast, confirmModal, promptModal, row, badge, countBadge, statusPill, showErrorBanner, clearErrorBanner } from './ui.js';
 import { icon } from './icons.js';
 
 const $ = s => document.querySelector(s);
@@ -31,7 +31,7 @@ function selectSubtab(name) {
   document.querySelectorAll('.subtab-panel').forEach(x => x.classList.toggle('hidden', x.id !== 'subtab-' + name));
 }
 
-async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); wireOrganizer(); loadLeadsTab(); }
+async function boot() { loadHeaderStatus(); loadBatches(); loadConfig(); wireOrganizer(); loadLeadsTab(); loadSocialTab(); }
 
 // Wires the "Organize old Drive recordings" card, which now lives as static markup in
 // index.html (Actions tab) instead of being injected into the DOM at boot — keeps the
@@ -347,8 +347,15 @@ async function loadLeadsTab() {
 
   try {
     const stats = await api('/api/leads/stats');
+    const split = stats.replySplit || { local: 0, gemini: 0 };
+    const splitTotal = split.local + split.gemini;
+    const splitPct = splitTotal ? Math.round((split.local / splitTotal) * 100) : 0;
+    const ob = stats.outbound || {};
     $('#lrStats').innerHTML = `New leads today: ${stats.dailyCount}/${stats.dailyCap} · Contact cache: ` +
-      (stats.contactCache.ready ? `${stats.contactCache.size} loaded ✓` : '⚠️ not ready yet — bot stays silent for everyone until synced');
+      (stats.contactCache.ready ? `${stats.contactCache.size} loaded ✓` : '⚠️ not ready yet — bot stays silent for everyone until synced') +
+      `<br>Replies today — local: ${split.local} · Gemini: ${split.gemini} (${splitPct}% local)` +
+      `<br>Outbound sent today: ${ob.sentToday ?? 0}/${ob.dailyCap ?? 20}` +
+      (ob.enabled === false ? ` · <span style="color:var(--color-danger)">OUTBOUND_ENABLED=false — all AUTO-mode sends are blocked</span>` : '');
     const kc = stats.knownChats;
     if (kc) {
       $('#lrKnownChatsStats').innerHTML = `WhatsApp reports ${kc.knownChatsTotal} known chat(s) · ${kc.chatsWithContent} have cached message text the scanner can use` +
@@ -421,29 +428,31 @@ async function loadLeadsTab() {
 
   try {
     const backlog = await api('/api/backlog');
-    backlogPendingCount = backlog.queue.filter(q => !q.approved).length;
+    backlogPendingCount = backlog.queue.length;
     if (backlog.queue.length) {
       $('#lrBacklogCard').style.display = 'block';
       $('#lrBacklogStatus').textContent =
-        (backlog.firstRunCleared ? 'Auto-sends once its turn comes up — remove to veto' : 'First run — nothing sends until you approve it') +
+        'Nothing sends automatically — review each one and click Send' +
         ` · Sent today: ${backlog.sentToday}/5`;
       $('#lrBacklogList').innerHTML = backlog.queue.map(q => `
         <div class="list-row stacked">
           <div class="row-primary">${q.phone}${q.pushName ? ' (' + q.pushName + ')' : ''}</div>
           <div class="row-secondary" style="margin:2px 0 8px">"${(q.lastMessageSnippet || '').slice(0, 80)}"</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-            ${badge(q.approved ? 'Approved, waiting its turn' : 'Needs approval', q.approved ? 'success' : 'warning')}
             <span class="row-secondary">Last message: ${shortDT(q.lastMessageAt)}</span>
           </div>
           <div style="display:flex;gap:8px">
-            ${!q.approved ? `<button class="btn btn-primary btn-sm" data-approve="${q.jid}">Approve</button>` : ''}
+            <button class="btn btn-primary btn-sm" data-sendbacklog="${q.jid}">Send</button>
             <button class="btn btn-danger btn-sm" data-removebacklog="${q.jid}">Remove</button>
           </div>
         </div>`).join('');
-      document.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => {
+      document.querySelectorAll('[data-sendbacklog]').forEach(btn => btn.onclick = async () => {
         btn.disabled = true;
-        try { await api(`/api/backlog/${encodeURIComponent(btn.dataset.approve)}/approve`, { method: 'POST' }); toast('Approved ✓'); loadLeadsTab(); }
-        catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+        try {
+          const r = await api(`/api/backlog/${encodeURIComponent(btn.dataset.sendbacklog)}/send`, { method: 'POST' });
+          if (r.sent) { toast('Sent ✓'); loadLeadsTab(); }
+          else { toast('Not sent: ' + (r.reason || 'unknown reason'), { tone: 'danger' }); btn.disabled = false; }
+        } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
       });
       document.querySelectorAll('[data-removebacklog]').forEach(btn => btn.onclick = async () => {
         const ok = await confirmModal({ title: 'Remove from backlog queue?', body: 'This chat will not be re-discovered by future scans.', confirmLabel: 'Remove', danger: true });
@@ -592,6 +601,171 @@ $('#lrScanNow').onclick = async () => {
     loadLeadsTab();
   } catch (e) { toast('Error: ' + e.message); }
   btn.disabled = false;
+};
+
+// SOCIAL (Facebook Reels auto-posting)
+let SOC_SCHEDULE_SLOTS = [];
+
+async function loadSocialTab() {
+  try {
+    const status = await api('/api/social/status');
+    clearErrorBanner($('#socStatusStrip'));
+    $('#socStatusStrip').innerHTML = [
+      statusPill(status.socialEnabled ? 'Auto-posting: ON' : 'Auto-posting: OFF', status.socialEnabled ? 'success' : undefined),
+      statusPill(status.tokenValid ? `Facebook: connected${status.pageName ? ' (' + status.pageName + ')' : ''}` : `Facebook: ${status.tokenError || 'not connected'}`, status.tokenValid ? 'success' : 'danger'),
+      statusPill(status.stockCount != null ? `${status.stockCount} video(s) left in Drive` : (status.stockError || 'stock unknown'), status.stockCount === 0 ? 'warning' : undefined),
+      statusPill(`Posted today: ${status.postedToday}`)
+    ].join('');
+  } catch (e) {
+    showErrorBanner($('#socStatusStrip'), 'Could not load status: ' + e.message, loadSocialTab);
+  }
+
+  try {
+    const queue = await api('/api/social/queue');
+    clearErrorBanner($('#socQueueList'));
+    const pending = queue.filter(q => q.status !== 'published').sort((a, b) => new Date(a.scheduledFor || 0) - new Date(b.scheduledFor || 0));
+    const published = queue.filter(q => q.status === 'published').sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0));
+
+    $('#socQueueList').innerHTML = pending.length ? pending.map((q, i) => `
+      <div class="list-row stacked">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div class="row-primary">${icon('video', { size: 14 })} <b>${q.fileName}</b></div>
+          ${badge(q.status, q.status === 'failed' ? 'danger' : (q.status === 'uploading' ? 'warning' : undefined))}
+        </div>
+        <div class="row-secondary" style="margin:4px 0 8px">${icon('clock', { size: 12 })} ${q.scheduledFor ? shortDT(q.scheduledFor) : 'unscheduled'}${q.error ? ` · <span style="color:var(--color-danger)">${q.error}</span>` : ''}</div>
+        <div class="field" style="margin:0 0 8px">
+          <label class="field-label">Caption</label>
+          <textarea class="textarea" data-soc-caption="${q.id}">${q.caption || ''}</textarea>
+        </div>
+        <div class="row-secondary" style="margin-bottom:8px">${(q.hashtags || []).join(' ')}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-secondary btn-sm" data-soc-save="${q.id}">Save caption</button>
+          <button class="btn btn-secondary btn-sm" data-soc-regen="${q.id}">${icon('refresh', { size: 13 })} Regenerate caption</button>
+          <button class="btn btn-primary btn-sm" data-soc-publish="${q.id}">${icon('upload', { size: 13 })} Publish Now</button>
+          ${i > 0 ? `<button class="icon-btn" data-soc-up="${q.id}" title="Move earlier">${icon('chevronUp', { size: 14 })}</button>` : ''}
+          ${i < pending.length - 1 ? `<button class="icon-btn" data-soc-down="${q.id}" title="Move later">${icon('chevronDown', { size: 14 })}</button>` : ''}
+          <button class="icon-btn danger" data-soc-remove="${q.id}" title="Remove">${icon('trash', { size: 14 })}</button>
+        </div>
+      </div>`).join('') : '<div class="empty-state">Queue is empty.</div>';
+
+    $('#socHistoryList').innerHTML = published.length ? published.map(q => `
+      <div class="list-row stacked">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div class="row-primary">${icon('checkCircle', { size: 14 })} <b>${q.fileName}</b></div>
+          <span class="row-secondary">${shortDT(q.publishedAt)}${q.publishDelaySeconds != null ? ` · ${q.publishDelaySeconds}s after scheduled time` : ''}</span>
+        </div>
+        <div class="row-secondary" style="margin-top:4px">
+          ${q.insights
+            ? `${icon('play', { size: 12 })} ${q.insights.views ?? '—'} views · reach ${q.insights.reach ?? '—'} · ${q.insights.likes ?? '—'} likes · ${q.insights.comments ?? '—'} comments (as of ${shortDT(q.insights.fetchedAt)})`
+            : 'Insights not fetched yet — refreshed every 6 hours.'}
+        </div>
+      </div>`).join('') : '<div class="empty-state">Nothing published yet.</div>';
+
+    document.querySelectorAll('[data-soc-save]').forEach(btn => btn.onclick = async () => {
+      const id = btn.dataset.socSave;
+      const caption = document.querySelector(`[data-soc-caption="${CSS.escape(id)}"]`).value;
+      btn.disabled = true;
+      try { await api(`/api/social/queue/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ caption }) }); toast('Caption saved ✓'); }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+      btn.disabled = false;
+    });
+
+    document.querySelectorAll('[data-soc-regen]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true; toast('Regenerating…');
+      try { await api('/api/social/caption/regenerate', { method: 'POST', body: JSON.stringify({ queueItemId: btn.dataset.socRegen }) }); toast('Caption regenerated ✓'); loadSocialTab(); }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+    });
+
+    document.querySelectorAll('[data-soc-publish]').forEach(btn => btn.onclick = async () => {
+      const ok = await confirmModal({ title: 'Publish this reel now?', body: 'This posts live to Facebook immediately, instead of waiting for its scheduled time.', confirmLabel: 'Publish now' });
+      if (!ok) return;
+      btn.disabled = true; toast('Publishing…');
+      try { await api('/api/social/publish-now', { method: 'POST', body: JSON.stringify({ queueItemId: btn.dataset.socPublish }) }); toast('Published ✓'); loadSocialTab(); }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); btn.disabled = false; }
+    });
+
+    document.querySelectorAll('[data-soc-up]').forEach(btn => btn.onclick = async () => {
+      const id = btn.dataset.socUp;
+      const idx = pending.findIndex(q => q.id === id);
+      try { await api(`/api/social/queue/${encodeURIComponent(id)}/reorder`, { method: 'POST', body: JSON.stringify({ newIndex: Math.max(0, idx - 1) }) }); loadSocialTab(); }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+    });
+    document.querySelectorAll('[data-soc-down]').forEach(btn => btn.onclick = async () => {
+      const id = btn.dataset.socDown;
+      const idx = pending.findIndex(q => q.id === id);
+      try { await api(`/api/social/queue/${encodeURIComponent(id)}/reorder`, { method: 'POST', body: JSON.stringify({ newIndex: idx + 1 }) }); loadSocialTab(); }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+    });
+    document.querySelectorAll('[data-soc-remove]').forEach(btn => btn.onclick = async () => {
+      const ok = await confirmModal({ title: 'Remove from queue?', body: 'This does not mark the video as posted — a future refill can re-queue it.', confirmLabel: 'Remove', danger: true });
+      if (!ok) return;
+      try { await api(`/api/social/queue/${encodeURIComponent(btn.dataset.socRemove)}`, { method: 'DELETE' }); toast('Removed'); loadSocialTab(); }
+      catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+    });
+  } catch (e) {
+    showErrorBanner($('#socQueueList'), 'Could not load queue: ' + e.message, loadSocialTab);
+  }
+
+  try {
+    const schedule = await api('/api/social/schedule');
+    $('#socEnabled').checked = !!schedule.enabled;
+    $('#socPostsPerDay').value = schedule.postsPerDay || 1;
+    SOC_SCHEDULE_SLOTS = [...(schedule.slots || [])];
+    renderSocSlots();
+  } catch {}
+
+  setTimeout(loadSocialTab, 30000);
+}
+
+function renderSocSlots() {
+  const container = $('#socSlotsList');
+  container.innerHTML = `
+    <div class="list">
+      ${SOC_SCHEDULE_SLOTS.length ? SOC_SCHEDULE_SLOTS.map((s, i) => row({
+        icon: 'clock',
+        primary: s,
+        actionsHtml: `<button type="button" class="icon-btn danger" data-remove-slot="${i}" title="Remove slot">${icon('trash')}</button>`
+      })).join('') : '<div class="empty-state">No time slots yet.</div>'}
+      <button type="button" class="list-row-add" data-add-slot>${icon('plus')} Add time slot</button>
+    </div>`;
+  container.querySelectorAll('[data-remove-slot]').forEach(btn => btn.onclick = () => {
+    SOC_SCHEDULE_SLOTS = SOC_SCHEDULE_SLOTS.filter((_, i) => i !== Number(btn.dataset.removeSlot));
+    renderSocSlots();
+  });
+  container.querySelector('[data-add-slot]').onclick = async () => {
+    const value = await promptModal({ title: 'Add time slot (IST, 24h)', placeholder: '09:00', confirmLabel: 'Add' });
+    if (value === null) return;
+    const v = value.trim();
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) return toast('Use 24h HH:MM, e.g. 09:00', { tone: 'danger' });
+    if (SOC_SCHEDULE_SLOTS.includes(v)) return toast('Already in the list', { tone: 'danger' });
+    SOC_SCHEDULE_SLOTS.push(v);
+    SOC_SCHEDULE_SLOTS.sort();
+    renderSocSlots();
+  };
+}
+
+$('#socSaveSchedule').onclick = async () => {
+  try {
+    await api('/api/social/schedule', { method: 'POST', body: JSON.stringify({
+      enabled: $('#socEnabled').checked,
+      postsPerDay: +$('#socPostsPerDay').value,
+      slots: SOC_SCHEDULE_SLOTS
+    }) });
+    toast('Schedule saved ✓');
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
+};
+
+$('#socPublishNext').onclick = async () => {
+  const ok = await confirmModal({ title: 'Publish the next queued reel now?', body: 'This posts live to Facebook immediately, instead of waiting for its scheduled slot.', confirmLabel: 'Publish now' });
+  if (!ok) return;
+  try {
+    const queue = await api('/api/social/queue');
+    const next = queue.filter(q => q.status === 'queued').sort((a, b) => new Date(a.scheduledFor || 0) - new Date(b.scheduledFor || 0))[0];
+    if (!next) return toast('Queue is empty', { tone: 'danger' });
+    toast('Publishing…');
+    await api('/api/social/publish-now', { method: 'POST', body: JSON.stringify({ queueItemId: next.id }) });
+    toast('Published ✓'); loadSocialTab();
+  } catch (e) { toast('Error: ' + e.message, { tone: 'danger' }); }
 };
 
 // CONFIG

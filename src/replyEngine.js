@@ -1,0 +1,209 @@
+// Local (no-LLM) reply engine for the WhatsApp lead responder. Intent-matching against
+// data/replies.json runs BEFORE any Gemini call — see src/leadResponder.js, which only
+// falls back to Gemini when detectIntent() returns null (no confident local match).
+// Keeps replies fast, cheap (zero Gemini quota burned on routine messages), and on-tone
+// by construction, since the wording is fixed by a human, not generated per message.
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPLIES_PATH = path.join(__dirname, '..', 'data', 'replies.json');
+const ROTATION_PATH = path.join(__dirname, '..', 'data', 'reply-rotation.json');
+const LOG_PATH = path.join(__dirname, '..', 'data', 'reply-engine-log.jsonl');
+
+// Below this, detectIntent returns null so the caller falls back to Gemini rather than
+// risk sending a canned reply to a message it doesn't actually recognize.
+const CONFIDENCE_THRESHOLD = 0.55;
+
+// ---------- data/replies.json (read fresh every call, no caching — same convention as
+// course-knowledge.md: an operator edit takes effect on the very next message) ----------
+function loadReplies() {
+  try { return JSON.parse(fs.readFileSync(REPLIES_PATH, 'utf-8')).intents || {}; }
+  catch (e) { console.error('replyEngine: failed to load data/replies.json:', e.message); return {}; }
+}
+
+// ---------- rotation state (data/reply-rotation.json) ----------
+// Same read-modify-write pattern as store.js/leadStore.js. Separate small file rather
+// than adding fields onto leads.json — rotation history is per (contact, intent,
+// language), not part of the lead record itself, and this way it survives even for
+// senders who never become a tracked lead (e.g. a quick off-topic exchange).
+function ensureRotationFile() {
+  if (!fs.existsSync(ROTATION_PATH)) fs.writeFileSync(ROTATION_PATH, JSON.stringify({}, null, 2));
+}
+function readRotation() {
+  ensureRotationFile();
+  try { return JSON.parse(fs.readFileSync(ROTATION_PATH, 'utf-8')); } catch { return {}; }
+}
+function writeRotation(db) {
+  ensureRotationFile();
+  fs.writeFileSync(ROTATION_PATH, JSON.stringify(db, null, 2));
+}
+
+// ---------- text normalization ----------
+// Common misspellings/transliteration variants -> one canonical token, applied to the
+// whole string before keyword matching so e.g. "coarse ki fes kitni hai" still matches
+// the "course"+"fee" keywords used in data/replies.json.
+const MISSPELLING_FIXES = [
+  [/\b(coarse|coures|cource|corse|cours)\b/g, 'course'],
+  [/\b(hipnosis|hipnotism|hypnotism|hypnotis[ms]|hipno|hypno)\b/g, 'hypnosis'],
+  [/\b(fes|fee['s]?s|feee+|fies|fess)\b/g, 'fee'],
+  [/\b(telikinesis|telekenesis|telekensis|telikinesys)\b/g, 'telekinesis'],
+  [/\bmind[- ]?reading\b/g, 'mindreading'],
+  [/\b(vashikaran|vashikran|vashikarn|vashikarann)\b/g, 'vashikaran'],
+  [/\b(shedule|schdule|scedule|shedual)\b/g, 'schedule'],
+  [/\b(syllabous|silabus|sylabus|sylabas)\b/g, 'syllabus'],
+  [/\b(certifcate|certifikate|certificat|certifikat)\b/g, 'certificate'],
+  [/\b(pemant|payement|paymnt|payemnt)\b/g, 'payment'],
+  [/\b(durtion|duraton|duartion)\b/g, 'duration'],
+  [/\b(insta+lment|instalement)\b/g, 'installment'],
+];
+
+export function normalizeText(raw) {
+  let t = (raw || '').toLowerCase().trim();
+  t = t.replace(/[.,!?;:()"'`~*_[\]{}<>\\|/]+/g, ' ');
+  t = t.replace(/\s+/g, ' ').trim();
+  for (const [re, replacement] of MISSPELLING_FIXES) t = t.replace(re, replacement);
+  return t;
+}
+
+// ---------- language detection ----------
+// Binary on purpose — see data/replies.json's variants_hi, which is Roman-script
+// Hinglish, not Devanagari. Devanagari input still routes to variants_hi (the closest
+// natural match this library has); "mixed" defaults to Hinglish per spec.
+const DEVANAGARI_RE = /[ऀ-ॿ]/;
+const HINGLISH_MARKERS = /\b(hai|hain|kya|kitna|kitne|kitni|kaise|kab|kahan|mujhe|mujhko|aap|aapka|nahi|nhi|kar|karo|karna|karni|hoon|hu|mein|mai|ke|ki|ka|se|batao|bata|bataiye|chahiye|acha|accha|thik|theek|haan|nahin|bhai|didi|paisa|paise|sikha|sikhao|humko|hamko|kaun|kyu|kyun)\b/i;
+
+export function detectLanguage(raw) {
+  if (DEVANAGARI_RE.test(raw || '')) return 'hi';
+  if (HINGLISH_MARKERS.test(raw || '')) return 'hi';
+  return 'en';
+}
+
+// ---------- emoji-only detection ----------
+const EMOJI_ONLY_RE = /^[\p{Extended_Pictographic}‍️\s]+$/u;
+export function isEmojiOnly(raw) {
+  const t = (raw || '').trim();
+  return t.length > 0 && EMOJI_ONLY_RE.test(t);
+}
+
+// ---------- matching ----------
+function countKeywordHits(normText, keywords = []) {
+  let hits = 0;
+  for (const kw of keywords) {
+    const k = (kw || '').toLowerCase().trim();
+    if (!k) continue;
+    if (k.includes(' ')) {
+      if (normText.includes(k)) hits++;
+    } else {
+      const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`\\b${escaped}\\b`).test(normText)) hits++;
+    }
+  }
+  return hits;
+}
+
+function countPatternHits(normText, patterns = []) {
+  let hits = 0;
+  for (const p of patterns) {
+    try { if (new RegExp(p, 'i').test(normText)) hits++; }
+    catch (e) { console.error('replyEngine: bad pattern in data/replies.json:', p, e.message); }
+  }
+  return hits;
+}
+
+// messageText: the raw inbound WhatsApp text. conversationState: { hasGreetedBefore } —
+// leadResponder.js passes this from lead history; only used to promote a bare greeting
+// into greeting_repeat when this isn't the lead's first hello. Returns
+// { intent, confidence, language } or null (caller must fall back to Gemini on null).
+export function detectIntent(messageText, conversationState = {}) {
+  const raw = messageText || '';
+  const language = detectLanguage(raw);
+  const intents = loadReplies();
+  if (!Object.keys(intents).length) return null;
+
+  if (isEmojiOnly(raw) && intents.greeting_only_emoji) {
+    return { intent: 'greeting_only_emoji', confidence: 0.95, language };
+  }
+
+  const norm = normalizeText(raw);
+  if (!norm) return null;
+
+  let best = null;
+  for (const [key, def] of Object.entries(intents)) {
+    if (key === 'greeting_only_emoji') continue; // handled above, never via keyword match
+    const kwHits = countKeywordHits(norm, def.match?.keywords);
+    const patHits = countPatternHits(norm, def.match?.patterns);
+    const totalHits = kwHits + patHits;
+    if (totalHits === 0) continue;
+
+    const confidence = Math.min(0.95, 0.55 + 0.12 * totalHits);
+    const priority = def.priority || 5;
+
+    if (!best || priority > best.priority || (priority === best.priority && confidence > best.confidence)) {
+      best = { intent: key, confidence, priority };
+    }
+  }
+
+  if (!best) return null;
+
+  // A bare greeting-family match, but the lead has already been greeted earlier in this
+  // conversation — swap to greeting_repeat instead of greeting them like a stranger.
+  if (conversationState.hasGreetedBefore && best.intent.startsWith('greeting_') &&
+      best.intent !== 'greeting_repeat' && intents.greeting_repeat) {
+    best = { ...best, intent: 'greeting_repeat' };
+  }
+
+  if (best.confidence < CONFIDENCE_THRESHOLD) return null;
+  return { intent: best.intent, confidence: best.confidence, language };
+}
+
+// ---------- variant rotation ----------
+// Rotates so the same contact never gets the same variant twice in a row, and avoids
+// repeating anything from its last 5 sends of this exact (intent, language) whenever
+// there are enough variants to make that possible.
+export function pickVariant(intent, language, contactJid) {
+  const intents = loadReplies();
+  const def = intents[intent];
+  if (!def) return null;
+  const list = language === 'hi' ? (def.variants_hi || []) : (def.variants_en || []);
+  if (!list.length) return null;
+  if (list.length === 1) return { text: list[0], index: 0 };
+
+  const rotationKey = `${contactJid || 'unknown'}::${intent}::${language}`;
+  const db = readRotation();
+  const history = db[rotationKey] || [];
+
+  const avoidRecent = new Set(history.slice(-5));
+  let candidates = list.map((_, i) => i).filter(i => !avoidRecent.has(i));
+  if (!candidates.length) candidates = list.map((_, i) => i).filter(i => i !== history[history.length - 1]);
+  if (!candidates.length) candidates = list.map((_, i) => i);
+
+  const index = candidates[Math.floor(Math.random() * candidates.length)];
+
+  db[rotationKey] = [...history, index].slice(-10);
+  writeRotation(db);
+
+  return { text: list[index], index };
+}
+
+// ---------- audit log (append-only JSONL, same convention as leadStore.js's lead-log) ----------
+export function logMatch({ jid, message, intent, confidence, language, variantIndex }) {
+  try {
+    fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+    fs.appendFileSync(LOG_PATH, JSON.stringify({ ts: Date.now(), jid, message, intent, confidence, language, variantIndex }) + '\n');
+  } catch (e) { console.error('replyEngine: failed to write reply-engine log:', e.message); }
+}
+
+export function listIntentKeys() {
+  return Object.keys(loadReplies());
+}
+
+// { escalate } for a given intent key — used by leadResponder.js to decide whether a
+// locally-matched reply should also flag the lead / notify the operator (course_payment_done,
+// show_* booking enquiries, student_* issues, etc.) via the same deliver() escalate path
+// Gemini-generated replies already use, rather than a separate parallel mechanism.
+export function getIntentMeta(intent) {
+  const def = loadReplies()[intent];
+  return { escalate: !!def?.escalate };
+}

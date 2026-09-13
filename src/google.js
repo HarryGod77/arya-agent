@@ -2,6 +2,7 @@
 // All use ONE OAuth2 client (one refresh token).
 import { google } from 'googleapis';
 import { Readable } from 'stream';
+import fs from 'fs';
 
 // --- Env fallbacks: works with BOTH old and new variable names ---
 const SENDER_EMAIL  = process.env.GOOGLE_SENDER_EMAIL || process.env.GOOGLE_EMAIL || '';
@@ -206,6 +207,38 @@ export async function uploadFile(name, buffer, mimeType, folderId) {
     fields: 'id'
   });
   return res.data.id;
+}
+
+// ---------- SOCIAL (Facebook auto-posting) ----------
+// Videos sitting in the operator's own "social queue" folder (DRIVE_SOCIAL_FOLDER_ID),
+// oldest first — same "process in upload order" convention as listVideosSince's orderBy.
+// Unlike listVideosSince, this DOES filter by parent folder: this folder is one we
+// control (unlike Meet's own recordings folder), so there's no need for the Drive-wide
+// workaround.
+export async function listSocialVideos(folderId) {
+  if (!folderId) return [];
+  const res = await drive().files.list({
+    q: `'${folderId}' in parents and mimeType contains 'video' and trashed = false`,
+    fields: 'files(id, name, size, createdTime)',
+    orderBy: 'createdTime',
+    pageSize: 100
+  });
+  return res.data.files || [];
+}
+
+// Streams a Drive file straight to local disk — never buffers the whole file in memory.
+// The server runs with ~1GB RAM; a multi-hundred-MB reel read into a Buffer first (the
+// way uploadFile() above does for small invoice PDFs) would risk exhausting it.
+export async function downloadDriveFile(fileId, destPath) {
+  const res = await drive().files.get({ fileId, alt: 'media' }, { responseType: 'stream' });
+  await new Promise((resolve, reject) => {
+    const dest = fs.createWriteStream(destPath);
+    res.data
+      .on('error', reject)
+      .pipe(dest)
+      .on('finish', resolve)
+      .on('error', reject);
+  });
 }
 
 export async function makeShareable(fileId) {

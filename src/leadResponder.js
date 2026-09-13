@@ -4,7 +4,15 @@
 import * as WA from './whatsapp.js';
 import * as LS from './leadStore.js';
 import * as G from './gemini.js';
+import * as RE from './replyEngine.js';
 import { read as readDb } from './store.js';
+
+// ---------- outbound safety (Part 4) ----------
+// Scoped to deliver()'s AUTO-mode branch only — see that function below. Read live from
+// process.env (not cached at import time) so a change to .env + restart always applies,
+// same convention as every other env-gated toggle in this codebase.
+const outboundEnabled = () => process.env.OUTBOUND_ENABLED !== 'false';
+const dailyOutboundCap = () => Number(process.env.DAILY_OUTBOUND_CAP) || 20;
 
 const DEFAULT_CONFIG = {
   mode: 'draft', dailyCap: 30, silentHours: { start: 23, end: 8 },
@@ -134,7 +142,52 @@ export async function generateTieredReply({ jid, phone, text, leadState, intent,
   return { ...result, tier: usedTier, model: usedModel };
 }
 
-export async function handleInboundMessage({ jid, phone, pushName, text, hasImage = false }) {
+// Maps a matched local intent key to the same coarse category advanceState() already
+// understands from the Gemini path ('greeting' / 'class_inquiry' / anything else). Course,
+// skill and show questions are genuine inquiry signal; identity/off-topic/student intents
+// still count as engagement (new -> informed) but must never look like a second
+// class_inquiry (informed -> interested), so they fall through to the 'unclear' bucket,
+// exactly like a genuinely ambiguous Gemini-classified message would.
+function localIntentCategory(intentKey) {
+  if (intentKey.startsWith('greeting_')) return 'greeting';
+  if (intentKey.startsWith('course_') || intentKey.startsWith('skill_') || intentKey.startsWith('show_')) return 'class_inquiry';
+  return 'unclear';
+}
+
+// Shared by the local-match branch of handleInboundMessage, the voice-note/sticker
+// special case, and handleMissedCall — picks a variant, delivers it through the same
+// deliver() funnel (and therefore the same outbound kill-switch/cap, typing delay, and
+// never-mark-sent-unless-confirmed guarantees as the Gemini path), and only advances
+// state/counters/flags once delivery is actually confirmed.
+async function deliverLocalMatch({ jid, phone, pushName, intentKey, language, confidence, cfg, sourceMessage = '', lead = null }) {
+  const variant = RE.pickVariant(intentKey, language, jid);
+  if (!variant) {
+    LS.logEvent({ jid, action: 'local_reply_no_variant', detail: { intent: intentKey, language } });
+    return false;
+  }
+
+  const { escalate } = RE.getIntentMeta(intentKey);
+  const escalateReason = escalate ? `local_intent:${intentKey}` : null;
+
+  const delivered = await deliver({
+    jid, phone, pushName, reply: variant.text, mode: cfg.mode,
+    escalate, escalateReason, tier: 'local', model: intentKey
+  });
+
+  RE.logMatch({ jid, message: sourceMessage, intent: intentKey, confidence, language, variantIndex: variant.index });
+  if (!delivered) return false;
+
+  LS.incrementReplySplit('local');
+  LS.logEvent({ jid, action: 'local_reply_sent', detail: { intent: intentKey, confidence, language, variantIndex: variant.index } });
+  if (escalate) {
+    LS.addFlag(jid, escalateReason);
+    LS.logEvent({ jid, action: 'escalated', detail: escalateReason });
+  }
+  if (lead) advanceState(jid, lead, localIntentCategory(intentKey));
+  return true;
+}
+
+export async function handleInboundMessage({ jid, phone, pushName, text, hasImage = false, hasAudio = false, hasSticker = false }) {
   // 1) Fail-closed contact-cache gate — see src/whatsapp.js#isContactCacheReady.
   if (!WA.isContactCacheReady()) {
     LS.logEvent({ jid, action: 'skipped_contact_cache_not_ready', detail: null });
@@ -184,10 +237,37 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
     return;
   }
 
+  // 4c) Voice note / sticker with no usable text — nothing for either the local engine
+  // or Gemini to work with, so this is a fixed local reply only, no classification call.
+  if (!text && (hasAudio || hasSticker)) {
+    LS.appendMessage(jid, { dir: 'in', text: hasAudio ? '[voice note]' : '[sticker]' });
+    const lead = LS.getLead(jid);
+    await deliverLocalMatch({
+      jid, phone, pushName, cfg, lead,
+      intentKey: hasAudio ? 'ot_voice_note_received' : 'ot_sticker_only',
+      language: 'en', confidence: 1, sourceMessage: hasAudio ? '[voice note]' : '[sticker]'
+    });
+    return;
+  }
+
   LS.appendMessage(jid, { dir: 'in', text });
   const lead = LS.getLead(jid);
 
-  // 5) Classify.
+  // 5) Local reply engine first — fast, free, on-tone by construction (see
+  // src/replyEngine.js). Only falls through to Gemini below when nothing matches with
+  // enough confidence. A bare "hi" after the lead has already had a real reply routes to
+  // greeting_repeat instead of greeting them like a first-time stranger.
+  const hasGreetedBefore = (lead.replyCount || 0) > 0;
+  const local = RE.detectIntent(text, { hasGreetedBefore });
+  if (local) {
+    await deliverLocalMatch({
+      jid, phone, pushName, cfg, lead, sourceMessage: text,
+      intentKey: local.intent, language: local.language, confidence: local.confidence
+    });
+    return;
+  }
+
+  // 6) Gemini fallback — classify.
   const { intent, quotaExhausted: classifyQuotaExhausted } = await G.classifyIntent(LS.lastMessages(jid, 20));
   LS.logEvent({ jid, action: 'classified', detail: { intent, quotaExhausted: !!classifyQuotaExhausted } });
 
@@ -202,7 +282,7 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   // generateReply has its own instruction branch for 'unclear' (acknowledge naturally /
   // ask a short clarifying question, don't invent an assumption about what they meant).
 
-  // 6) Generate reply (class_inquiry, greeting, or unclear) via priority-based model
+  // 6b) Generate reply (class_inquiry, greeting, or unclear) via priority-based model
   // routing — see generateTieredReply above. Silent hours: still answer normally (see
   // step 7) but never with payment details, regardless of the paymentAutoSend toggle —
   // real bank/UPI details wait for daytime.
@@ -255,10 +335,46 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
   // reasoning that still holds back backlogScan.js's sender and sendFollowUp doesn't
   // apply here. The reply itself already carries the off-hours note and omits payment
   // details when silentNow is true — see step 6 and gemini.js#generateReply's offHours.
-  await deliver({ jid, phone, pushName, reply, mode: cfg.mode, escalate, escalateReason, tier, model });
+  const delivered = await deliver({ jid, phone, pushName, reply, mode: cfg.mode, escalate, escalateReason, tier, model });
+  if (delivered) LS.incrementReplySplit('gemini');
 
   // 8) State transition.
   advanceState(jid, lead, intent);
+}
+
+// Registered by server.js via WA.setMissedCallHandler — a call that rang and went
+// unanswered runs through the same gate chain (contact cache ready, saved-contact skip,
+// manual override, new-lead daily cap) as a real message, then gets a fixed local reply.
+// Never touches Gemini — there's no text here to classify in the first place.
+export async function handleMissedCall({ jid, phone, pushName = '' }) {
+  if (!WA.isContactCacheReady()) {
+    LS.logEvent({ jid, action: 'skipped_contact_cache_not_ready', detail: null });
+    return;
+  }
+  if (WA.isSavedContact(jid)) {
+    LS.logEvent({ jid, action: 'filtered_saved_contact', detail: null });
+    return;
+  }
+  const existing = LS.getLead(jid);
+  if (existing?.manualOverride === 'ignore' || existing?.state === 'converted') {
+    LS.logEvent({ jid, action: 'skipped_manual_override', detail: existing.manualOverride || existing.state });
+    return;
+  }
+  const cfg = getConfig();
+  if (!existing && LS.getDailyCount() >= cfg.dailyCap) {
+    LS.logEvent({ jid, action: 'filtered_daily_cap', detail: { cap: cfg.dailyCap } });
+    return;
+  }
+  if (!existing) {
+    LS.createLead(jid, { phone, pushName });
+    LS.incrementDailyCount();
+  }
+  LS.appendMessage(jid, { dir: 'in', text: '[missed call]' });
+  const lead = LS.getLead(jid);
+  await deliverLocalMatch({
+    jid, phone, pushName, cfg, lead, intentKey: 'ot_missed_call',
+    language: 'en', confidence: 1, sourceMessage: '[missed call]'
+  });
 }
 
 // Actually sends (or drafts) a reply and records it — shared by the live path above,
@@ -268,6 +384,23 @@ export async function handleInboundMessage({ jid, phone, pushName, text, hasImag
 export async function deliver({ jid, phone, pushName, reply, mode, escalate, escalateReason, isFollowUp = false, tier = null, model = null }) {
   const who = pushName ? `${phone} (${pushName})` : phone;
   const label = isFollowUp ? 'follow-up' : 'reply';
+
+  // DRAFT-mode notes go to the operator's own Note-to-Self, never reaching the lead's
+  // real number — zero ban risk, so the kill switch and cap below deliberately don't
+  // apply to that branch, only to an actual AUTO-mode send.
+  if (mode === 'auto') {
+    if (!outboundEnabled()) {
+      LS.logEvent({ jid, action: 'outbound_blocked_kill_switch', detail: null });
+      console.warn(`OUTBOUND_ENABLED is false — skipping ${label} to ${who}`);
+      return false;
+    }
+    if (LS.getOutboundSentToday() >= dailyOutboundCap()) {
+      LS.logEvent({ jid, action: 'outbound_blocked_daily_cap', detail: { cap: dailyOutboundCap() } });
+      console.warn(`Daily outbound cap (${dailyOutboundCap()}) reached — skipping ${label} to ${who}`);
+      return false;
+    }
+  }
+
   try {
     if (mode === 'auto') {
       await WA.sendWithTypingDelay({ jid, text: reply });
@@ -275,6 +408,7 @@ export async function deliver({ jid, phone, pushName, reply, mode, escalate, esc
       // operator, so marking the chat "replied" there would be wrong until (if) they
       // manually forward it, which Baileys' own message reflection already captures.
       WA.markChatReplied(jid);
+      LS.incrementOutboundSentToday();
       if (escalate) await notifyOperator(`⚠️ Auto-replied to ${who}, but this needs you: ${escalateReason || 'see Leads tab'}`);
     } else {
       const note = `📋 DRAFT ${label} for ${who}:\n\n${reply}\n\n(forward this manually if it looks good)` +

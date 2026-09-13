@@ -19,7 +19,9 @@ const DEFAULT_DB = {
     backlogSentToday: { date: '', count: 0 },     // separate from dailyCount — backlog opens don't count against the reactive new-lead cap
     backlogLastSendAt: null,
     backlogFirstRunCleared: false,                // false until every first-scan item has been approved/removed at least once
-    learningQueue: []                             // [{id, jid, phone, pushName, question, answer, createdAt}] — see appendMessage/handleOutboundMessage
+    learningQueue: [],                            // [{id, jid, phone, pushName, question, answer, createdAt}] — see appendMessage/handleOutboundMessage
+    replySplit: { date: '', local: 0, gemini: 0 }, // local-reply-engine vs Gemini split for today's panel counter
+    outboundSentToday: { date: '', count: 0 }      // every lead-facing AUTO send (reply/follow-up/backlog open) — DAILY_OUTBOUND_CAP in .env
   }
 };
 
@@ -151,6 +153,39 @@ export function incrementDailyCount() {
   });
 }
 
+// ---------- local-reply-engine vs Gemini split (today, IST) — panel counter ----------
+export function getReplySplitToday() {
+  const db = read();
+  const c = db.meta.replySplit || { date: '', local: 0, gemini: 0 };
+  return c.date === istDateKey() ? c : { date: istDateKey(), local: 0, gemini: 0 };
+}
+
+export function incrementReplySplit(kind) {
+  update(d => {
+    const today = istDateKey();
+    if (!d.meta.replySplit || d.meta.replySplit.date !== today) d.meta.replySplit = { date: today, local: 0, gemini: 0 };
+    d.meta.replySplit[kind] = (d.meta.replySplit[kind] || 0) + 1;
+  });
+}
+
+// ---------- outbound safety: hard daily cap on lead-facing AUTO sends (IST calendar day) ----------
+// Scoped to src/leadResponder.js#deliver's AUTO-mode branch only — DRAFT-mode notes to the
+// operator's own Note-to-Self never reach a lead's real number, so they carry none of the
+// ban-risk this cap exists for and are deliberately not counted here.
+export function getOutboundSentToday() {
+  const db = read();
+  const c = db.meta.outboundSentToday || { date: '', count: 0 };
+  return c.date === istDateKey() ? c.count : 0;
+}
+
+export function incrementOutboundSentToday() {
+  update(d => {
+    const today = istDateKey();
+    if (!d.meta.outboundSentToday || d.meta.outboundSentToday.date !== today) d.meta.outboundSentToday = { date: today, count: 0 };
+    d.meta.outboundSentToday.count++;
+  });
+}
+
 // ---------- backlog scan queue ----------
 // Defensively fall back to [] / defaults everywhere here — an existing data/leads.json
 // from before this feature existed won't have these meta fields, and DEFAULT_DB above
@@ -172,20 +207,14 @@ export function removeFromBacklogQueue(jid) {
   update(d => { d.meta.backlogQueue = (d.meta.backlogQueue || []).filter(e => e.jid !== jid); });
 }
 
-// First-run items start unapproved and need this explicit call before they're eligible
-// to send. Later runs add items pre-approved (see backlogScan.js), so this is only ever
-// used for that initial review batch.
+// Vestigial now that sending is manual-only (Part 4 outbound safety) — approval no
+// longer gates anything, but kept for the existing POST /api/backlog/:jid/approve route
+// rather than breaking that endpoint outright.
 export function approveBacklogItem(jid) {
   update(d => {
     const item = (d.meta.backlogQueue || []).find(e => e.jid === jid);
     if (item) item.approved = true;
   });
-}
-
-// Peek only — the caller removes the item itself once delivery is confirmed, same
-// separation as pendingSend's set/clear.
-export function getNextApprovedBacklogItem() {
-  return (read().meta.backlogQueue || []).find(e => e.approved) || null;
 }
 
 export function isBacklogFirstRunCleared() {

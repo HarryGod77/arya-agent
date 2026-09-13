@@ -7,19 +7,24 @@ import QRCodeImage from 'qrcode';
 import { read, update, id } from './src/store.js';
 import {
   startWhatsApp, isWhatsAppReady, listGroups, sendMessage, resolveGroupJid, getQrCode,
-  setInboundMessageHandler, setOutboundMessageHandler, getContactCacheStats, getKnownChatsStats
+  setInboundMessageHandler, setOutboundMessageHandler, setMissedCallHandler,
+  getContactCacheStats, getKnownChatsStats
 } from './src/whatsapp.js';
 import * as G from './src/gemini.js';
-import { startScheduler, jobs, matchRecordingForClass } from './src/scheduler.js';
+import { startScheduler, jobs, matchRecordingForClass, publishQueueItem } from './src/scheduler.js';
 import {
   createClassEvent, deleteClassEvent, sendEmail, listInboxVideos, listVideosSince,
-  ensureFolder, moveFile, ensureBatchFolder, ensureFolderAccess, moveIntoFolder
+  ensureFolder, moveFile, ensureBatchFolder, ensureFolderAccess, moveIntoFolder,
+  listSocialVideos
 } from './src/google.js';
 import * as leadResponder from './src/leadResponder.js';
 import * as LS from './src/leadStore.js';
 import * as backlogScan from './src/backlogScan.js';
 import * as invoicing from './src/invoicing.js';
 import * as PS from './src/paymentStore.js';
+import * as SS from './src/social/socialStore.js';
+import * as FB from './src/social/facebookApi.js';
+import { generateSocialCaption } from './src/social/captionGen.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -343,7 +348,13 @@ app.get('/api/leads/stats', auth, (req, res) => {
     dailyCount: LS.getDailyCount(), dailyCap: cfg.dailyCap,
     mode: cfg.mode, paymentAutoSend: cfg.paymentAutoSend,
     contactCache: getContactCacheStats(),
-    knownChats: getKnownChatsStats()
+    knownChats: getKnownChatsStats(),
+    replySplit: LS.getReplySplitToday(),
+    outbound: {
+      sentToday: LS.getOutboundSentToday(),
+      dailyCap: Number(process.env.DAILY_OUTBOUND_CAP) || 20,
+      enabled: process.env.OUTBOUND_ENABLED !== 'false'
+    }
   });
 });
 
@@ -436,6 +447,16 @@ app.post('/api/backlog/:jid/approve', auth, (req, res) => {
   res.json({ ok: true });
 });
 
+// Manual send only (Part 4 outbound safety) — nothing in this queue goes out on any
+// cron anymore. This is the one and only path that actually delivers a backlog opener,
+// and it only ever runs from an explicit "Send" click in the Leads tab.
+app.post('/api/backlog/:jid/send', auth, async (req, res) => {
+  try {
+    const result = await backlogScan.sendBacklogItem(req.params.jid);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Permanent exclusion, not just a one-time skip — creates/marks the lead as manually
 // ignored so a future daily scan can't just re-discover and re-queue the same chat.
 app.post('/api/backlog/:jid/remove', auth, (req, res) => {
@@ -476,6 +497,138 @@ app.post('/api/payments/:invoiceNumber/resend', auth, async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+// ---------- SOCIAL (Facebook Reels auto-posting) ----------
+// IST date-key helper, same fixed-offset approach used throughout the lead-responder
+// subsystem (leadStore.js's istDateKey, paymentStore.js's istYear) — used here only to
+// decide what counts as "today" for the status strip's queue/posted-count display.
+const istDateKey = (d = new Date()) => new Date(d.getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+
+app.get('/api/social/status', auth, async (req, res) => {
+  const result = {
+    socialEnabled: process.env.SOCIAL_ENABLED === 'true',
+    tokenValid: false, pageName: null, tokenError: null,
+    stockCount: null, stockError: null,
+    postedToday: 0, todaysQueue: []
+  };
+
+  if (process.env.FB_PAGE_ACCESS_TOKEN) {
+    try {
+      const v = await FB.validateToken(process.env.FB_PAGE_ACCESS_TOKEN);
+      result.tokenValid = true;
+      result.pageName = v.name;
+    } catch (e) { result.tokenError = e.message; }
+  } else {
+    result.tokenError = 'FB_PAGE_ACCESS_TOKEN not set';
+  }
+
+  if (googleReady() && process.env.DRIVE_SOCIAL_FOLDER_ID) {
+    try {
+      const files = await listSocialVideos(process.env.DRIVE_SOCIAL_FOLDER_ID);
+      result.stockCount = files.filter(f => !SS.isAlreadyUploaded(f.id)).length;
+    } catch (e) { result.stockError = e.message; }
+  } else {
+    result.stockError = googleReady() ? 'DRIVE_SOCIAL_FOLDER_ID not set' : 'google auth missing';
+  }
+
+  const today = istDateKey();
+  const queue = SS.getQueue();
+  result.todaysQueue = queue.filter(q => q.scheduledFor && istDateKey(new Date(q.scheduledFor)) === today);
+  result.postedToday = queue.filter(q => q.status === 'published' && q.publishedAt && istDateKey(new Date(q.publishedAt)) === today).length;
+
+  res.json(result);
+});
+
+app.get('/api/social/queue', auth, (req, res) => {
+  const insights = SS.getAllInsights();
+  res.json(SS.getQueue().map(q => ({ ...q, insights: q.fbVideoId ? (insights[q.fbVideoId] || null) : null })));
+});
+
+// Manual trigger for the daily 08:00 refill — same job the cron calls.
+app.post('/api/social/queue/refill', auth, async (req, res) => {
+  try { await jobs.refillSocialQueue(); res.json({ ok: true, queue: SS.getQueue() }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Publishes immediately instead of waiting for its scheduled time (or, given a bare
+// driveFileId not yet in the queue, queues + publishes it on the spot) — shared with the
+// 5-min cron tick via scheduler.js#publishQueueItem so both paths run the identical
+// download -> upload -> publish -> cleanup sequence.
+app.post('/api/social/publish-now', auth, async (req, res) => {
+  try {
+    const { queueItemId, driveFileId } = req.body || {};
+    let item;
+    if (queueItemId) {
+      item = SS.getQueueItem(queueItemId);
+      if (!item) return res.status(404).json({ error: 'queue item not found' });
+    } else if (driveFileId) {
+      if (SS.isAlreadyUploaded(driveFileId)) return res.status(400).json({ error: 'this Drive file was already posted' });
+      const existing = SS.getQueue().find(q => q.driveFileId === driveFileId && q.status !== 'failed');
+      if (existing) {
+        item = existing;
+      } else {
+        if (!process.env.DRIVE_SOCIAL_FOLDER_ID) return res.status(400).json({ error: 'DRIVE_SOCIAL_FOLDER_ID not set' });
+        const files = await listSocialVideos(process.env.DRIVE_SOCIAL_FOLDER_ID);
+        const file = files.find(f => f.id === driveFileId);
+        if (!file) return res.status(404).json({ error: 'file not found in the configured Drive social folder' });
+        const cap = await generateSocialCaption(file.name).catch(() => ({ title: file.name, caption: '', hashtags: [] }));
+        item = SS.addToQueue({ driveFileId: file.id, fileName: file.name, caption: cap.caption, title: cap.title, hashtags: cap.hashtags, scheduledFor: new Date().toISOString() });
+      }
+    } else {
+      return res.status(400).json({ error: 'queueItemId or driveFileId required' });
+    }
+
+    const result = await publishQueueItem(item);
+    if (result.status !== 'published') return res.status(500).json({ error: result.error || 'publish failed', item: result });
+    res.json({ ok: true, item: result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Inline edits from the panel's queue list (caption/title/hashtags/scheduled time).
+app.put('/api/social/queue/:id', auth, (req, res) => {
+  const item = SS.getQueueItem(req.params.id);
+  if (!item) return res.status(404).json({ error: 'queue item not found' });
+  const { caption, title, hashtags, scheduledFor } = req.body || {};
+  const patch = {};
+  if (typeof caption === 'string') patch.caption = caption;
+  if (typeof title === 'string') patch.title = title;
+  if (Array.isArray(hashtags)) patch.hashtags = hashtags.filter(h => typeof h === 'string');
+  if (typeof scheduledFor === 'string') patch.scheduledFor = scheduledFor;
+  res.json(SS.updateQueueItem(item.id, patch));
+});
+
+app.post('/api/social/queue/:id/reorder', auth, (req, res) => {
+  const newIndex = Number(req.body?.newIndex);
+  if (!Number.isInteger(newIndex) || newIndex < 0) return res.status(400).json({ error: 'newIndex (integer >= 0) required' });
+  if (!SS.getQueueItem(req.params.id)) return res.status(404).json({ error: 'queue item not found' });
+  res.json({ ok: true, queue: SS.reorderQueue(req.params.id, newIndex) });
+});
+
+app.delete('/api/social/queue/:id', auth, (req, res) => {
+  SS.removeFromQueue(req.params.id);
+  res.json({ ok: true });
+});
+
+app.get('/api/social/schedule', auth, (req, res) => res.json(SS.getSchedule()));
+
+app.post('/api/social/schedule', auth, (req, res) => {
+  const { slots, timezone, enabled, postsPerDay } = req.body || {};
+  const patch = {};
+  if (Array.isArray(slots) && slots.every(s => /^([01]\d|2[0-3]):[0-5]\d$/.test(s))) patch.slots = slots;
+  if (typeof timezone === 'string' && timezone.trim()) patch.timezone = timezone.trim();
+  if (typeof enabled === 'boolean') patch.enabled = enabled;
+  if (Number.isFinite(postsPerDay) && postsPerDay > 0) patch.postsPerDay = Math.floor(postsPerDay);
+  res.json(SS.setSchedule(patch));
+});
+
+app.post('/api/social/caption/regenerate', auth, async (req, res) => {
+  try {
+    const item = SS.getQueueItem(req.body?.queueItemId);
+    if (!item) return res.status(404).json({ error: 'queue item not found' });
+    const cap = await generateSocialCaption(item.fileName);
+    res.json(SS.updateQueueItem(item.id, { title: cap.title, caption: cap.caption, hashtags: cap.hashtags }));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ---------- RUN JOBS MANUALLY ----------
 app.post('/api/run/:job', auth, async (req, res) => {
   const fn = jobs[req.params.job];
@@ -510,6 +663,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server listening on http://localhost:${PORT} or http://${lanIP()}:${PORT}`);
   setInboundMessageHandler(leadResponder.handleInboundMessage);
   setOutboundMessageHandler(leadResponder.handleOutboundMessage);
+  setMissedCallHandler(leadResponder.handleMissedCall);
 
   if (whatsappEnabled) {
     startWhatsApp();

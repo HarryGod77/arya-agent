@@ -36,6 +36,7 @@ const PATHS = {
   upload: `<path d="M12 19V5"/><polyline points="6 10 12 4 18 10"/><line x1="4" y1="21" x2="20" y2="21"/>`,
   download: `<path d="M12 5v14"/><polyline points="6 14 12 20 18 14"/><line x1="4" y1="21" x2="20" y2="21"/>`,
   chevronDown: `<polyline points="6 9 12 15 18 9"/>`,
+  chevronUp: `<polyline points="6 15 12 9 18 15"/>`,
   x: `<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>`,
   refresh: `<path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3 21 9 15 9"/>`,
   search: `<circle cx="10.5" cy="10.5" r="6.5"/><line x1="21" y1="21" x2="15.5" y2="15.5"/>`,

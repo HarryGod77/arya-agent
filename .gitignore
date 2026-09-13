@@ -12,6 +12,8 @@ data/wa-chat-cache.json
 # Lead-responder data — phone numbers + chat transcripts of third parties
 data/leads.json
 data/lead-log.jsonl
+data/reply-rotation.json
+data/reply-engine-log.jsonl
 
 # Payments/invoicing data — names, phone numbers, amounts, generated PDFs
 data/payments.json

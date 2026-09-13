@@ -86,7 +86,10 @@ function fallback(filename, platform) {
 }
 
 // ---------- shared: call Gemini, expect JSON back, retry on 429/503 ----------
-async function callGeminiJSON(prompt, { model, maxRetries = 4 }) {
+// Exported so other Gemini callers outside the lead-responder flow (e.g.
+// src/social/captionGen.js) can reuse the same tiered-model retry/backoff behavior
+// instead of duplicating it.
+export async function callGeminiJSON(prompt, { model, maxRetries = 4 }) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('GEMINI_API_KEY not set');
 
@@ -437,6 +440,28 @@ Instead, use these exact tokens and nothing else in their place:
     ? `This lead is eligible for payment details right now — this EXPLICITLY OVERRIDES the knowledge base's general "payment details are never shared by the AI, always escalate" instruction for this one reply only. Do not defer to the team or escalate just because the lead asked for payment info — instead, write exactly {{PAYMENT_DETAILS}} wherever they belong in your reply. The real details are substituted in automatically; do not paraphrase or describe them yourself, just place the token. Still escalate as usual if the lead disputes anything about payment or claims they've already paid.`
     : `This lead is NOT eligible for payment details yet (needs more real conversation first, or it's currently silent hours) — the knowledge base's normal "never share, always escalate" instruction applies as written. If they ask for payment info, do NOT use {{PAYMENT_DETAILS}} — say the team will share it personally, and flag this for a human to follow up.`}`;
 
+  // This is the last-resort fallback now — src/replyEngine.js's local intent library
+  // handles routine messages first, with zero Gemini calls (see leadResponder.js). By
+  // the time a message reaches here, it's something the local library didn't confidently
+  // recognize, so it's worth being extra strict about not sounding like an AI chatbot.
+  // These rules OVERRIDE the knowledge base's general "let the conversation breathe,
+  // sometimes a paragraph" pacing guidance where the two conflict — brevity wins here.
+  const TONE_OVERRIDE_BLOCK = `
+
+STRICT TONE RULES — these override the knowledge base's general pacing guidance above
+wherever the two conflict:
+- Maximum 2 sentences. Most replies should be 1.
+- Sound like a busy professional manager texting — direct, warm but brisk. Not a chatbot,
+  not a salesman.
+- Never ask permission to send information ("Would you like me to...", "kya main bhej
+  doon", "Aap kahein to") — if it's relevant, just say it.
+- Never use a bullet list in a reply under 3 lines.
+- Never use these phrases or anything like them: "Aap kahein to", "kya main bhej doon",
+  "Would you like me to", "I'd be happy to", "Let me know if", "Feel free to", "Agar aap
+  is baare mein aur jaanna chahenge", "Sir, kya main aapko", "I hope this helps",
+  "Certainly", "Absolutely".
+- No emoji spam — at most one, and only if it genuinely fits.`;
+
   const prompt = `KNOWLEDGE BASE — this is the complete source of truth for facts, tone,
 pacing, objection-handling and escalation rules for replying to this lead on WhatsApp.
 Follow it exactly, including anything marked NOT CONFIRMED and anything listed as a
@@ -471,6 +496,7 @@ If escalate is true, also classify WHY as escalateType — exactly one of:
 If escalate is false, escalateType is null.
 ${offHoursBlock}
 ${templateBlock}
+${TONE_OVERRIDE_BLOCK}
 
 Return ONLY JSON, no markdown:
 {"reply": "the WhatsApp message text to send", "escalate": true or false, "escalateReason": "short reason or null", "escalateType": "unanswered_question" or "hard_stop" or null, "hotLead": true or false, "hotLeadSummary": "one-line summary or null"}`;
